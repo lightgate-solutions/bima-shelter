@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
+    "check": "pnpm exec biome check --write",
     "db:start": "docker compose up -d",
     "db:stop": "docker compose stop",
     "db:studio": "drizzle-kit studio",
