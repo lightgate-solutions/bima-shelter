@@ -1,42 +1,16 @@
 # BIMA SHELTERS MANAGEMENT SOFTWARE
 
-## Architecture
+## Repo Architecture
 
-src/
-├── actions (Store all server actions in here)
-│   └── auth (should be grouped by module / function)
-│       ├── login.ts
-│       └── register.ts
-├── app
-│   ├── api (Can optionally use api routes)
-│   │   └── auth (Do not touch)
-│   ├── (auth) (Auth folder / Do not touch)
-│   ├── (dashboard) (folder where all pages will be created)
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-├── components (each modules components should be grouped by folder)
-│   ├── layouts (layout components stored here)
-│   │   ├── app-sidebar.tsx
-│   │   ├── nav-main.tsx
-│   │   ├── nav-projects.tsx
-│   │   ├── nav-user.tsx
-│   │   └── team-switcher.tsx
-│   └── ui (re-usuable ui components stored here)
-│       ├── avatar.tsx
-│       ├── button.tsx
-│       ├── collapsible.tsx
-├── db
-│   ├── index.ts
-│   └── schema (all db schemas go in here)
-│       ├── auth.ts
-│       └── index.ts (Created schemas should be exported in this file)
-└── lib (shared libs)
-    ├── auth-client.ts
-    ├── auth.ts
-    └── utils.ts
-
-- A `utils` folder can be used for shared utilities
-- A `types` folder can be used for types
+- `src/app/(dashboard)/` folder: where all pages will be created
+- `src/actions/[module name]` folder: store all server actions in here (should be grouped)
+- `src/app/api/` folder: Can optionally use api routes
+- `src/components/[module name]/` folder: each modules components should be grouped by folder here
+- `src/components/ui/` folder: re-usuable ui components stored here
+- `src/db/schema/` folder: all db schemas go in here
+- `src/lib/` folder: used for shared libs
+- `src/types/` folder: used for types
+- `src/utils/` folder: used for shared utilities
 
 ## Requirements
 
