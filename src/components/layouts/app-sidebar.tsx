@@ -11,6 +11,7 @@ import {
   Map as MapIcon,
   PieChart,
   TvMinimal,
+  Users,
   Warehouse,
 } from "lucide-react";
 import {
@@ -24,13 +25,9 @@ import { TeamSwitcher } from "./team-switcher";
 import { NavMain } from "./nav-main";
 import { NavProjects } from "./nav-projects";
 import { NavUser } from "./nav-user";
+import type { User } from "better-auth";
 
 const data = {
-  user: {
-    name: "Admin",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   org: [
     {
       name: "Bima Shelters",
@@ -101,6 +98,17 @@ const data = {
         },
       ],
     },
+    {
+      title: "Hr/Payroll",
+      url: "/hr",
+      icon: Users,
+      items: [
+        {
+          title: "User Management",
+          url: "/hr/admin",
+        },
+      ],
+    },
   ],
   projects: [
     {
@@ -121,7 +129,10 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  user,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & { user: User }) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -132,7 +143,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

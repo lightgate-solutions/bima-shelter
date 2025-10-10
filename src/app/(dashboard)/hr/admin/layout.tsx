@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-export default async function RootLayout({
+export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -10,7 +10,10 @@ export default async function RootLayout({
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  if (session) redirect("/");
 
-  return <div>{children}</div>;
+  if (!session || session.user.role !== "admin") {
+    return redirect("/unauthorized");
+  }
+
+  return <section>{children}</section>;
 }
