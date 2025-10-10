@@ -150,7 +150,6 @@ export async function createUser(data: {
   const { autoVerify, ...userData } = data;
 
   try {
-    // If autoVerify is true, add emailVerified to data
     const createData = {
       ...userData,
       data: {
@@ -161,7 +160,6 @@ export async function createUser(data: {
 
     const user = await auth.api.createUser({ body: createData });
 
-    // Build full employee record using provided fields, with sensible fallbacks
     const parsedManagerId =
       userData.data?.managerId === undefined ||
       userData.data?.managerId === null ||
@@ -198,19 +196,21 @@ export async function createUser(data: {
     return {
       success: { reason: "User created successfully" },
       error: null,
-      data: undefined,
+      data: null,
     };
   } catch (err) {
     if (err instanceof APIError) {
       return {
         error: { reason: err.message },
         success: null,
+        data: null,
       };
     }
 
     return {
       error: { reason: "Couldn't create user. Try again!" },
       success: null,
+      data: null,
     };
   }
 }

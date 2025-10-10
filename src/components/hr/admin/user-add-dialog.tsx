@@ -1,6 +1,9 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <> */
+
 "use client";
 
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
@@ -11,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,23 @@ import { toast } from "sonner";
 import { getManagers } from "@/actions/auth/users";
 import { Switch } from "@/components/ui/switch";
 
+const userSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  email: z.email("Invalid email format."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
+  role: z.enum(["user", "admin"]),
+  autoVerify: z.boolean(),
+  isManager: z.boolean(),
+  phone: z.string().optional(),
+  staffNumber: z.string().min(2, "Staff id must be at least 2 characters."),
+  department: z.string().min(2, "Department is required"),
+  managerId: z.string().optional(),
+  dateOfBirth: z.date().nullable(),
+  address: z.string().optional(),
+  maritalStatus: z.enum(["Single", "Married", "Divorced", "Widowed"]),
+  employmentType: z.enum(["Full-time", "Part-time", "Contract", "Intern"]),
+});
+
 interface UserAddDialogProps {
   isOpen: boolean;
   onCloseAction: () => void;
@@ -39,6 +58,7 @@ export function UserAddDialog({
   onSuccess,
 }: UserAddDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -62,27 +82,61 @@ export function UserAddDialog({
       | "Contract"
       | "Intern",
   });
-
   const [managers, setManagers] = useState<{ id: number; name: string }[]>([]);
+
+  // Fetch managers
   useEffect(() => {
     if (!isOpen) return;
     (async () => {
       try {
         const res = await getManagers();
-        if (res.success) {
-          const data = res.data;
-          setManagers(data ?? []);
-        } else {
-          toast.error(res.error.reason);
-        }
-      } catch (_e) {
+        if (res.success) setManagers(res.data ?? []);
+        else toast.error(res.error.reason);
+      } catch {
         toast.error("Unexpected error. Please try again");
       }
     })();
   }, [isOpen]);
 
+  const validateField = (field: string, value: any) => {
+    const merged = { ...formData, ...employeeData, [field]: value };
+    const result = userSchema.safeParse(merged);
+
+    if (!result.success) {
+      const fieldError = result.error.issues.find(
+        (issue) => issue.path[0] === field,
+      );
+      setErrors((prev) => ({
+        ...prev,
+        [field]: fieldError ? fieldError.message : "",
+      }));
+    } else {
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[field];
+        return updated;
+      });
+    }
+  };
+
+  const validateForm = () => {
+    const parsed = userSchema.safeParse({ ...formData, ...employeeData });
+    if (!parsed.success) {
+      const fieldErrors: Record<string, string> = {};
+      parsed.error.issues.forEach((issue) => {
+        fieldErrors[issue.path[0] as string] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return false;
+    }
+    setErrors({});
+    return true;
+  };
+
   const handleCreateUser = async () => {
+    if (!validateForm()) return toast.error("Invalid form submission");
     setIsLoading(true);
+
     const res = await createUser({
       ...formData,
       data: {
@@ -96,9 +150,9 @@ export function UserAddDialog({
         employmentType: employeeData.employmentType || undefined,
       },
     });
-    if (res.error) {
-      toast.error(res.error.reason);
-    } else {
+
+    if (res.error) toast.error(res.error.reason);
+    else {
       toast.success(
         formData.autoVerify
           ? "User created and verified successfully"
@@ -106,13 +160,13 @@ export function UserAddDialog({
       );
       onSuccess?.();
       onCloseAction();
-      // Reset form
+
       setFormData({
         name: "",
         email: "",
         password: "",
         role: "user",
-        autoVerify: false,
+        autoVerify: true,
         isManager: false,
       });
       setEmployeeData({
@@ -139,18 +193,18 @@ export function UserAddDialog({
       confirmText={isLoading ? "Creating..." : "Create User"}
     >
       <div className="grid gap-4 grid-cols-2 py-4">
-        {/* Account fields */}
         <div className="grid gap-2">
           <Label htmlFor="name">Name</Label>
           <Input
             id="name"
             value={formData.name}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, name: e.target.value }))
-            }
+            onChange={(e) => {
+              setFormData((p) => ({ ...p, name: e.target.value }));
+              validateField("name", e.target.value);
+            }}
             placeholder="Enter user's name"
-            required
           />
+          {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
         </div>
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
@@ -158,33 +212,42 @@ export function UserAddDialog({
             id="email"
             type="email"
             value={formData.email}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, email: e.target.value }))
-            }
+            onChange={(e) => {
+              setFormData((p) => ({ ...p, email: e.target.value }));
+              validateField("email", e.target.value);
+            }}
             placeholder="Enter user's email"
-            required
           />
+          {errors.email && (
+            <p className="text-sm text-red-500">{errors.email}</p>
+          )}
         </div>
+
         <div className="grid gap-2">
           <Label htmlFor="password">Password</Label>
           <Input
             id="password"
             type="password"
             value={formData.password}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, password: e.target.value }))
-            }
+            onChange={(e) => {
+              setFormData((p) => ({ ...p, password: e.target.value }));
+              validateField("password", e.target.value);
+            }}
             placeholder="Enter user's password"
-            required
           />
+          {errors.password && (
+            <p className="text-sm text-red-500">{errors.password}</p>
+          )}
         </div>
+
         <div className="grid gap-2">
           <Label htmlFor="role">Role</Label>
           <Select
             value={formData.role}
-            onValueChange={(value: "admin" | "user") =>
-              setFormData((prev) => ({ ...prev, role: value }))
-            }
+            onValueChange={(value: "admin" | "user") => {
+              setFormData((p) => ({ ...p, role: value }));
+              validateField("role", value);
+            }}
           >
             <SelectTrigger id="role" className="w-full">
               <SelectValue placeholder="Select role" />
@@ -203,9 +266,10 @@ export function UserAddDialog({
           <Switch
             id="isManager"
             checked={formData.isManager}
-            onCheckedChange={(checked: boolean) =>
-              setFormData((prev) => ({ ...prev, isManager: checked }))
-            }
+            onCheckedChange={(checked) => {
+              setFormData((p) => ({ ...p, isManager: checked }));
+              validateField("isManager", checked);
+            }}
           />
         </div>
 
@@ -214,26 +278,15 @@ export function UserAddDialog({
           <Input
             id="staffNumber"
             value={employeeData.staffNumber}
-            onChange={(e) =>
-              setEmployeeData((prev) => ({
-                ...prev,
-                staffNumber: e.target.value,
-              }))
-            }
+            onChange={(e) => {
+              setEmployeeData((p) => ({ ...p, staffNumber: e.target.value }));
+              validateField("staffNumber", e.target.value);
+            }}
             placeholder="Enter staff id number"
           />
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="phone">Phone</Label>
-          <Input
-            id="phone"
-            value={employeeData.phone}
-            onChange={(e) =>
-              setEmployeeData((prev) => ({ ...prev, phone: e.target.value }))
-            }
-            placeholder="Enter phone number"
-          />
+          {errors.staffNumber && (
+            <p className="text-sm text-red-500">{errors.staffNumber}</p>
+          )}
         </div>
 
         <div className="grid gap-2">
@@ -241,14 +294,15 @@ export function UserAddDialog({
           <Input
             id="department"
             value={employeeData.department}
-            onChange={(e) =>
-              setEmployeeData((prev) => ({
-                ...prev,
-                department: e.target.value,
-              }))
-            }
+            onChange={(e) => {
+              setEmployeeData((p) => ({ ...p, department: e.target.value }));
+              validateField("department", e.target.value);
+            }}
             placeholder="Enter department"
           />
+          {errors.department && (
+            <p className="text-sm text-red-500">{errors.department}</p>
+          )}
         </div>
 
         <div className="grid gap-2">
@@ -270,6 +324,19 @@ export function UserAddDialog({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="phone">Phone</Label>
+          <Input
+            id="phone"
+            value={employeeData.phone}
+            onChange={(e) => {
+              setEmployeeData((p) => ({ ...p, phone: e.target.value }));
+              validateField("phone", e.target.value);
+            }}
+            placeholder="Enter phone number"
+          />
         </div>
 
         <div className="grid gap-2">
@@ -355,9 +422,10 @@ export function UserAddDialog({
             id="address"
             rows={3}
             value={employeeData.address}
-            onChange={(e) =>
-              setEmployeeData((prev) => ({ ...prev, address: e.target.value }))
-            }
+            onChange={(e) => {
+              setEmployeeData((p) => ({ ...p, address: e.target.value }));
+              validateField("address", e.target.value);
+            }}
             placeholder="Enter full address"
           />
         </div>
