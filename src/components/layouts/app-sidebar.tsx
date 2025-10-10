@@ -107,6 +107,10 @@ const data = {
           title: "User Management",
           url: "/hr/admin",
         },
+        {
+          title: "View Employees",
+          url: "/hr/employees",
+        },
       ],
     },
   ],
