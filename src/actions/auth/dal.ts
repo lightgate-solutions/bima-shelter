@@ -24,9 +24,11 @@ export const getUser = cache(async () => {
   const [user] = await db
     .select({
       id: employees.id,
-      staffNumber: employees.staffNumber,
       name: employees.name,
+      staffNumber: employees.staffNumber,
       role: employees.role,
+      email: employees.email,
+      phone: employees.phone,
       department: employees.department,
       managerId: employees.managerId,
       isManager: employees.isManager,
