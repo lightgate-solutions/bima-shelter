@@ -85,6 +85,18 @@ const data = {
           title: "Inbox",
           url: "/mail/inbox",
         },
+        {
+          title: "Sent",
+          url: "/mail/sent",
+        },
+        {
+          title: "Archive",
+          url: "/mail/archive",
+        },
+        {
+          title: "Trash",
+          url: "/mail/trash",
+        },
       ],
     },
     {

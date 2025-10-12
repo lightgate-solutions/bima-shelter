@@ -9,7 +9,15 @@ import { DrizzleQueryError, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function getAllEmployees() {
-  return await db.select().from(employees);
+  return await db
+    .select({
+      id: employees.id,
+      email: employees.email,
+      role: employees.role,
+      name: employees.role,
+      department: employees.department,
+    })
+    .from(employees);
 }
 
 export async function updateEmployee(
