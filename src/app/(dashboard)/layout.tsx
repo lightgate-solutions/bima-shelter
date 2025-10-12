@@ -20,7 +20,7 @@ export default async function RootLayout({
   if (!session) redirect("/auth/login");
 
   return (
-    <div>
+    <section>
       <SidebarProvider>
         <AppSidebar user={session.user} />
         <SidebarInset>
@@ -33,6 +33,6 @@ export default async function RootLayout({
           <div className="p-2">{children}</div>
         </SidebarInset>
       </SidebarProvider>
-    </div>
+    </section>
   );
 }

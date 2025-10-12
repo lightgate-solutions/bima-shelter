@@ -1,9 +1,10 @@
-/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <> */
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: <> */
 /** biome-ignore-all lint/suspicious/noExplicitAny: <> */
+/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <> */
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,9 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CardContent } from "@/components/ui/card";
 import { searchEmails } from "@/actions/mail/email";
 import { toast } from "sonner";
-import { CardContent } from "../ui/card";
 
 interface SearchResult {
   id: string;
@@ -43,10 +44,14 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState<number>(-1);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSearch = async () => {
+  // --- Debounced Search ---
+  const performSearch = useCallback(async () => {
     if (!query.trim()) {
-      toast.error("Please enter a search query");
+      setResults([]);
+      setShowResults(false);
       return;
     }
 
@@ -59,18 +64,30 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
     if (result.success) {
       setResults(result?.data ?? []);
       setShowResults(true);
-      if (result.data?.length === 0) {
-        toast.info("No results found");
-      }
+      if (result.data?.length === 0) toast.info("No results found");
     } else {
       toast.error(result.error || "Failed to search emails");
     }
-    setIsSearching(false);
-  };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSearch();
+    setIsSearching(false);
+  }, [query, folder]);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => performSearch(), 500);
+  }, [query, folder, performSearch]);
+
+  // --- Keyboard navigation ---
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showResults) return;
+
+    if (e.key === "ArrowDown") {
+      setHighlightIndex((prev) => (prev + 1) % results.length);
+    } else if (e.key === "ArrowUp") {
+      setHighlightIndex((prev) => (prev - 1 + results.length) % results.length);
+    } else if (e.key === "Enter" && highlightIndex >= 0) {
+      const selected = results[highlightIndex];
+      onResultClick(selected.id, selected.folder);
     }
   };
 
@@ -87,13 +104,14 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      {/* Search Controls */}
+      <div className="flex gap-2 items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="Search emails by subject, content, or sender..."
             className="pl-9 pr-9"
           />
@@ -108,11 +126,11 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
         </div>
 
         <Select value={folder} onValueChange={(value: any) => setFolder(value)}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue />
+          <SelectTrigger className="w-[130px]">
+            <SelectValue placeholder="Folder" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Folders</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             <SelectItem value="inbox">Inbox</SelectItem>
             <SelectItem value="sent">Sent</SelectItem>
             <SelectItem value="archive">Archive</SelectItem>
@@ -121,14 +139,14 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
         </Select>
 
         <Button
-          onClick={handleSearch}
+          onClick={performSearch}
           disabled={isSearching || !query.trim()}
           className="gap-2"
         >
           {isSearching ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Searching...
+              Searching
             </>
           ) : (
             <>
@@ -139,28 +157,42 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
         </Button>
       </div>
 
+      {/* Results */}
       {showResults && (
-        <div className="border rounded-lg overflow-hidden">
-          <div className="bg-muted px-4 py-2 font-medium text-sm">
-            {results.length} result{results.length !== 1 ? "s" : ""} found
+        <div className="border rounded-lg overflow-hidden animate-fadeIn">
+          <div className="bg-muted px-4 py-2 font-medium text-sm flex justify-between">
+            <span>
+              {results.length} result{results.length !== 1 ? "s" : ""}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs px-2 h-6"
+              onClick={() => setShowResults(false)}
+            >
+              Close
+            </Button>
           </div>
-          <div className="divide-y max-h-[400px] overflow-y-auto">
-            {results.map((result) => (
+
+          <div className="divide-y max-h-[400px] overflow-y-auto scrollbar-thin">
+            {results.map((result, idx) => (
               <CardContent
-                key={result.id}
+                key={idx}
                 onClick={() => onResultClick(result.id, result.folder)}
-                className="p-4 hover:bg-muted/50 cursor-pointer transition-colors"
+                className={`p-4 cursor-pointer transition-colors ${
+                  highlightIndex === idx ? "bg-muted/70" : "hover:bg-muted/40"
+                }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <span className="font-medium truncate">
                       {result.senderName}
                     </span>
-                    <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded flex-shrink-0">
+                    <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">
                       {result.folder}
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
                     {new Date(result.createdAt).toLocaleDateString()}
                   </span>
                 </div>
@@ -168,7 +200,7 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
                   {result.subject}
                 </h4>
                 <p className="text-sm text-muted-foreground line-clamp-2">
-                  {truncateText(result.body, 150)}
+                  {truncateText(result.body, 140)}
                 </p>
               </CardContent>
             ))}

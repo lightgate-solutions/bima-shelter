@@ -37,7 +37,7 @@ const composeEmailSchema = z.object({
 
 type ComposeEmailFormData = z.infer<typeof composeEmailSchema>;
 
-interface Employee {
+interface User {
   id: number;
   name: string;
   email: string;
@@ -48,7 +48,7 @@ interface Employee {
 interface ComposeEmailProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  users: Employee[];
+  users: User[];
   onSuccess?: () => void;
 }
 
@@ -58,7 +58,7 @@ export function ComposeEmail({
   users,
   onSuccess,
 }: ComposeEmailProps) {
-  const [selectedUsers, setSelectedUsers] = useState<Employee[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserList, setShowUserList] = useState(false);
 
@@ -86,7 +86,7 @@ export function ComposeEmail({
     }
   };
 
-  const handleUserSelect = (user: Employee) => {
+  const handleUserSelect = (user: User) => {
     if (!selectedUsers.find((u) => u.id === user.id)) {
       const newSelectedUsers = [...selectedUsers, user];
       setSelectedUsers(newSelectedUsers);
@@ -125,7 +125,7 @@ export function ComposeEmail({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Compose Email</DialogTitle>
           <DialogDescription>

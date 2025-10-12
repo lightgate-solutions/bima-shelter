@@ -172,6 +172,7 @@ export default function ArchivePage() {
               id: selectedEmail.id,
               subject: selectedEmail.subject,
               body: selectedEmail.body,
+              senderId: selectedEmail.senderId,
               senderName: selectedEmail.senderName,
               senderEmail: selectedEmail.senderEmail,
               createdAt: selectedEmail.createdAt,

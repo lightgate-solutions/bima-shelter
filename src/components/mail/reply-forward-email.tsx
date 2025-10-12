@@ -38,18 +38,17 @@ const replyForwardSchema = z.object({
 
 type ReplyForwardFormData = z.infer<typeof replyForwardSchema>;
 
-interface Employee {
+interface User {
   id: number;
   name: string;
   email: string;
-  role: string;
-  department: string | null;
 }
 
 interface OriginalEmail {
   id: number;
   subject: string;
   body: string;
+  senderId: number;
   senderName: string;
   senderEmail: string;
   createdAt: Date;
@@ -60,7 +59,7 @@ interface ReplyForwardEmailProps {
   onOpenChange: (open: boolean) => void;
   mode: "reply" | "forward";
   originalEmail: OriginalEmail;
-  users: Employee[];
+  users: User[];
   onSuccess?: () => void;
 }
 
@@ -72,7 +71,7 @@ export function ReplyForwardEmail({
   users,
   onSuccess,
 }: ReplyForwardEmailProps) {
-  const [selectedUsers, setSelectedUsers] = useState<Employee[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserList, setShowUserList] = useState(false);
 
@@ -104,7 +103,7 @@ export function ReplyForwardEmail({
   const form = useForm<ReplyForwardFormData>({
     resolver: zodResolver(replyForwardSchema),
     defaultValues: {
-      recipientIds: [],
+      recipientIds: [originalEmail.senderId],
       subject: getDefaultSubject(),
       body: getDefaultBody(),
     },
@@ -136,7 +135,7 @@ export function ReplyForwardEmail({
     }
   };
 
-  const handleUserSelect = (user: Employee) => {
+  const handleUserSelect = (user: User) => {
     if (!selectedUsers.find((u) => u.id === user.id)) {
       const newSelectedUsers = [...selectedUsers, user];
       setSelectedUsers(newSelectedUsers);
@@ -175,7 +174,7 @@ export function ReplyForwardEmail({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === "reply" ? "Reply to Email" : "Forward Email"}

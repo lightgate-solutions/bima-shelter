@@ -584,6 +584,22 @@ export async function getEmailById(emailId: number) {
           error: "Email not found",
         };
       }
+      const [recipientRow] = await tx
+        .select({ id: emailRecipient.recipientId })
+        .from(emailRecipient)
+        .where(
+          and(
+            eq(emailRecipient.emailId, emailId),
+            eq(emailRecipient.recipientId, currentUser.id),
+          ),
+        )
+        .limit(1);
+
+      const isSender = emailData.senderId === currentUser.id;
+      const isRecipient = !!recipientRow;
+      if (!isSender && !isRecipient) {
+        return { success: false, data: null, error: "Unauthorized" };
+      }
 
       const recipients = await tx
         .select({
@@ -594,13 +610,13 @@ export async function getEmailById(emailId: number) {
           readAt: emailRecipient.readAt,
         })
         .from(emailRecipient)
-        .innerJoin(employees, eq(emailRecipient.recipientId, currentUser.id))
+        .innerJoin(employees, eq(emailRecipient.recipientId, employees.id))
         .where(eq(emailRecipient.emailId, emailId));
 
-      const isSender = emailData.senderId === currentUser.id;
-      const isRecipient = recipients.some((r) => r.id === currentUser.id);
+      const isUserSender = emailData.senderId === currentUser.id;
+      const isUserReceipient = recipients.some((r) => r.id === currentUser.id);
 
-      if (!isSender && !isRecipient) {
+      if (!isUserSender && !isUserReceipient) {
         return {
           success: false,
           data: null,
