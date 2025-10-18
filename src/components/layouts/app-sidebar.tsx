@@ -49,8 +49,8 @@ const data = {
       isActive: false,
       items: [
         {
-          title: "History",
-          url: "/documents/history",
+          title: "View",
+          url: "/documents",
         },
       ],
     },
