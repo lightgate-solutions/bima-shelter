@@ -12,6 +12,7 @@ import {
 import { Filter } from "lucide-react";
 import { useState } from "react";
 import DocumentsTable from "./documents-table";
+import { Button } from "../ui/button";
 
 export function DocumentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -20,11 +21,19 @@ export function DocumentsPage() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">All Documents</h1>
-        <p className="text-muted-foreground">
-          Review and manage all documents across the organization
-        </p>
+      <div className="w-full flex justify-between pt-2">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            All Documents
+          </h1>
+          <p className="text-muted-foreground">
+            Review and manage all documents across the organization
+          </p>
+        </div>
+
+        <Button size="lg" className="hover:cursor-pointer">
+          Upload Document
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
@@ -35,6 +44,7 @@ export function DocumentsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <Filter className="h-4 w-4 mr-2" />
