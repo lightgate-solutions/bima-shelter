@@ -13,6 +13,14 @@ import { Filter } from "lucide-react";
 import { useState } from "react";
 import DocumentsTable from "./documents-table";
 import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
+import UploadDocument from "./upload-document";
 
 export function DocumentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -31,9 +39,19 @@ export function DocumentsPage() {
           </p>
         </div>
 
-        <Button size="lg" className="hover:cursor-pointer">
-          Upload Document
-        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="hover:cursor-pointer" size="lg">
+              Upload Document
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle></DialogTitle>
+            </DialogHeader>
+            <UploadDocument />
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
@@ -72,9 +90,19 @@ export function DocumentsPage() {
       </div>
 
       <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">All Documents</TabsTrigger>
-          <TabsTrigger value="personal">Personal</TabsTrigger>
+        <TabsList className="gap-2">
+          <TabsTrigger
+            value="all"
+            className="hover:cursor-pointer hover:bg-primary-foreground"
+          >
+            All Documents
+          </TabsTrigger>
+          <TabsTrigger
+            value="personal"
+            className="hover:cursor-pointer hover:bg-primary-foreground"
+          >
+            Personal
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="all">
