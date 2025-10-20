@@ -17,7 +17,7 @@
     "rules": {
       "recommended": true,
       "correctness": {
-        "useUniqueElementIds": "warn"
+        "useUniqueElementIds": "off"
       }
     }
   },
