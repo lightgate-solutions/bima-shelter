@@ -35,7 +35,7 @@ export const employees = pgTable(
     staffNumber: text("staff_number").notNull(),
     role: text("role").notNull(),
     isManager: boolean("is_manager").notNull().default(false),
-    department: text("department"),
+    department: text("department").notNull(),
     managerId: integer("manager_id"),
     dateOfBirth: date("date_of_birth"),
     address: text("address"),

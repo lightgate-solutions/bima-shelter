@@ -12,17 +12,16 @@ import {
 import { Filter } from "lucide-react";
 import { useState } from "react";
 import DocumentsTable from "./documents-table";
-import { Button } from "../ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../ui/dialog";
-import UploadDocument from "./upload-document";
+import { Dialog } from "../ui/dialog";
+import UploadDocumentButton from "./upload-document-button";
 
-export function DocumentsPage() {
+export function DocumentsPage({
+  usersFolders,
+  department,
+}: {
+  usersFolders: { name: string }[];
+  department: string;
+}) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,17 +39,10 @@ export function DocumentsPage() {
         </div>
 
         <Dialog>
-          <DialogTrigger asChild>
-            <Button className="hover:cursor-pointer" size="lg">
-              Upload Document
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle></DialogTitle>
-            </DialogHeader>
-            <UploadDocument />
-          </DialogContent>
+          <UploadDocumentButton
+            usersFolders={usersFolders}
+            department={department}
+          />
         </Dialog>
       </div>
 

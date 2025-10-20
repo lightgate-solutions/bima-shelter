@@ -130,97 +130,6 @@ export function Dropzone({
     }
   };
 
-  const uploadFile = async (file: File) => {
-    setFiles((prevFiles) =>
-      prevFiles.map((f) => (f.file === file ? { ...f, uploading: true } : f)),
-    );
-
-    try {
-      const endpoint =
-        provider === "aws-s3" ? "/api/s3/upload" : "/api/r2/upload";
-      const presignedResponse = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
-          size: file.size,
-        }),
-      });
-
-      if (!presignedResponse.ok) {
-        toast.error("Failed to get presigned URL");
-        setFiles((prevFiles) =>
-          prevFiles.map((f) =>
-            f.file === file
-              ? { ...f, uploading: false, progress: 0, error: true }
-              : f,
-          ),
-        );
-        return;
-      }
-
-      const { presignedUrl, key, publicUrl } = await presignedResponse.json();
-
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percentComplete = (event.loaded / event.total) * 100;
-            setFiles((prevFiles) =>
-              prevFiles.map((f) =>
-                f.file === file
-                  ? {
-                      ...f,
-                      progress: Math.round(percentComplete),
-                      key: key,
-                      publicUrl: publicUrl,
-                    }
-                  : f,
-              ),
-            );
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status === 200 || xhr.status === 204) {
-            setFiles((prevFiles) =>
-              prevFiles.map((f) =>
-                f.file === file
-                  ? { ...f, progress: 100, uploading: false, error: false }
-                  : f,
-              ),
-            );
-            toast.success("File uploaded successfully");
-            // Add to db and delete if it fails
-            resolve();
-          } else {
-            reject(new Error(`Upload failed with status: ${xhr.status}`));
-          }
-        };
-
-        xhr.onerror = () => {
-          reject(new Error("Upload failed"));
-        };
-
-        xhr.open("PUT", presignedUrl);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.send(file);
-      });
-    } catch (error) {
-      console.error(error);
-      toast.error("Upload failed");
-      setFiles((prevFiles) =>
-        prevFiles.map((f) =>
-          f.file === file
-            ? { ...f, uploading: false, progress: 0, error: true }
-            : f,
-        ),
-      );
-    }
-  };
-
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length) {
       setFiles((prevFiles) => [
@@ -318,7 +227,7 @@ export function Dropzone({
       </Card>
 
       {files.length > 0 && (
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5 md:grid-cols-7">
           {files.map(
             ({
               id,
@@ -333,12 +242,12 @@ export function Dropzone({
 
               return (
                 <div key={id} className="flex flex-col gap-1">
-                  <div className="relative aspect-square rounded-lg overflow-hidden border">
+                  <div className="relative w-20 aspect-square rounded-lg overflow-hidden border">
                     {isImage ? (
                       <Image
                         src={objectUrl ?? "image"}
-                        width={250}
-                        height={250}
+                        width={100}
+                        height={100}
                         alt={file.name}
                         className="w-full h-full object-cover"
                       />
@@ -393,7 +302,6 @@ export function Dropzone({
   );
 }
 
-// Cleanup hook on unmount
 export function useDropzoneCleanup(files: FileWithMetadata[]) {
   useEffect(() => {
     return () => {

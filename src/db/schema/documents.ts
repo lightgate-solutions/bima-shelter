@@ -18,6 +18,8 @@ export const documentFolders = pgTable(
     name: text("name").notNull(),
     parentId: integer("parent_id"),
     department: text("department").notNull(),
+    public: boolean("public").notNull().default(false),
+    departmental: boolean("departmental").notNull().default(false),
     createdBy: integer("created_by")
       .references(() => employees.id)
       .notNull(),
@@ -30,7 +32,7 @@ export const documentFolders = pgTable(
   ],
 );
 
-export const managerRelations = relations(documentFolders, ({ one }) => ({
+export const foldersRelation = relations(documentFolders, ({ one }) => ({
   parent: one(documentFolders, {
     fields: [documentFolders.parentId],
     references: [documentFolders.id],
@@ -43,12 +45,13 @@ export const document = pgTable(
     id: serial("id").primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
+    originalFileName: text("original_file_name"),
     department: text("department"),
     folderId: integer("folder_id").references(() => documentFolders.id),
     currentVersionId: integer("current_version_id"),
     public: boolean("public").default(false),
     uploadedBy: integer("uploaded_by").references(() => employees.id),
-    status: text("status").default("Active").notNull(),
+    status: text("status").default("active").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -62,13 +65,14 @@ export const documentVersions = pgTable(
   "document_versions",
   {
     id: serial("id").primaryKey(),
-    documentId: integer("document_id").references(() => document.id),
+    documentId: integer("document_id")
+      .references(() => document.id)
+      .notNull(),
     versionNumber: integer("version_number").notNull(),
     filePath: text("file_path").notNull(),
     fileSize: numeric("file_size", { scale: 2, precision: 10 }).notNull(),
     mimeType: text("mime_type"),
     scannedOcr: text("scanned_ocr"),
-    checksum: text("checksum"),
     uploadedBy: integer("uploaded_by").references(() => employees.id),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -76,6 +80,7 @@ export const documentVersions = pgTable(
   (table) => [
     index("documents_version_number_idx").on(table.versionNumber),
     index("documents_version_uploaded_by_idx").on(table.uploadedBy),
+    index("documents_version_ocr_idx").on(table.scannedOcr),
   ],
 );
 
@@ -98,10 +103,12 @@ export const documentAccess = pgTable(
   "document_access",
   {
     id: serial("id").primaryKey(),
-    documentId: integer("document_id").references(() => document.id),
+    accessLevel: text("access_level").notNull(), // View, Edit, Manage
+    documentId: integer("document_id")
+      .references(() => document.id)
+      .notNull(),
     userId: integer("user_id").references(() => employees.id),
     department: text("department"),
-    accessLevel: text("access_level").notNull(), // View, Edit, Manage
     grantedBy: integer("granted_by").references(() => employees.id),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -121,7 +128,10 @@ export const documentLogs = pgTable(
     id: serial("id").primaryKey(),
     userId: integer("user_id").references(() => employees.id),
     documentId: integer("document_id").references(() => document.id),
-    action: text("action").notNull(), // "Upload", "View", "Edit", "Delete", "Share"
+    documentVersionId: integer("document_version_id_log").references(
+      () => documentVersions.id,
+    ),
+    action: text("action").notNull(),
     details: text("details"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
