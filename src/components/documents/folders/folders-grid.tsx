@@ -11,6 +11,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { usePathname } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { archiveFolder, deleteFolder } from "@/actions/documents/folders";
+import { toast } from "sonner";
 
 export default function FoldersGrid({
   folders,
@@ -116,24 +129,32 @@ export default function FoldersGrid({
                     <MoreVertical size={16} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="space-y-1">
                   <DropdownMenuItem
                     disabled={
                       folder.name === department || folder.name === "personal"
                     }
-                    className="hover:cursor-pointer"
+                    className="hover:cursor-pointer "
+                    asChild
                   >
-                    <Archive size={16} className="mr-2" />
-                    Archive
+                    <FoldersAction
+                      type="archive"
+                      id={folder.id}
+                      pathname={pathname}
+                    />
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     disabled={
                       folder.name === department || folder.name === "personal"
                     }
                     className="text-red-600 hover:cursor-pointer"
+                    asChild
                   >
-                    <Trash2 size={16} className="mr-2" />
-                    Delete
+                    <FoldersAction
+                      type="delete"
+                      id={folder.id}
+                      pathname={pathname}
+                    />
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -142,5 +163,85 @@ export default function FoldersGrid({
         </div>
       ))}
     </div>
+  );
+}
+
+function FoldersAction({
+  id,
+  pathname,
+  type,
+}: {
+  id: number;
+  pathname: string;
+  type: "delete" | "archive";
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        {type === "delete" ? (
+          <Button
+            className="flex w-full gap-3 hover:cursor-pointer"
+            variant="secondary"
+          >
+            <Trash2 className="mr-2" size={16} />
+            Delete
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            className="flex w-full gap-3 hover:cursor-pointer"
+          >
+            <Archive className="mr-2" size={16} />
+            Archive
+          </Button>
+        )}
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          {type === "delete" ? (
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              folder and remove all its data from our servers.
+            </AlertDialogDescription>
+          ) : (
+            <AlertDialogDescription>
+              This action cannot be undone. This will archive the folder and
+              move all its content to the archive page.
+            </AlertDialogDescription>
+          )}
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          {type === "delete" ? (
+            <AlertDialogAction
+              onClick={async () => {
+                const res = await deleteFolder(id, pathname);
+                if (res.error) {
+                  toast.error(res.error.reason);
+                } else {
+                  toast.error(res.success.reason);
+                }
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          ) : (
+            <AlertDialogAction
+              onClick={async () => {
+                const res = await archiveFolder(id, pathname);
+                if (res.error) {
+                  toast.error(res.error.reason);
+                } else {
+                  toast.error(res.success.reason);
+                }
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

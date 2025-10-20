@@ -1,7 +1,16 @@
 "use server";
 
 import { db } from "@/db";
-import { documentFolders } from "@/db/schema";
+import {
+  document,
+  documentAccess,
+  documentComments,
+  documentFolders,
+  documentLogs,
+  documentSharedLinks,
+  documentTags,
+  documentVersions,
+} from "@/db/schema";
 import { and, DrizzleQueryError, eq, inArray, isNull } from "drizzle-orm";
 import { getUser } from "../auth/dal";
 import { revalidatePath } from "next/cache";
@@ -14,7 +23,7 @@ interface CreateFoldersProps {
   departmental: boolean;
 }
 
-export default async function createFolder(data: CreateFoldersProps) {
+export async function createFolder(data: CreateFoldersProps, pathname: string) {
   const user = await getUser();
   if (!user) throw new Error("User not logged in");
 
@@ -93,7 +102,7 @@ export default async function createFolder(data: CreateFoldersProps) {
         createdBy: user.id,
       });
 
-      revalidatePath("/documents");
+      revalidatePath(pathname);
       return {
         success: {
           reason: "Folder created successfully",
@@ -155,4 +164,191 @@ export async function getSubFolders(id: number) {
     );
 
   return folders;
+}
+
+export async function deleteFolder(folderId: number, pathname: string) {
+  const user = await getUser();
+  if (!user) throw new Error("User not logged in");
+
+  try {
+    return await db.transaction(async (tx) => {
+      if (user.role !== "admin") {
+        const folder = await tx
+          .select()
+          .from(documentFolders)
+          .where(
+            and(
+              eq(documentFolders.id, folderId),
+              eq(documentFolders.createdBy, user.id),
+            ),
+          )
+          .limit(1);
+
+        if (folder.length === 0) {
+          return {
+            error: { reason: "User doesn't have the proper permissions" },
+            success: null,
+          };
+        }
+      }
+
+      async function getAllSubfolderIds(
+        currentFolderId: number,
+      ): Promise<number[]> {
+        const subFolders = await tx
+          .select({ id: documentFolders.id })
+          .from(documentFolders)
+          .where(eq(documentFolders.parentId, currentFolderId));
+
+        const subIds = subFolders.map((f) => f.id);
+        for (const subId of subIds) {
+          const nested = await getAllSubfolderIds(subId);
+          subIds.push(...nested);
+        }
+        return subIds;
+      }
+
+      const allFolderIds = [folderId, ...(await getAllSubfolderIds(folderId))];
+
+      const docs = await tx
+        .select({ id: document.id })
+        .from(document)
+        .where(inArray(document.folderId, allFolderIds));
+
+      const docIds = docs.map((d) => d.id);
+
+      if (docIds.length > 0) {
+        await tx
+          .delete(documentVersions)
+          .where(inArray(documentVersions.documentId, docIds));
+        await tx
+          .delete(documentTags)
+          .where(inArray(documentTags.documentId, docIds));
+        await tx
+          .delete(documentAccess)
+          .where(inArray(documentAccess.documentId, docIds));
+        await tx
+          .delete(documentLogs)
+          .where(inArray(documentLogs.documentId, docIds));
+        await tx
+          .delete(documentSharedLinks)
+          .where(inArray(documentSharedLinks.documentId, docIds));
+        await tx
+          .delete(documentComments)
+          .where(inArray(documentComments.documentId, docIds));
+
+        await tx.delete(document).where(inArray(document.id, docIds));
+      }
+
+      await tx
+        .delete(documentFolders)
+        .where(inArray(documentFolders.id, allFolderIds));
+
+      revalidatePath(pathname);
+      return {
+        success: { reason: "Folder and related data deleted successfully" },
+        error: null,
+      };
+    });
+  } catch (err) {
+    if (err instanceof DrizzleQueryError) {
+      return {
+        success: null,
+        error: { reason: err.cause?.message || "Database error occurred" },
+      };
+    }
+
+    console.error(err);
+    return {
+      error: { reason: "Couldn't delete folder. Check inputs and try again!" },
+      success: null,
+    };
+  }
+}
+
+export async function archiveFolder(folderId: number, pathname: string) {
+  const user = await getUser();
+  if (!user) throw new Error("User not logged in");
+
+  try {
+    return await db.transaction(async (tx) => {
+      if (user.role !== "admin") {
+        const folder = await tx
+          .select()
+          .from(documentFolders)
+          .where(
+            and(
+              eq(documentFolders.id, folderId),
+              eq(documentFolders.createdBy, user.id),
+            ),
+          )
+          .limit(1);
+
+        if (folder.length === 0) {
+          return {
+            error: { reason: "User doesn't have the proper permissions" },
+            success: null,
+          };
+        }
+      }
+
+      async function getAllSubfolderIds(
+        currentFolderId: number,
+      ): Promise<number[]> {
+        const subFolders = await tx
+          .select({ id: documentFolders.id })
+          .from(documentFolders)
+          .where(eq(documentFolders.parentId, currentFolderId));
+
+        const subIds = subFolders.map((f) => f.id);
+        for (const subId of subIds) {
+          const nested = await getAllSubfolderIds(subId);
+          subIds.push(...nested);
+        }
+        return subIds;
+      }
+
+      const allFolderIds = [folderId, ...(await getAllSubfolderIds(folderId))];
+
+      const docs = await tx
+        .select({ id: document.id })
+        .from(document)
+        .where(inArray(document.folderId, allFolderIds));
+
+      const docIds = docs.map((d) => d.id);
+
+      if (docIds.length > 0) {
+        await tx
+          .update(document)
+          .set({ status: "archived", updatedAt: new Date() })
+          .where(inArray(document.id, docIds));
+      }
+
+      await tx
+        .update(documentFolders)
+        .set({ status: "archived", updatedAt: new Date() })
+        .where(inArray(documentFolders.id, allFolderIds));
+
+      revalidatePath(pathname);
+      return {
+        success: {
+          reason: "Folder and all related content archived successfully",
+        },
+        error: null,
+      };
+    });
+  } catch (err) {
+    if (err instanceof DrizzleQueryError) {
+      return {
+        success: null,
+        error: { reason: err.cause?.message || "Database error occurred" },
+      };
+    }
+
+    console.error(err);
+    return {
+      error: { reason: "Couldn't archive folder. Check inputs and try again!" },
+      success: null,
+    };
+  }
 }

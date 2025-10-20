@@ -32,8 +32,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import createFolder from "@/actions/documents/folders";
 import { Spinner } from "@/components/ui/spinner";
+import { createFolder } from "@/actions/documents/folders";
+import { usePathname } from "next/navigation";
 
 const uploadSchema = z.object({
   name: z
@@ -53,6 +54,7 @@ export default function CreateFolderButton({
   department: string;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const pathname = usePathname();
 
   const form = useForm<z.infer<typeof uploadSchema>>({
     resolver: zodResolver(uploadSchema),
@@ -67,12 +69,15 @@ export default function CreateFolderButton({
   async function onSubmit(data: z.infer<typeof uploadSchema>) {
     setIsSubmitting(true);
     try {
-      const res = await createFolder({
-        name: data.name,
-        parent: data.parent,
-        public: data.public,
-        departmental: data.departmental,
-      });
+      const res = await createFolder(
+        {
+          name: data.name,
+          parent: data.parent,
+          public: data.public,
+          departmental: data.departmental,
+        },
+        pathname,
+      );
       if (res.success) {
         toast.success("Folder created succesfully");
       } else {
