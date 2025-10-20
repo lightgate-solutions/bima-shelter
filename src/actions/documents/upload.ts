@@ -12,12 +12,14 @@ import {
 } from "@/db/schema/documents";
 import { and, DrizzleQueryError, eq } from "drizzle-orm";
 import { getUser } from "../auth/dal";
+import { employees } from "@/db/schema";
 
 interface UploadActionProps {
   title: string;
   description?: string;
   folder: string;
   public: boolean;
+  departmental: boolean;
   status: string;
   Files: {
     originalFileName: string;
@@ -103,6 +105,18 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
 
   try {
     await db.transaction(async (tx) => {
+      const [currentCount] = await tx
+        .select({ count: employees.documentCount })
+        .from(employees)
+        .where(eq(employees.id, user.id));
+
+      const updatedCount = currentCount.count + data.Files.length;
+
+      await tx
+        .update(employees)
+        .set({ documentCount: updatedCount })
+        .where(eq(employees.id, user.id));
+
       const insertedDocuments = await tx
         .insert(document)
         .values(
@@ -111,6 +125,7 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
             description: data.description,
             originalFileName: file.originalFileName,
             department: user.department,
+            departmental: data.departmental,
             folderId,
             public: isPersonal ? false : data.public,
             uploadedBy: user.id,

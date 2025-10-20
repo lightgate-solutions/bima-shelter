@@ -65,6 +65,7 @@ const uploadSchema = z.object({
     .optional(),
   folder: z.string().min(1, "Please select documents folder."),
   public: z.boolean(),
+  departmental: z.boolean(),
   tags: z
     .array(
       z.object({
@@ -107,6 +108,7 @@ export default function UploadDocumentButton({
       description: "",
       folder: "personal",
       public: false,
+      departmental: false,
       status: "active",
       tags: [{ name: "Personal" }],
       permissions: [{ all: false, department: false, departmentAll: false }],
@@ -251,6 +253,7 @@ export default function UploadDocumentButton({
   async function onSubmit(data: z.infer<typeof uploadSchema>) {
     setIsUploading(true);
     setProgress(0);
+    console.log(data);
 
     try {
       if (!files || files?.length <= 0) {
@@ -286,6 +289,7 @@ export default function UploadDocumentButton({
         tags: data.tags,
         status: data.status,
         public: data.public,
+        departmental: data.departmental,
         description: data.description,
         Files: uploadedUrls,
       });
@@ -310,7 +314,7 @@ export default function UploadDocumentButton({
   ];
 
   return (
-    <form name="form-upload-document" onSubmit={form.handleSubmit(onSubmit)}>
+    <form id="form-upload-document" onSubmit={form.handleSubmit(onSubmit)}>
       <DialogTrigger asChild>
         <Button className="hover:cursor-pointer" size="lg">
           Upload Document
@@ -374,7 +378,11 @@ export default function UploadDocumentButton({
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent position="item-aligned">
-                        {safeFolders.map((folder, idx) => (
+                        {[
+                          ...new Map(
+                            safeFolders.map((f) => [f.name.toLowerCase(), f]),
+                          ).values(),
+                        ].map((folder, idx) => (
                           <SelectItem key={idx} value={folder.name}>
                             {folder.name.charAt(0).toUpperCase() +
                               folder.name.slice(1)}
@@ -516,40 +524,66 @@ export default function UploadDocumentButton({
               </div>
             </div>
 
-            <Controller
-              name="public"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <FieldSet data-invalid={fieldState.invalid}>
-                  <FieldContent>
-                    <FieldLabel>Options</FieldLabel>
-                    <FieldGroup data-slot="checkbox-group">
-                      <Field orientation="horizontal">
-                        <Checkbox
-                          name={field.name}
-                          checked={
-                            folderWatch === "public" ? true : field.value
-                          }
-                          disabled={folderWatch === "personal"}
-                          onCheckedChange={field.onChange}
-                        />
-                        <FieldLabel htmlFor="public" className="font-normal">
-                          Public (Documents accessible to all employees)
-                        </FieldLabel>
-                      </Field>
-                    </FieldGroup>
-                    <FieldDescription>
-                      Select options that apply to upload
-                    </FieldDescription>
+            <div>
+              <FieldContent>
+                <FieldLabel>Options</FieldLabel>
 
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </FieldContent>
-                </FieldSet>
-              )}
-            />
+                <Controller
+                  name="public"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <FieldSet data-invalid={fieldState.invalid}>
+                      <FieldGroup data-slot="checkbox-group">
+                        <Field orientation="horizontal">
+                          <Checkbox
+                            name={field.name}
+                            disabled={folderWatch === "personal"}
+                            onCheckedChange={field.onChange}
+                          />
+                          <FieldLabel htmlFor="public" className="font-normal">
+                            Public (Documents accessible to all employees)
+                          </FieldLabel>
+                        </Field>
+                      </FieldGroup>
 
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </FieldSet>
+                  )}
+                />
+
+                <Controller
+                  name="departmental"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <FieldSet data-invalid={fieldState.invalid}>
+                      <FieldGroup data-slot="checkbox-group">
+                        <Field orientation="horizontal">
+                          <Checkbox
+                            name={field.name}
+                            disabled={folderWatch === "personal"}
+                            onCheckedChange={field.onChange}
+                          />
+                          <FieldLabel htmlFor="public" className="font-normal">
+                            Department (Documents accessible to {department}{" "}
+                            employees)
+                          </FieldLabel>
+                        </Field>
+                      </FieldGroup>
+
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </FieldSet>
+                  )}
+                />
+
+                <FieldDescription>
+                  Select options that apply to upload
+                </FieldDescription>
+              </FieldContent>
+            </div>
             <div className="gap-3">
               <FieldLabel>
                 Configure permissions / Uploader has all permissions

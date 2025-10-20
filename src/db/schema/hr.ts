@@ -41,6 +41,7 @@ export const employees = pgTable(
     address: text("address"),
     maritalStatus: maritalStatusEnum("marital_status"),
     employmentType: employmentTypeEnum("employment_type"),
+    documentCount: integer("document_count").default(0).notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
