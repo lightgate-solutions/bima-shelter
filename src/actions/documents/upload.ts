@@ -33,7 +33,7 @@ interface UploadActionProps {
 
 // NOTE: create personal folders on create user action
 
-export async function getUsersFolderId(folder: string) {
+async function getUsersFolderId(folder: string) {
   const user = await getUser();
   if (!user) throw new Error("User not logged in");
 
@@ -214,7 +214,7 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
 
     return {
       error: {
-        reason: "Couldn't update employee. Check inputs and try again!",
+        reason: "Couldn't upload document. Check inputs and try again!",
       },
       success: null,
     };

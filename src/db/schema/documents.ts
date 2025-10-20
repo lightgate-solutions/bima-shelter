@@ -7,9 +7,9 @@ import {
   serial,
   numeric,
   boolean,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import { employees } from "./hr";
-import { relations } from "drizzle-orm";
 
 export const documentFolders = pgTable(
   "document_folders",
@@ -17,7 +17,9 @@ export const documentFolders = pgTable(
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
     parentId: integer("parent_id"),
+    root: boolean("root").default(true).notNull(),
     department: text("department").notNull(),
+    status: text("status").notNull().default("active"),
     public: boolean("public").notNull().default(false),
     departmental: boolean("departmental").notNull().default(false),
     createdBy: integer("created_by")
@@ -26,18 +28,17 @@ export const documentFolders = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  (table) => [
-    index("folders_name_idx").on(table.name),
-    index("folders_department_idx").on(table.department),
-  ],
-);
-
-export const foldersRelation = relations(documentFolders, ({ one }) => ({
-  parent: one(documentFolders, {
-    fields: [documentFolders.parentId],
-    references: [documentFolders.id],
+  (table) => ({
+    foldersNameIdx: index("folders_name_idx").on(table.name),
+    foldersDepartmentIdx: index("folders_department_idx").on(table.department),
+    foldersParentIdx: index("folders_parent_idx").on(table.parentId),
+    documentFoldersParentFk: foreignKey({
+      columns: [table.parentId],
+      foreignColumns: [table.id],
+      name: "document_folders_parent_id_fk",
+    }),
   }),
-}));
+);
 
 export const document = pgTable(
   "document",

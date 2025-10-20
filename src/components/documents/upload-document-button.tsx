@@ -95,7 +95,7 @@ export default function UploadDocumentButton({
   usersFolders,
   department,
 }: {
-  usersFolders: { name: string }[];
+  usersFolders: { name: string; path?: string }[];
   department: string;
 }) {
   const [files, setFiles] = useState<FileWithMetadata[]>();
@@ -253,7 +253,6 @@ export default function UploadDocumentButton({
   async function onSubmit(data: z.infer<typeof uploadSchema>) {
     setIsUploading(true);
     setProgress(0);
-    console.log(data);
 
     try {
       if (!files || files?.length <= 0) {
@@ -310,7 +309,7 @@ export default function UploadDocumentButton({
     ...usersFolders,
     ...(usersFolders.some((f) => f.name.toLowerCase() === "general")
       ? []
-      : [{ name: "public" }, { name: department }]),
+      : [{ name: "public" }, { name: department }, { name: "personal" }]),
   ];
 
   return (
@@ -384,8 +383,10 @@ export default function UploadDocumentButton({
                           ).values(),
                         ].map((folder, idx) => (
                           <SelectItem key={idx} value={folder.name}>
-                            {folder.name.charAt(0).toUpperCase() +
-                              folder.name.slice(1)}
+                            {(folder.path ?? folder.name)
+                              .charAt(0)
+                              .toUpperCase() +
+                              (folder.path ?? folder.name).slice(1)}
                           </SelectItem>
                         ))}
                       </SelectContent>
