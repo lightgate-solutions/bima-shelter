@@ -19,6 +19,7 @@ interface UploadActionProps {
   folder: string;
   public: boolean;
   status: string;
+  departmental: boolean;
   Files: {
     originalFileName: string;
     filePath: string;
@@ -110,6 +111,7 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
             title: data.Files.length > 1 ? `${data.title}-${idx}` : data.title,
             description: data.description,
             originalFileName: file.originalFileName,
+            departmental: data.departmental,
             department: user.department,
             folderId,
             public: isPersonal ? false : data.public,
