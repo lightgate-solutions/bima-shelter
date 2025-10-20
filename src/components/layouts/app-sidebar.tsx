@@ -106,7 +106,7 @@ const data = {
       items: [
         {
           title: "View All",
-          url: "/projects/all",
+          url: "/projects",
         },
       ],
     },
