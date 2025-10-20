@@ -65,7 +65,6 @@ const uploadSchema = z.object({
     .optional(),
   folder: z.string().min(1, "Please select documents folder."),
   public: z.boolean(),
-  departmental: z.boolean(),
   tags: z
     .array(
       z.object({
@@ -108,7 +107,6 @@ export default function UploadDocumentButton({
       description: "",
       folder: "personal",
       public: false,
-      departmental: false,
       status: "active",
       tags: [{ name: "Personal" }],
       permissions: [{ all: false, department: false, departmentAll: false }],
@@ -285,7 +283,6 @@ export default function UploadDocumentButton({
         title: data.title,
         folder: data.folder,
         permissions: data.permissions,
-        departmental: data.departmental,
         tags: data.tags,
         status: data.status,
         public: data.public,
@@ -311,9 +308,6 @@ export default function UploadDocumentButton({
       ? []
       : [{ name: "public" }, { name: department }]),
   ];
-
-  const [customMode, setCustomMode] = useState(false);
-  const [customFolder, setCustomFolder] = useState("");
 
   return (
     <form name="form-upload-document" onSubmit={form.handleSubmit(onSubmit)}>
@@ -367,98 +361,30 @@ export default function UploadDocumentButton({
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}
-
-                    {!customMode ? (
-                      <>
-                        <Select
-                          name={field.name}
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger
-                            name="folder"
-                            aria-invalid={fieldState.invalid}
-                            className="w-full"
-                          >
-                            <SelectValue
-                              placeholder="Select"
-                              // ✅ Fallback so custom folder still displays
-                              defaultValue={field.value}
-                            >
-                              {field.value &&
-                                field.value.charAt(0).toUpperCase() +
-                                  field.value.slice(1)}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent position="item-aligned">
-                            {[
-                              ...new Map(
-                                safeFolders.map((f) => [
-                                  f.name.toLowerCase(),
-                                  f,
-                                ]),
-                              ).values(),
-                            ].map((folder, idx) => (
-                              <SelectItem key={idx} value={folder.name}>
-                                {folder.name.charAt(0).toUpperCase() +
-                                  folder.name.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        <div className="mt-2 flex justify-end">
-                          <Button
-                            variant="link"
-                            type="button"
-                            onClick={() => {
-                              setCustomMode(true);
-                              setCustomFolder("");
-                            }}
-                          >
-                            + Create new folder
-                          </Button>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="space-y-2">
-                        <Input
-                          name="folder"
-                          placeholder="Enter new folder name"
-                          value={customFolder}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setCustomFolder(val);
-                            field.onChange(val);
-                          }}
-                        />
-                        <div className="flex justify-between">
-                          <Button
-                            variant="secondary"
-                            type="button"
-                            onClick={() => {
-                              setCustomMode(false);
-                              setCustomFolder("");
-                              field.onChange(""); // reset
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            variant="outline"
-                            type="button"
-                            onClick={() => {
-                              if (customFolder.trim()) {
-                                field.onChange(customFolder.trim());
-                                setCustomMode(false);
-                              }
-                            }}
-                          >
-                            Use “{customFolder}”
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    <Select
+                      name={field.name}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger
+                        name="folder"
+                        aria-invalid={fieldState.invalid}
+                        className="w-full"
+                      >
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent position="item-aligned">
+                        {safeFolders.map((folder, idx) => (
+                          <SelectItem key={idx} value={folder.name}>
+                            {folder.name.charAt(0).toUpperCase() +
+                              folder.name.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      Select folder to drop documents.
+                    </FieldDescription>
                   </FieldContent>
                 </Field>
               )}
@@ -590,80 +516,39 @@ export default function UploadDocumentButton({
               </div>
             </div>
 
-            <div>
-              <FieldContent>
-                <FieldLabel>Options</FieldLabel>
-                <Controller
-                  name="public"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <FieldSet data-invalid={fieldState.invalid}>
-                      <FieldContent>
-                        <FieldGroup data-slot="checkbox-group">
-                          <Field orientation="horizontal">
-                            <Checkbox
-                              name={field.name}
-                              checked={
-                                folderWatch === "public" ? true : field.value
-                              }
-                              disabled={folderWatch === "personal"}
-                              onCheckedChange={field.onChange}
-                            />
-                            <FieldLabel
-                              htmlFor="public"
-                              className="font-normal"
-                            >
-                              Public (Accessible to all employees)
-                            </FieldLabel>
-                          </Field>
-                        </FieldGroup>
+            <Controller
+              name="public"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <FieldSet data-invalid={fieldState.invalid}>
+                  <FieldContent>
+                    <FieldLabel>Options</FieldLabel>
+                    <FieldGroup data-slot="checkbox-group">
+                      <Field orientation="horizontal">
+                        <Checkbox
+                          name={field.name}
+                          checked={
+                            folderWatch === "public" ? true : field.value
+                          }
+                          disabled={folderWatch === "personal"}
+                          onCheckedChange={field.onChange}
+                        />
+                        <FieldLabel htmlFor="public" className="font-normal">
+                          Public (Documents accessible to all employees)
+                        </FieldLabel>
+                      </Field>
+                    </FieldGroup>
+                    <FieldDescription>
+                      Select options that apply to upload
+                    </FieldDescription>
 
-                        {fieldState.invalid && (
-                          <FieldError errors={[fieldState.error]} />
-                        )}
-                      </FieldContent>
-                    </FieldSet>
-                  )}
-                />
-
-                <Controller
-                  name="departmental"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <FieldSet data-invalid={fieldState.invalid}>
-                      <FieldContent>
-                        <FieldGroup data-slot="checkbox-group">
-                          <Field orientation="horizontal">
-                            <Checkbox
-                              name={field.name}
-                              checked={
-                                folderWatch === department ? true : field.value
-                              }
-                              disabled={folderWatch === "personal"}
-                              onCheckedChange={field.onChange}
-                            />
-                            <FieldLabel
-                              htmlFor="departmental"
-                              className="font-normal"
-                            >
-                              Department (Accessible to all {department}{" "}
-                              employees )
-                            </FieldLabel>
-                          </Field>
-                        </FieldGroup>
-
-                        {fieldState.invalid && (
-                          <FieldError errors={[fieldState.error]} />
-                        )}
-                      </FieldContent>
-                    </FieldSet>
-                  )}
-                />
-                <FieldDescription>
-                  Select options that apply to upload
-                </FieldDescription>
-              </FieldContent>
-            </div>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </FieldContent>
+                </FieldSet>
+              )}
+            />
 
             <div className="gap-3">
               <FieldLabel>
