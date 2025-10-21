@@ -1,36 +1,32 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <> */
+/** biome-ignore-all lint/suspicious/noExplicitAny: <> */
+/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <> */
 // biome-ignore-all lint/style/noNonNullAssertion: <>
 "use client";
 
 import {
   Archive,
-  ArchiveIcon,
   Calendar,
   CheckCircle,
   Clock,
   Download,
-  Edit,
   Edit2,
   Eye,
   FileIcon,
   ImagePlay,
-  MoreHorizontalIcon,
   MoreVertical,
   Pencil,
   Settings,
   Share,
   Shield,
   Trash2,
-  Trash2Icon,
   User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { usePathname, useRouter } from "next/navigation";
@@ -58,6 +54,11 @@ import {
   archiveDocumentAction,
   deleteDocumentAction,
   type getActiveFolderDocuments,
+  getDocumentComments,
+  addDocumentComment,
+  getDocumentVersions,
+  deleteDocumentVersion,
+  getDocumentLogs,
 } from "@/actions/documents/documents";
 import { Label } from "../ui/label";
 import { Separator } from "../ui/separator";
@@ -80,10 +81,11 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import { Dropzone, type FileWithMetadata } from "../ui/dropzone";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { uploadNewDocumentVersion } from "@/actions/documents/upload";
 import { Spinner } from "../ui/spinner";
 import { Progress } from "../ui/progress";
+import { Textarea } from "../ui/textarea";
 
 type DocumentType = NonNullable<
   Awaited<ReturnType<typeof getActiveFolderDocuments>>["success"]
@@ -167,6 +169,80 @@ function DocumentSheet({
   const [progress, setProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
+
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const [comments, setComments] = useState<any[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentText, setCommentText] = useState("");
+
+  const [versions, setVersions] = useState<any[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+
+  const [logs, setLogs] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+
+  async function loadComments() {
+    try {
+      setCommentsLoading(true);
+      const res = await getDocumentComments(doc.id);
+      if (res.success) {
+        setComments(res.success);
+      } else {
+        toast.error(res.error?.reason);
+      }
+    } finally {
+      setCommentsLoading(false);
+    }
+  }
+
+  async function loadVersions() {
+    try {
+      setVersionsLoading(true);
+      const res = await getDocumentVersions(doc.id);
+      if (res.success) {
+        setVersions(res.success);
+      } else {
+        toast.error(res.error?.reason);
+      }
+    } finally {
+      setVersionsLoading(false);
+    }
+  }
+
+  async function loadLogs() {
+    try {
+      setLogsLoading(true);
+      const res = await getDocumentLogs(doc.id);
+      if (res.success) {
+        setLogs(res.success);
+      } else {
+        toast.error(res.error?.reason);
+      }
+    } finally {
+      setLogsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "comment") loadComments();
+    if (activeTab === "versions") loadVersions();
+    if (activeTab === "history") loadLogs();
+  }, [activeTab, doc.id]);
+
+  async function handleAddComment() {
+    const text = commentText.trim();
+    if (!text) return;
+    const res = await addDocumentComment(doc.id, text);
+    if (res.success) {
+      setCommentText("");
+      toast.success("Comment added");
+      await loadComments();
+      router.refresh();
+    } else {
+      toast.error(res.error?.reason ?? "Failed to add comment");
+    }
+  }
 
   const uploadFile = async (file: File): Promise<string | null | undefined> => {
     setFiles((prevFiles) =>
@@ -342,14 +418,14 @@ function DocumentSheet({
                   href={doc.filePath ?? ""}
                   className="hover:cursor-pointer"
                 >
-                  <Button variant="outline">
+                  <Button>
                     <Download />
                     Download
                   </Button>
                 </Link>
               </ButtonGroup>
               <ButtonGroup>
-                <Button variant="outline">
+                <Button disabled variant="outline">
                   <Share />
                   Share
                 </Button>
@@ -357,7 +433,7 @@ function DocumentSheet({
               <ButtonGroup>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button variant="outline">
                       <Edit2 />
                       New Version
                     </Button>
@@ -407,32 +483,28 @@ function DocumentSheet({
                 </Dialog>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      aria-label="More Options"
-                    >
-                      <MoreHorizontalIcon />
+                    <Button variant="outline" className="px-2 bg-transparent">
+                      <MoreVertical size={16} />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-52">
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem>
-                        <Edit />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <ArchiveIcon />
-                        Archive
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem variant="destructive">
-                        <Trash2Icon />
-                        Trash
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
+                  <DropdownMenuContent align="end" className="space-y-1">
+                    <DropdownMenuItem className="hover:cursor-pointer " asChild>
+                      <DocumentsActions
+                        type="archive"
+                        id={doc.id}
+                        pathname={pathname}
+                      />
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-red-600 hover:cursor-pointer"
+                      asChild
+                    >
+                      <DocumentsActions
+                        type="delete"
+                        id={doc.id}
+                        pathname={pathname}
+                      />
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </ButtonGroup>
@@ -443,11 +515,12 @@ function DocumentSheet({
         <Separator />
 
         <div className="flex px-4 overflow-y-auto w-full flex-col gap-6">
-          <Tabs defaultValue="overview">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
               <TabsTrigger value="comment">Comments</TabsTrigger>
+              <TabsTrigger value="versions">Versions</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -568,42 +641,178 @@ function DocumentSheet({
               </Card>
             </TabsContent>
 
-            <TabsContent value="history">
+            <TabsContent value="comment">
               <Card>
                 <CardHeader>
-                  <CardTitle>Password</CardTitle>
+                  <CardTitle>Comments</CardTitle>
                   <CardDescription>
-                    Change your password here. After saving, you&apos;ll be
-                    logged out.
+                    comments relating to this document
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-6">
-                  <div className="grid gap-3">
-                    <Label htmlFor="tabs-demo-current">Current password</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor={`comment-${doc.id}`}>Add a comment</Label>
+                    <Textarea
+                      id={`comment-${doc.id}`}
+                      placeholder="Write your comment..."
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      rows={3}
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={handleAddComment}
+                        disabled={!commentText.trim()}
+                      >
+                        Post comment
+                      </Button>
+                    </div>
                   </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="tabs-demo-new">New password</Label>
+                  <div className="space-y-4">
+                    {commentsLoading ? (
+                      <div className="text-sm text-muted-foreground">
+                        Loading comments...
+                      </div>
+                    ) : comments.length === 0 ? (
+                      <div className="text-sm text-muted-foreground">
+                        No comments yet.
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {comments.map((c, idx) => (
+                          <div key={idx} className="p-3 rounded-md border">
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium">
+                                {c.userName ?? "User"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(c.createdAt).toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="text-sm mt-2">{c.comment}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="comment">
+            <TabsContent value="versions">
               <Card>
                 <CardHeader>
-                  <CardTitle>Password</CardTitle>
+                  <CardTitle>Versions</CardTitle>
+                  <CardDescription>All past versions</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-6">
+                  {versionsLoading ? (
+                    <div className="text-sm text-muted-foreground">
+                      Loading versions...
+                    </div>
+                  ) : versions.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">
+                      No previous versions.
+                    </div>
+                  ) : (
+                    versions.map((v) => {
+                      const isCurrent = v.versionNumber === doc.currentVersion;
+                      return (
+                        <div
+                          key={v.id}
+                          className="flex items-center justify-between border rounded-md p-3"
+                        >
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">
+                                v{v.versionNumber}
+                              </span>
+                              {isCurrent && (
+                                <Badge variant="secondary">Current</Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(v.createdAt).toLocaleString()} •{" "}
+                              {v.fileSize} MB • {v.mimeType}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Uploaded by {v.uploadedByName ?? "User"}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Link target="_blank" href={v.filePath ?? ""}>
+                              <Button variant="outline" size="sm">
+                                <Download className="w-4 h-4 mr-1" />
+                                Download
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              disabled={isCurrent}
+                              onClick={async () => {
+                                const res = await deleteDocumentVersion(
+                                  v.id,
+                                  pathname,
+                                );
+                                if (res?.success) {
+                                  toast.success(res.success.reason);
+                                  await loadVersions();
+                                  router.refresh();
+                                } else {
+                                  toast.error(
+                                    res?.error?.reason ??
+                                      "Failed to delete version",
+                                  );
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="history">
+              <Card>
+                <CardHeader>
+                  <CardTitle>History</CardTitle>
                   <CardDescription>
-                    Change your password here. After saving, you&apos;ll be
-                    logged out.
+                    history/logs for the document
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-6">
-                  <div className="grid gap-3">
-                    <Label htmlFor="tabs-demo-current">Current password</Label>
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="tabs-demo-new">New password</Label>
-                  </div>
+                  {logsLoading ? (
+                    <div className="text-sm text-muted-foreground">
+                      Loading history...
+                    </div>
+                  ) : logs.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">
+                      No history yet.
+                    </div>
+                  ) : (
+                    logs.map((l) => (
+                      <div
+                        key={l.id}
+                        className="flex items-center justify-between border rounded-md p-3"
+                      >
+                        <div>
+                          <div className="font-medium">{l.action}</div>
+                          <div className="text-sm">{l.details}</div>
+                        </div>
+                        <div className="text-right text-xs text-muted-foreground">
+                          <div>{l.userName ?? "User"}</div>
+                          <div>{new Date(l.createdAt).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
