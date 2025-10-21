@@ -13,6 +13,7 @@ import {
 import { and, DrizzleQueryError, eq } from "drizzle-orm";
 import { getUser } from "../auth/dal";
 import { employees } from "@/db/schema";
+import { revalidatePath } from "next/cache";
 
 interface UploadActionProps {
   title: string;
@@ -28,7 +29,7 @@ interface UploadActionProps {
     mimeType: string;
   }[];
   tags: { name: string }[];
-  permissions: { all: boolean; departmentAll: boolean; department: boolean }[];
+  permissions: { view: boolean; edit: boolean; manage: boolean }[];
 }
 
 // NOTE: create personal folders on create user action
@@ -153,7 +154,10 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
       for (const version of insertedVersions) {
         await tx
           .update(document)
-          .set({ currentVersionId: version.versionNumber })
+          .set({
+            currentVersionId: version.id,
+            currentVersion: version.versionNumber,
+          })
           .where(eq(document.id, version.documentId));
       }
 
@@ -169,13 +173,11 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
 
       const accessToInsert = insertedDocuments.flatMap((doc) => {
         return data.permissions.map((perm) => {
-          const accessLevel = perm.all
-            ? "all"
-            : perm.departmentAll
-              ? "write"
-              : perm.department
-                ? "read"
-                : "none";
+          const accessLevel = perm.manage
+            ? "manage"
+            : perm.edit
+              ? "edit"
+              : "view";
 
           return {
             accessLevel,
@@ -202,6 +204,76 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
 
     return {
       success: { reason: "Uploaded document/s successfully!" },
+      error: null,
+    };
+  } catch (err) {
+    if (err instanceof DrizzleQueryError) {
+      return {
+        success: null,
+        error: { reason: err.cause?.message },
+      };
+    }
+
+    return {
+      error: {
+        reason: "Couldn't upload document. Check inputs and try again!",
+      },
+      success: null,
+    };
+  }
+}
+
+interface UploadNewVersionProps {
+  id: number;
+  newVersionNumber: number;
+  url?: string | null;
+  fileSize: string;
+  mimeType: string;
+  pathname?: string;
+}
+
+export async function uploadNewDocumentVersion(data: UploadNewVersionProps) {
+  console.log(data);
+  const user = await getUser();
+  if (!user) throw new Error("User not logged in");
+  try {
+    await db.transaction(async (tx) => {
+      const [version] = await tx
+        .insert(documentVersions)
+        .values({
+          versionNumber: data.newVersionNumber,
+          filePath: data.url ?? "",
+          mimeType: data.mimeType,
+          fileSize: data.fileSize,
+          uploadedBy: user.id,
+          documentId: data.id,
+        })
+        .returning();
+
+      await tx
+        .update(document)
+        .set({
+          currentVersion: data.newVersionNumber,
+          currentVersionId: version.id,
+          updatedAt: new Date(),
+          uploadedBy: user.id,
+        })
+        .where(eq(document.id, data.id));
+
+      await tx.insert(documentLogs).values({
+        userId: user.id,
+        documentId: data.id,
+        action: "upload",
+        details: `uploaded new version v${data.newVersionNumber}`,
+        documentVersionId: version.id,
+      });
+    });
+
+    if (data.pathname) {
+      revalidatePath(data.pathname);
+    }
+    return {
+      success: { reason: "Updated version successfully" },
       error: null,
     };
   } catch (err) {

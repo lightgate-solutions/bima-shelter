@@ -50,7 +50,8 @@ export const document = pgTable(
     department: text("department"),
     departmental: boolean("departmental").default(false),
     folderId: integer("folder_id").references(() => documentFolders.id),
-    currentVersionId: integer("current_version_id"),
+    currentVersion: integer("current_version").notNull().default(0),
+    currentVersionId: integer("current_version_id").notNull().default(0),
     public: boolean("public").default(false),
     uploadedBy: integer("uploaded_by").references(() => employees.id),
     status: text("status").default("active").notNull(),
@@ -129,9 +130,12 @@ export const documentLogs = pgTable(
   {
     id: serial("id").primaryKey(),
     userId: integer("user_id").references(() => employees.id),
-    documentId: integer("document_id").references(() => document.id),
-    documentVersionId: integer("document_version_id_log").references(
+    documentId: integer("document_id").references(() => document.id, {
+      onDelete: "cascade",
+    }),
+    documentVersionId: integer("document_version_id").references(
       () => documentVersions.id,
+      { onDelete: "cascade" },
     ),
     action: text("action").notNull(),
     details: text("details"),

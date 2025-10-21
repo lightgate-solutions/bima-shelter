@@ -1,5 +1,7 @@
 import { getUser } from "@/actions/auth/dal";
+import { getActiveFolderDocuments } from "@/actions/documents/documents";
 import { getSubFolders } from "@/actions/documents/folders";
+import DocumentsGrid from "@/components/documents/documents-grid";
 import FoldersGrid from "@/components/documents/folders/folders-grid";
 
 export default async function Page({
@@ -11,11 +13,18 @@ export default async function Page({
   const user = await getUser();
   if (!user) return null;
 
-  const subFolders = await getSubFolders(Number(foldersId.at(-1)));
+  const currentFolderId = foldersId.at(-1);
+
+  const subFolders = await getSubFolders(Number(currentFolderId));
+
+  const documents = await getActiveFolderDocuments(Number(currentFolderId));
+
+  if (documents.error) return null;
 
   return (
-    <div>
+    <div className="space-y-6">
       <FoldersGrid folders={subFolders} department={user.department} />
+      <DocumentsGrid documents={documents.success.docs} />
     </div>
   );
 }

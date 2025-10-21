@@ -82,9 +82,9 @@ const uploadSchema = z.object({
   permissions: z
     .array(
       z.object({
-        all: z.boolean(),
-        departmentAll: z.boolean(),
-        department: z.boolean(),
+        manage: z.boolean(),
+        edit: z.boolean(),
+        view: z.boolean(),
       }),
     )
     .min(1, "At least one permission entry is required.")
@@ -110,8 +110,8 @@ export default function UploadDocumentButton({
       public: false,
       departmental: false,
       status: "active",
-      tags: [{ name: "Personal" }],
-      permissions: [{ all: false, department: false, departmentAll: false }],
+      tags: [{ name: "" }],
+      permissions: [{ manage: false, edit: false, view: false }],
     },
   });
 
@@ -463,10 +463,6 @@ export default function UploadDocumentButton({
                               id={`tag-${index}`}
                               placeholder="Enter tag name"
                               aria-invalid={fieldState.invalid}
-                              value={
-                                folderWatch.charAt(0).toUpperCase() +
-                                folderWatch.slice(1)
-                              }
                               autoComplete="off"
                             />
                             {tagFields.length > 1 && (
@@ -596,12 +592,12 @@ export default function UploadDocumentButton({
                 >
                   <div className="flex flex-col gap-2 flex-1">
                     <Controller
-                      name={`permissions.${index}.all`}
+                      name={`permissions.${index}.manage`}
                       control={form.control}
                       render={({ field: controllerField }) => (
                         <div className="flex items-center justify-between">
                           <Label htmlFor={`all-${index}`}>
-                            All Access (View, Read, Write)
+                            Manage (can update permissions)
                           </Label>
                           <Switch
                             id={`all-${index}`}
@@ -614,12 +610,12 @@ export default function UploadDocumentButton({
                     />
 
                     <Controller
-                      name={`permissions.${index}.departmentAll`}
+                      name={`permissions.${index}.edit`}
                       control={form.control}
                       render={({ field: controllerField }) => (
                         <div className="flex items-center justify-between">
                           <Label htmlFor={`dept-all-${index}`}>
-                            Department Access (View, Read, Write)
+                            Edit (can edit uploaded documents)
                           </Label>
                           <Switch
                             id={`dept-all-${index}`}
@@ -632,12 +628,12 @@ export default function UploadDocumentButton({
                     />
 
                     <Controller
-                      name={`permissions.${index}.department`}
+                      name={`permissions.${index}.view`}
                       control={form.control}
                       render={({ field: controllerField }) => (
                         <div className="flex items-center justify-between">
                           <Label htmlFor={`dept-${index}`}>
-                            Department Access (View, Read)
+                            View (can view and download documents)
                           </Label>
                           <Switch
                             id={`dept-${index}`}
