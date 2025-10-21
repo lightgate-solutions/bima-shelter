@@ -2,8 +2,9 @@
 
 import { Dialog } from "../ui/dialog";
 import CreateFolderButton from "./folders/create-folder-button";
-import FoldersGrid from "./folders/folders-grid";
+import FoldersViewWrapper from "./folders/folders-view-wrapper";
 import UploadDocumentButton from "./upload-document-button";
+import { ViewToggle } from "./view-toggle/view-toggle";
 
 export function DocumentsOverview({
   usersFolders,
@@ -24,25 +25,28 @@ export function DocumentsOverview({
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Dialog>
-            <UploadDocumentButton
-              usersFolders={usersFolders}
-              department={department}
-            />
-          </Dialog>
+        <div className="flex items-start gap-3">
+          <ViewToggle />
+          <div className="space-y-2">
+            <Dialog>
+              <UploadDocumentButton
+                usersFolders={usersFolders}
+                department={department}
+              />
+            </Dialog>
 
-          <Dialog>
-            <CreateFolderButton
-              usersFolders={usersFolders}
-              department={department}
-            />
-          </Dialog>
+            <Dialog>
+              <CreateFolderButton
+                usersFolders={usersFolders}
+                department={department}
+              />
+            </Dialog>
+          </div>
         </div>
       </div>
 
       <div>
-        <FoldersGrid folders={usersFolders} department={department} />
+        <FoldersViewWrapper folders={usersFolders} department={department} />
       </div>
     </div>
   );

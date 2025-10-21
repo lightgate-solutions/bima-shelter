@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <> */
+/** biome-ignore-all lint/suspicious/noExplicitAny: <> */
 // biome-ignore-all lint/style/noNonNullAssertion: <>
 
 "use client";
@@ -89,6 +90,15 @@ const uploadSchema = z.object({
     )
     .min(1, "At least one permission entry is required.")
     .max(10, "You can define up to 10 permission sets."),
+  shares: z
+    .array(
+      z.object({
+        email: z.email("Enter a valid email address"),
+        accessLevel: z.enum(["view", "edit", "manage"]),
+      }),
+    )
+    .max(50, "You can share with up to 50 users.")
+    .optional(),
 });
 
 export default function UploadDocumentButton({
@@ -112,6 +122,7 @@ export default function UploadDocumentButton({
       status: "active",
       tags: [{ name: "" }],
       permissions: [{ manage: false, edit: false, view: false }],
+      shares: [],
     },
   });
 
@@ -130,6 +141,15 @@ export default function UploadDocumentButton({
       name: "permissions",
     },
   );
+
+  const {
+    fields: shareFields,
+    append: shareAppend,
+    remove: shareRemove,
+  } = useFieldArray({
+    control: form.control,
+    name: "shares",
+  });
 
   function handleAddTag() {
     const trimmed = newTag.trim();
@@ -281,7 +301,7 @@ export default function UploadDocumentButton({
           });
       }
 
-      const res = await uploadDocumentsAction({
+      const payload: any = {
         title: data.title,
         folder: data.folder,
         permissions: data.permissions,
@@ -291,7 +311,12 @@ export default function UploadDocumentButton({
         departmental: data.departmental,
         description: data.description,
         Files: uploadedUrls,
-      });
+        shares:
+          (data as any).shares?.filter(
+            (s: any) => s?.email && s?.accessLevel,
+          ) ?? [],
+      };
+      const res = await uploadDocumentsAction(payload);
       if (res.success) {
         toast.success("Files uploaded succesfully");
       } else {
@@ -665,6 +690,87 @@ export default function UploadDocumentButton({
               {form.formState.errors.permissions?.root && (
                 <FieldError errors={[form.formState.errors.permissions.root]} />
               )}
+            </div>
+
+            <div className="gap-3">
+              <FieldLabel>Share with specific users</FieldLabel>
+              {shareFields.length === 0 && (
+                <FieldDescription>
+                  Add people by email and set access level.
+                </FieldDescription>
+              )}
+              {shareFields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="flex items-center justify-between gap-4 border rounded-md p-3"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <Controller
+                      name={`shares.${index}.email`}
+                      control={form.control}
+                      render={({ field: controllerField, fieldState }) => (
+                        <Field
+                          orientation="horizontal"
+                          data-invalid={fieldState.invalid}
+                          className="flex-1"
+                        >
+                          <Input
+                            {...controllerField}
+                            id={`share-email-${index}`}
+                            type="email"
+                            placeholder="user@example.com"
+                            aria-invalid={fieldState.invalid}
+                            autoComplete="off"
+                          />
+                          {fieldState.invalid && (
+                            <FieldError errors={[fieldState.error]} />
+                          )}
+                        </Field>
+                      )}
+                    />
+                    <Controller
+                      name={`shares.${index}.accessLevel`}
+                      control={form.control}
+                      render={({ field: controllerField }) => (
+                        <Select
+                          value={controllerField.value}
+                          onValueChange={controllerField.onChange}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Access" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="view">View</SelectItem>
+                            <SelectItem value="edit">Edit</SelectItem>
+                            <SelectItem value="manage">Manage</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => shareRemove(index)}
+                    aria-label={`Remove share ${index + 1}`}
+                  >
+                    <XIcon />
+                  </Button>
+                </div>
+              ))}
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    shareAppend({ email: "", accessLevel: "view" })
+                  }
+                >
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  Add user
+                </Button>
+              </div>
             </div>
 
             <div className="col-span-2">

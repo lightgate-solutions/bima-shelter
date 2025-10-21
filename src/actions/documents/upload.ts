@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <> */
+// biome-ignore-all lint/style/noNonNullAssertion: <>
+//
 "use server";
 
 import { db } from "@/db";
@@ -10,7 +12,7 @@ import {
   documentTags,
   documentVersions,
 } from "@/db/schema/documents";
-import { and, DrizzleQueryError, eq } from "drizzle-orm";
+import { and, DrizzleQueryError, eq, inArray } from "drizzle-orm";
 import { getUser } from "../auth/dal";
 import { employees } from "@/db/schema";
 import { revalidatePath } from "next/cache";
@@ -30,6 +32,7 @@ interface UploadActionProps {
   }[];
   tags: { name: string }[];
   permissions: { view: boolean; edit: boolean; manage: boolean }[];
+  shares?: { email: string; accessLevel: "view" | "edit" | "manage" }[];
 }
 
 // NOTE: create personal folders on create user action
@@ -212,6 +215,42 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
         await tx.insert(documentAccess).values(accessToInsert);
       }
 
+      if (data.shares && data.shares.length > 0) {
+        const uniqueEmails = Array.from(
+          new Set(
+            data.shares
+              .map((s) => s.email?.toLowerCase())
+              .filter((e): e is string => !!e),
+          ),
+        );
+        if (uniqueEmails.length > 0) {
+          const shareUsers = await tx
+            .select({ id: employees.id, email: employees.email })
+            .from(employees)
+            .where(inArray(employees.email, uniqueEmails));
+
+          const shareAccessRows = insertedDocuments.flatMap((doc) =>
+            shareUsers.map((u) => {
+              const share = data.shares!.find(
+                (s) => s.email.toLowerCase() === u.email.toLowerCase(),
+              );
+              const level = share?.accessLevel ?? "view";
+              return {
+                accessLevel: level,
+                documentId: doc.id,
+                userId: u.id,
+                department: null,
+                grantedBy: user.id,
+              };
+            }),
+          );
+
+          if (shareAccessRows.length > 0) {
+            await tx.insert(documentAccess).values(shareAccessRows);
+          }
+        }
+      }
+
       const logsToInsert = insertedDocuments.map((doc, i) => ({
         userId: user.id,
         documentId: doc.id,
@@ -233,6 +272,7 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
         error: { reason: err.cause?.message },
       };
     }
+    console.log(err);
 
     return {
       error: {

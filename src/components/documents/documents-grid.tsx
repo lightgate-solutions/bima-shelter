@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <> */
 /** biome-ignore-all lint/suspicious/noExplicitAny: <> */
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <> */
 // biome-ignore-all lint/style/noNonNullAssertion: <>
@@ -15,10 +17,8 @@ import {
   FileIcon,
   ImagePlay,
   MoreVertical,
-  Pencil,
   Settings,
   Share,
-  Shield,
   Trash2,
   User,
 } from "lucide-react";
@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { usePathname, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +60,13 @@ import {
   getDocumentVersions,
   deleteDocumentVersion,
   getDocumentLogs,
+  searchEmployeesForShare,
+  getDocumentShares,
+  addDocumentShare,
+  removeDocumentShare,
+  getMyDocumentAccess,
+  updateDocumentPublic,
+  updateDepartmentAccess,
 } from "@/actions/documents/documents";
 import { Label } from "../ui/label";
 import { Separator } from "../ui/separator";
@@ -86,6 +94,7 @@ import { uploadNewDocumentVersion } from "@/actions/documents/upload";
 import { Spinner } from "../ui/spinner";
 import { Progress } from "../ui/progress";
 import { Textarea } from "../ui/textarea";
+import { Input } from "../ui/input";
 
 type DocumentType = NonNullable<
   Awaited<ReturnType<typeof getActiveFolderDocuments>>["success"]
@@ -93,67 +102,129 @@ type DocumentType = NonNullable<
 
 export default function DocumentsGrid({
   documents,
+  paging,
 }: {
   documents: DocumentType[];
+  paging?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages?: number;
+    hasMore?: boolean;
+  };
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const page = paging?.page ?? Number(searchParams?.get("page") ?? 1);
+  const pageSize =
+    paging?.pageSize ?? Number(searchParams?.get("pageSize") ?? 20);
+  const total = paging?.total;
+  const totalPages =
+    paging?.totalPages ??
+    (total !== undefined
+      ? Math.max(1, Math.ceil(total / pageSize))
+      : undefined);
+  const hasMore = paging?.hasMore ?? (totalPages ? page < totalPages : false);
+  const start = total !== undefined ? (page - 1) * pageSize + 1 : undefined;
+  const end =
+    total !== undefined ? Math.min(page * pageSize, total) : undefined;
+
+  function goToPage(p: number) {
+    if (p < 1) return;
+    if (totalPages && p > totalPages) return;
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    params.set("page", String(p));
+    params.set("pageSize", String(pageSize));
+    router.push(`${pathname}?${params.toString()}`);
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {documents.map((doc, idx) => (
-        <div
-          key={idx}
-          className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
-        >
-          <div className={`h-24 flex items-center justify-center`}>
-            <FileIcon size={56} className="text-green-600" />
-          </div>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 2xl:grid-cols-5 gap-6">
+        {documents.map((doc, idx) => (
+          <div
+            key={idx}
+            className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+          >
+            <div className={`h-24 flex items-center justify-center`}>
+              <FileIcon size={56} className="text-green-600" />
+            </div>
 
-          <div className="p-4">
-            <h3 className="font-semibold text-foreground mb-1 truncate">
-              {doc.title.charAt(0).toUpperCase() + doc.title.slice(1)}
-            </h3>
-            <p className="text-sm text-muted-foreground mb-3">
-              Last Modified: {doc.updatedAt.toLocaleDateString()}
-            </p>
+            <div className="p-4">
+              <h3 className="font-semibold text-foreground mb-1 truncate">
+                {doc.title.charAt(0).toUpperCase() + doc.title.slice(1)}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Last Modified: {doc.updatedAt.toLocaleDateString()}
+              </p>
 
-            <div className="flex gap-2">
-              <DocumentSheet doc={doc} pathname={pathname} />
+              <div className="flex gap-2">
+                <DocumentSheet doc={doc} pathname={pathname} />
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="px-2 bg-transparent"
-                  >
-                    <MoreVertical size={16} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="space-y-1">
-                  <DropdownMenuItem className="hover:cursor-pointer " asChild>
-                    <DocumentsActions
-                      type="archive"
-                      id={doc.id}
-                      pathname={pathname}
-                    />
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-red-600 hover:cursor-pointer"
-                    asChild
-                  >
-                    <DocumentsActions
-                      type="delete"
-                      id={doc.id}
-                      pathname={pathname}
-                    />
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="px-2 bg-transparent"
+                    >
+                      <MoreVertical size={16} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="space-y-1">
+                    <DropdownMenuItem className="hover:cursor-pointer " asChild>
+                      <DocumentsActions
+                        type="archive"
+                        id={doc.id}
+                        pathname={pathname}
+                      />
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-red-600 hover:cursor-pointer"
+                      asChild
+                    >
+                      <DocumentsActions
+                        type="delete"
+                        id={doc.id}
+                        pathname={pathname}
+                      />
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
+        ))}
+      </div>
+
+      {paging && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            {total !== undefined && start !== undefined && end !== undefined
+              ? `Showing ${start}-${end} of ${total}`
+              : null}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPage(page - 1)}
+              disabled={page <= 1}
+            >
+              Previous
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => goToPage(page + 1)}
+              disabled={!hasMore}
+            >
+              Next
+            </Button>
+          </div>
         </div>
-      ))}
+      )}
     </div>
   );
 }
@@ -181,6 +252,32 @@ function DocumentSheet({
 
   const [logs, setLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [myAccess, setMyAccess] = useState<{
+    level: "none" | "view" | "edit" | "manage";
+    isOwner: boolean;
+    isAdminDepartment?: boolean;
+  } | null>(null);
+
+  const [shareEmail, setShareEmail] = useState("");
+  const [shareLevel, setShareLevel] = useState<"view" | "edit" | "manage">(
+    "view",
+  );
+  const [shareSuggestions, setShareSuggestions] = useState<any[]>([]);
+  const [shareSuggestionsLoading, setShareSuggestionsLoading] = useState(false);
+  const [shares, setShares] = useState<any[]>([]);
+  const [sharesLoading, setSharesLoading] = useState(false);
+
+  const [publicValue, setPublicValue] = useState(!!doc.public);
+  const [pubUpdating, setPubUpdating] = useState(false);
+  const initialDeptLevel =
+    (doc.accessRules.find(
+      (r: any) => r.department && r.department === doc.department,
+    )?.accessLevel as "view" | "edit" | "manage") ?? "view";
+  const [deptEnabled, setDeptEnabled] = useState(!!doc.departmental);
+  const [deptLevel, setDeptLevel] = useState<"view" | "edit" | "manage">(
+    initialDeptLevel,
+  );
+  const [deptUpdating, setDeptUpdating] = useState(false);
 
   async function loadComments() {
     try {
@@ -223,6 +320,77 @@ function DocumentSheet({
       setLogsLoading(false);
     }
   }
+
+  async function loadMyAccess() {
+    const res = await getMyDocumentAccess(doc.id);
+    if (res.success) {
+      setMyAccess(res.success);
+    } else {
+      toast.error(res.error.reason);
+    }
+  }
+
+  useEffect(() => {
+    loadMyAccess();
+  }, []);
+
+  async function loadShares() {
+    try {
+      setSharesLoading(true);
+      const res = await getDocumentShares(doc.id);
+      if (res.success) setShares(res.success);
+      else if (res.error) toast.error(res.error.reason);
+    } finally {
+      setSharesLoading(false);
+    }
+  }
+
+  async function handleShareAdd() {
+    const email = shareEmail.trim();
+    if (!email) return;
+    const res = await addDocumentShare(doc.id, email, shareLevel);
+    if (res.success) {
+      toast.success(res.success.reason);
+      setShareEmail("");
+      await loadShares();
+    } else {
+      toast.error(res.error?.reason ?? "Failed to add share");
+    }
+  }
+
+  async function handleShareRemove(userId: number) {
+    const res = await removeDocumentShare(doc.id, userId);
+    if (res.success) {
+      toast.success(res.success.reason);
+      await loadShares();
+    } else {
+      toast.error(res.error?.reason ?? "Failed to remove share");
+    }
+  }
+
+  useEffect(() => {
+    if (!shareEmail || shareEmail.length < 2) {
+      setShareSuggestions([]);
+      return;
+    }
+    let canceled = false;
+    setShareSuggestionsLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await searchEmployeesForShare(shareEmail);
+        if (!canceled) {
+          if (res.success) setShareSuggestions(res.success);
+          else setShareSuggestions([]);
+        }
+      } finally {
+        if (!canceled) setShareSuggestionsLoading(false);
+      }
+    }, 300);
+    return () => {
+      canceled = true;
+      clearTimeout(t);
+    };
+  }, [shareEmail]);
 
   useEffect(() => {
     if (activeTab === "comment") loadComments();
@@ -418,17 +586,135 @@ function DocumentSheet({
                   href={doc.filePath ?? ""}
                   className="hover:cursor-pointer"
                 >
-                  <Button>
-                    <Download />
-                    Download
+                  <Button variant="outline">
+                    <Eye />
+                    Open
                   </Button>
                 </Link>
               </ButtonGroup>
               <ButtonGroup>
-                <Button disabled variant="outline">
-                  <Share />
-                  Share
+                <Button
+                  onClick={() => {
+                    const url = doc.filePath ?? "";
+                    if (!url) return;
+                    try {
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    } catch {
+                      window.open(url, "_blank", "noopener,noreferrer");
+                    }
+                  }}
+                >
+                  <Download />
+                  Download
                 </Button>
+              </ButtonGroup>
+              <ButtonGroup>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Share />
+                      Share
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Share document</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="user@example.com"
+                          value={shareEmail}
+                          onChange={(e) => setShareEmail(e.target.value)}
+                        />
+                        <select
+                          className="border rounded px-2 text-sm"
+                          value={shareLevel}
+                          onChange={(e) =>
+                            setShareLevel(
+                              e.target.value as "view" | "edit" | "manage",
+                            )
+                          }
+                        >
+                          <option value="view">View</option>
+                          <option value="edit">Edit</option>
+                          <option value="manage">Manage</option>
+                        </select>
+                        <Button onClick={handleShareAdd}>Add</Button>
+                      </div>
+
+                      {shareSuggestionsLoading && (
+                        <div className="text-xs text-muted-foreground">
+                          Searching…
+                        </div>
+                      )}
+                      {shareSuggestions.length > 0 && (
+                        <div className="border rounded p-2 max-h-40 overflow-y-auto">
+                          {shareSuggestions.map((s: any) => (
+                            <div
+                              key={s.id}
+                              className="flex items-center justify-between py-1 hover:bg-muted/50 px-2 rounded cursor-pointer"
+                              onClick={() => setShareEmail(s.email)}
+                            >
+                              <div className="text-sm">
+                                {s.name} •{" "}
+                                <span className="text-muted-foreground">
+                                  {s.email}
+                                </span>
+                              </div>
+                              <Badge variant="outline">{s.department}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">
+                          Current shares
+                        </div>
+                        {sharesLoading ? (
+                          <div className="text-xs text-muted-foreground">
+                            Loading shares…
+                          </div>
+                        ) : shares.length === 0 ? (
+                          <div className="text-xs text-muted-foreground">
+                            No shares yet.
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {shares.map((u: any) => (
+                              <div
+                                key={u.userId}
+                                className="flex items-center justify-between border rounded p-2"
+                              >
+                                <div className="text-sm">
+                                  {u.name ?? "User"} •{" "}
+                                  <span className="text-muted-foreground">
+                                    {u.email}
+                                  </span>{" "}
+                                  • {u.accessLevel}
+                                </div>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleShareRemove(u.userId)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-1" />
+                                  Remove
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </ButtonGroup>
               <ButtonGroup>
                 <Dialog>
@@ -520,7 +806,10 @@ function DocumentSheet({
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="comment">Comments</TabsTrigger>
               <TabsTrigger value="versions">Versions</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="permissions">Permissions</TabsTrigger>
+              {(myAccess?.isOwner || myAccess?.level === "manage") && (
+                <TabsTrigger value="history">History</TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="overview">
@@ -606,35 +895,6 @@ function DocumentSheet({
                           ))}
                         </div>
                       </div>
-
-                      <div>
-                        <div>Permissions</div>
-                        {doc.accessRules.map((rule, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between py-2"
-                          >
-                            <span className="backdrop-blur-2xl p-2 bg-muted">
-                              User can:
-                            </span>
-                            {rule.accessLevel === "manage" && (
-                              <Badge className="bg-purple-100 text-purple-700">
-                                <Shield className="w-3 h-3 mr-1" /> Manage
-                              </Badge>
-                            )}
-                            {rule.accessLevel === "edit" && (
-                              <Badge className="bg-blue-100 text-blue-700">
-                                <Pencil className="w-3 h-3 mr-1" /> Edit
-                              </Badge>
-                            )}
-                            {rule.accessLevel === "view" && (
-                              <Badge className="bg-green-100 text-green-700">
-                                <Eye className="w-3 h-3 mr-1" /> View
-                              </Badge>
-                            )}
-                          </div>
-                        ))}
-                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -650,24 +910,28 @@ function DocumentSheet({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor={`comment-${doc.id}`}>Add a comment</Label>
-                    <Textarea
-                      id={`comment-${doc.id}`}
-                      placeholder="Write your comment..."
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      rows={3}
-                    />
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={handleAddComment}
-                        disabled={!commentText.trim()}
-                      >
-                        Post comment
-                      </Button>
+                  {(myAccess?.isOwner ||
+                    myAccess?.level === "edit" ||
+                    myAccess?.level === "manage") && (
+                    <div className="space-y-2">
+                      <Label htmlFor={`comment-${doc.id}`}>Add a comment</Label>
+                      <Textarea
+                        id={`comment-${doc.id}`}
+                        placeholder="Write your comment..."
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        rows={3}
+                      />
+                      <div className="flex justify-end">
+                        <Button
+                          onClick={handleAddComment}
+                          disabled={!commentText.trim()}
+                        >
+                          Post comment
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="space-y-4">
                     {commentsLoading ? (
                       <div className="text-sm text-muted-foreground">
@@ -740,12 +1004,31 @@ function DocumentSheet({
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Link target="_blank" href={v.filePath ?? ""}>
-                              <Button variant="outline" size="sm">
-                                <Download className="w-4 h-4 mr-1" />
-                                Download
-                              </Button>
-                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const url = v.filePath ?? "";
+                                if (!url) return;
+                                try {
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = `${doc.title}-v${v.versionNumber}`;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                } catch {
+                                  window.open(
+                                    url,
+                                    "_blank",
+                                    "noopener,noreferrer",
+                                  );
+                                }
+                              }}
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              Download
+                            </Button>
                             <Button
                               variant="destructive"
                               size="sm"
@@ -774,6 +1057,316 @@ function DocumentSheet({
                         </div>
                       );
                     })
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="permissions">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Permissions</CardTitle>
+                  <CardDescription>
+                    View and manage document access
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-6">
+                  {!myAccess ? (
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Load your permissions to manage access
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          await loadMyAccess();
+                          await loadShares();
+                        }}
+                      >
+                        Refresh
+                      </Button>
+                    </div>
+                  ) : myAccess.isOwner || myAccess.isAdminDepartment ? (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="border rounded-md p-3">
+                          <div className="text-sm font-medium mb-1">
+                            Uploader
+                          </div>
+                          <div className="text-sm">
+                            {doc.uploader} •{" "}
+                            <Badge variant="secondary">Manage</Badge>
+                          </div>
+                        </div>
+
+                        <div className="border rounded-md p-3">
+                          <div className="text-sm font-medium mb-1">
+                            Public access
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-muted-foreground">
+                              {publicValue
+                                ? "Document is public"
+                                : "Not public"}
+                            </div>
+                            <Button
+                              variant="outline"
+                              disabled={pubUpdating}
+                              onClick={async () => {
+                                try {
+                                  setPubUpdating(true);
+                                  const next = !publicValue;
+                                  const res = await updateDocumentPublic(
+                                    doc.id,
+                                    next,
+                                    pathname,
+                                  );
+                                  if (res?.success) {
+                                    setPublicValue(next);
+                                    toast.success(res.success.reason);
+                                    router.refresh();
+                                  } else {
+                                    toast.error(
+                                      res?.error?.reason ??
+                                        "Failed to update public",
+                                    );
+                                  }
+                                } finally {
+                                  setPubUpdating(false);
+                                }
+                              }}
+                            >
+                              {pubUpdating
+                                ? "Updating..."
+                                : publicValue
+                                  ? "Make Private"
+                                  : "Make Public"}
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="border rounded-md p-3 md:col-span-2">
+                          <div className="text-sm font-medium mb-1">
+                            Department access
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm text-muted-foreground">
+                                {deptEnabled
+                                  ? `Enabled for ${doc.department} department`
+                                  : "Not departmental"}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <select
+                                  className="border rounded px-2 text-sm"
+                                  disabled={!deptEnabled}
+                                  value={deptLevel}
+                                  onChange={(e) =>
+                                    setDeptLevel(
+                                      e.target.value as
+                                        | "view"
+                                        | "edit"
+                                        | "manage",
+                                    )
+                                  }
+                                >
+                                  <option value="view">View</option>
+                                  <option value="edit">Edit</option>
+                                  <option value="manage">Manage</option>
+                                </select>
+                                <Button
+                                  variant="outline"
+                                  disabled={deptUpdating}
+                                  onClick={async () => {
+                                    try {
+                                      setDeptUpdating(true);
+                                      const res = await updateDepartmentAccess(
+                                        doc.id,
+                                        deptEnabled,
+                                        deptEnabled ? deptLevel : undefined,
+                                        pathname,
+                                      );
+                                      if (res?.success) {
+                                        toast.success(res.success.reason);
+                                        router.refresh();
+                                      } else {
+                                        toast.error(
+                                          res?.error?.reason ??
+                                            "Failed to update departmental access",
+                                        );
+                                      }
+                                    } finally {
+                                      setDeptUpdating(false);
+                                    }
+                                  }}
+                                >
+                                  {deptUpdating ? "Updating..." : "Save"}
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs text-muted-foreground">
+                                Toggle departmental access for your department
+                                and set an access level.
+                              </div>
+                              <Button
+                                variant={deptEnabled ? "secondary" : "outline"}
+                                onClick={() => setDeptEnabled((v) => !v)}
+                              >
+                                {deptEnabled
+                                  ? "Disable departmental"
+                                  : "Enable departmental"}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">Add user</div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="user@example.com"
+                            value={shareEmail}
+                            onChange={(e) => setShareEmail(e.target.value)}
+                          />
+                          <select
+                            className="border rounded px-2 text-sm"
+                            value={shareLevel}
+                            onChange={(e) =>
+                              setShareLevel(
+                                e.target.value as "view" | "edit" | "manage",
+                              )
+                            }
+                          >
+                            <option value="view">View</option>
+                            <option value="edit">Edit</option>
+                            <option value="manage">Manage</option>
+                          </select>
+                          <Button onClick={handleShareAdd}>Add</Button>
+                        </div>
+                        {shareSuggestionsLoading && (
+                          <div className="text-xs text-muted-foreground">
+                            Searching…
+                          </div>
+                        )}
+                        {shareSuggestions.length > 0 && (
+                          <div className="border rounded p-2 max-h-40 overflow-y-auto">
+                            {shareSuggestions.map((s: any) => (
+                              <div
+                                key={s.id}
+                                className="flex items-center justify-between py-1 hover:bg-muted/50 px-2 rounded cursor-pointer"
+                                onClick={() => setShareEmail(s.email)}
+                              >
+                                <div className="text-sm">
+                                  {s.name} •{" "}
+                                  <span className="text-muted-foreground">
+                                    {s.email}
+                                  </span>
+                                </div>
+                                <Badge variant="outline">{s.department}</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium">
+                            Current shares
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              await loadShares();
+                            }}
+                          >
+                            Refresh
+                          </Button>
+                        </div>
+                        {sharesLoading ? (
+                          <div className="text-xs text-muted-foreground">
+                            Loading shares…
+                          </div>
+                        ) : shares.length === 0 ? (
+                          <div className="text-xs text-muted-foreground">
+                            No shares yet.
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {shares.map((u: any) => (
+                              <div
+                                key={u.userId}
+                                className="flex items-center justify-between border rounded p-2"
+                              >
+                                <div className="text-sm">
+                                  {u.name ?? "User"} •{" "}
+                                  <span className="text-muted-foreground">
+                                    {u.email}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    className="border rounded px-2 text-sm"
+                                    defaultValue={u.accessLevel}
+                                    onChange={async (e) => {
+                                      const lvl = e.target.value as
+                                        | "view"
+                                        | "edit"
+                                        | "manage";
+                                      const res = await addDocumentShare(
+                                        doc.id,
+                                        u.email,
+                                        lvl,
+                                      );
+                                      if (res.success) {
+                                        toast.success("Share updated");
+                                        await loadShares();
+                                      } else {
+                                        toast.error(
+                                          res.error?.reason ??
+                                            "Failed to update share",
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    <option value="view">View</option>
+                                    <option value="edit">Edit</option>
+                                    <option value="manage">Manage</option>
+                                  </select>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleShareRemove(u.userId)}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-1" />
+                                    Remove
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        You don&apos;t have permission to manage permissions on
+                        this document
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          await loadMyAccess();
+                          await loadShares();
+                        }}
+                      >
+                        Check my access
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>

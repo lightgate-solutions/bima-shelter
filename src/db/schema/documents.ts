@@ -47,7 +47,7 @@ export const document = pgTable(
     title: text("title").notNull(),
     description: text("description"),
     originalFileName: text("original_file_name"),
-    department: text("department"),
+    department: text("department").notNull(),
     departmental: boolean("departmental").default(false),
     folderId: integer("folder_id").references(() => documentFolders.id),
     currentVersion: integer("current_version").notNull().default(0),
