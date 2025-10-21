@@ -511,7 +511,7 @@ function DocumentSheet({
                           <ImagePlay size={18} />
                         </div>
                         <div className="flex flex-col ">
-                          <span>Application Type</span>
+                          <span>Document Type</span>
                           <span className="text-sm text-muted-foreground">
                             {doc.mimeType}
                           </span>
