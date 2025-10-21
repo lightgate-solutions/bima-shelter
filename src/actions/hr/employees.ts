@@ -16,6 +16,10 @@ export async function getAllEmployees() {
       role: employees.role,
       name: employees.role,
       department: employees.department,
+      employmentType: employees.employmentType,
+      phone: employees.phone,
+      dateOfBirth: employees.dateOfBirth,
+      staffNumber: employees.staffNumber,
     })
     .from(employees);
 }
