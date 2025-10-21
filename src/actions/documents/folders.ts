@@ -11,7 +11,7 @@ import {
   documentTags,
   documentVersions,
 } from "@/db/schema";
-import { and, DrizzleQueryError, eq, inArray, isNull } from "drizzle-orm";
+import { and, DrizzleQueryError, eq, inArray, isNull, or } from "drizzle-orm";
 import { getUser } from "../auth/dal";
 import { revalidatePath } from "next/cache";
 
@@ -160,6 +160,14 @@ export async function getSubFolders(id: number) {
       and(
         eq(documentFolders.parentId, id),
         eq(documentFolders.status, "active"),
+        or(
+          eq(documentFolders.createdBy, user.id),
+          eq(documentFolders.public, true),
+          and(
+            eq(documentFolders.departmental, true),
+            eq(documentFolders.department, user.department),
+          ),
+        ),
       ),
     );
 

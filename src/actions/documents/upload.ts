@@ -103,6 +103,8 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
 
   const folderId = folderResult[0].id;
   const isPersonal = data.folder === "personal";
+  const effectivePublic = isPersonal ? false : data.public;
+  const effectiveDepartmental = isPersonal ? false : data.departmental;
 
   try {
     await db.transaction(async (tx) => {
@@ -123,12 +125,12 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
         .values(
           data.Files.map((file, idx) => ({
             title: data.Files.length > 1 ? `${data.title}-${idx}` : data.title,
-            description: data.description,
+            description: data.description ?? "No description",
             originalFileName: file.originalFileName,
             department: user.department,
-            departmental: data.departmental,
+            departmental: effectiveDepartmental,
             folderId,
-            public: isPersonal ? false : data.public,
+            public: effectivePublic,
             uploadedBy: user.id,
             status: data.status,
           })),
@@ -172,21 +174,39 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
       }
 
       const accessToInsert = insertedDocuments.flatMap((doc) => {
-        return data.permissions.map((perm) => {
-          const accessLevel = perm.manage
-            ? "manage"
-            : perm.edit
-              ? "edit"
-              : "view";
-
-          return {
-            accessLevel,
-            documentId: doc.id,
-            userId: user.id,
-            department: user.department,
-            grantedBy: user.id,
-          };
+        const rows: any[] = [];
+        // Uploader always has manage access
+        rows.push({
+          accessLevel: "manage",
+          documentId: doc.id,
+          userId: user.id,
+          department: null,
+          grantedBy: user.id,
         });
+        // If departmental is enabled, add a department-level rule derived from provided permissions
+        if (effectiveDepartmental) {
+          const anyManage = data.permissions.some((p) => p.manage);
+          const anyEdit = data.permissions.some((p) => p.edit);
+          const anyView = data.permissions.some((p) => p.view);
+          const deptLevel = anyManage
+            ? "manage"
+            : anyEdit
+              ? "edit"
+              : anyView
+                ? "view"
+                : null;
+
+          if (deptLevel) {
+            rows.push({
+              accessLevel: deptLevel,
+              documentId: doc.id,
+              userId: null,
+              department: user.department,
+              grantedBy: user.id,
+            });
+          }
+        }
+        return rows;
       });
       if (accessToInsert.length > 0) {
         await tx.insert(documentAccess).values(accessToInsert);

@@ -21,6 +21,10 @@ export default async function Page() {
         or(
           eq(documentFolders.createdBy, user.id),
           eq(documentFolders.public, true),
+          and(
+            eq(documentFolders.departmental, true),
+            eq(documentFolders.department, user.department),
+          ),
         ),
         eq(documentFolders.root, true),
         eq(documentFolders.status, "active"),
