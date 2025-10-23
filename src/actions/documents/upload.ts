@@ -16,6 +16,8 @@ import { and, DrizzleQueryError, eq, inArray } from "drizzle-orm";
 import { getUser } from "../auth/dal";
 import { employees } from "@/db/schema";
 import { revalidatePath } from "next/cache";
+import { v4 } from "uuid";
+import { upstashIndex } from "@/lib/upstash-client";
 
 interface UploadActionProps {
   title: string;
@@ -139,6 +141,23 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
           })),
         )
         .returning();
+
+      // Insert to upstash search
+      insertedDocuments.map(async (doc) => {
+        const item = {
+          id: v4(),
+          content: {
+            title: doc.title,
+            description: doc.description,
+            tags: data.tags,
+          },
+          metadata: {
+            department: doc.department,
+            documentId: doc.id,
+          },
+        };
+        await upstashIndex.upsert([item]);
+      });
 
       const versionsToInsert = insertedDocuments.map((doc, index) => {
         const file = data.Files[index];
