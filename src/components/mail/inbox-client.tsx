@@ -9,6 +9,13 @@ import { EmailDetail } from "./email-detail";
 import { ComposeEmail } from "./compose-email";
 import { ReplyForwardEmail } from "./reply-forward-email";
 import { ScrollArea } from "../ui/scroll-area";
+import { useMailPagination } from "@/hooks/use-mail-pagination";
+import {
+  getInboxEmails,
+  getSentEmails,
+  getArchivedEmails,
+  getTrashEmails,
+} from "@/actions/mail/email";
 
 interface Email {
   id: number;
@@ -91,6 +98,33 @@ export function InboxClient({
   folder,
 }: InboxClientProps) {
   const router = useRouter();
+
+  // Get the appropriate fetch function based on folder
+  const getFetchFunction = (folder: "inbox" | "sent" | "archive" | "trash") => {
+    switch (folder) {
+      case "inbox":
+        return getInboxEmails;
+      case "sent":
+        return getSentEmails;
+      case "archive":
+        return getArchivedEmails;
+      case "trash":
+        return getTrashEmails;
+      default:
+        return getInboxEmails;
+    }
+  };
+
+  const {
+    emails: paginatedEmails,
+    loading,
+    hasMore,
+    loadMore,
+  } = useMailPagination({
+    initialEmails: emails,
+    folder,
+    fetchFunction: getFetchFunction(folder),
+  });
   const [showCompose, setShowCompose] = useState(false);
   const [showReplyForward, setShowReplyForward] = useState(false);
   const [replyForwardMode, setReplyForwardMode] = useState<"reply" | "forward">(
@@ -125,11 +159,18 @@ export function InboxClient({
         <div className="p-4 border-b flex-shrink-0">
           <h1 className="text-xl font-bold capitalize">{folder}</h1>
           <p className="text-xs text-muted-foreground">
-            {emails.length} email{emails.length !== 1 ? "s" : ""}
+            {paginatedEmails.length} email
+            {paginatedEmails.length !== 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <EmailListSidebar emails={emails} folder={folder} />
+          <EmailListSidebar
+            emails={paginatedEmails}
+            folder={folder}
+            onLoadMore={loadMore}
+            loading={loading}
+            hasMore={hasMore}
+          />
         </div>
       </ScrollArea>
 

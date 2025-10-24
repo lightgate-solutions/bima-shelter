@@ -22,7 +22,7 @@ export default async function SentPage({ searchParams }: PageProps) {
   const emailId = params.id;
 
   // Fetch emails
-  const emailsResult = await getSentEmails(1, 50);
+  const emailsResult = await getSentEmails(1, 20);
 
   let selectedEmail = null;
   if (emailId) {

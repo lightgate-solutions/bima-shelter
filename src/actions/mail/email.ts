@@ -3,7 +3,14 @@
 "use server";
 
 import { db } from "@/db";
-import { email, emailRecipient, employees } from "@/db/schema";
+import {
+  email,
+  emailRecipient,
+  emailAttachment,
+  employees,
+  document,
+  documentVersions,
+} from "@/db/schema";
 import { and, eq, or, ilike, sql, desc, inArray } from "drizzle-orm";
 import * as z from "zod";
 import { getUser } from "../auth/dal";
@@ -14,6 +21,7 @@ const sendEmailSchema = z.object({
     .min(1, "At least one recipient is required"),
   subject: z.string().min(1, "Subject is required").max(500),
   body: z.string().min(1, "Body is required"),
+  attachmentIds: z.array(z.number()).optional(),
 });
 
 const replyEmailSchema = z.object({
@@ -23,6 +31,7 @@ const replyEmailSchema = z.object({
     .min(1, "At least one recipient is required"),
   subject: z.string().min(1, "Subject is required").max(500),
   body: z.string().min(1, "Body is required"),
+  attachmentIds: z.array(z.number()).optional(),
 });
 
 const forwardEmailSchema = z.object({
@@ -32,6 +41,7 @@ const forwardEmailSchema = z.object({
     .min(1, "At least one recipient is required"),
   subject: z.string().min(1, "Subject is required").max(500),
   body: z.string().min(1, "Body is required"),
+  attachmentIds: z.array(z.number()).optional(),
 });
 
 const searchEmailSchema = z.object({
@@ -82,6 +92,44 @@ export async function sendEmail(data: z.infer<typeof sendEmailSchema>) {
           recipientId,
         })),
       );
+
+      // Handle attachments if provided
+      if (validated.attachmentIds && validated.attachmentIds.length > 0) {
+        // Verify user has access to all documents
+        const accessibleDocuments = await tx
+          .select({ id: document.id })
+          .from(document)
+          .where(
+            and(
+              inArray(document.id, validated.attachmentIds),
+              eq(document.status, "active"),
+              or(
+                eq(document.uploadedBy, currentUser.id),
+                eq(document.public, true),
+                and(
+                  eq(document.departmental, true),
+                  eq(document.department, currentUser.department),
+                ),
+              ),
+            ),
+          );
+
+        if (accessibleDocuments.length !== validated.attachmentIds.length) {
+          return {
+            success: false,
+            data: null,
+            error: "You don't have access to one or more documents",
+          };
+        }
+
+        // Attach documents to email
+        await tx.insert(emailAttachment).values(
+          validated.attachmentIds.map((documentId) => ({
+            emailId: newEmail.id,
+            documentId,
+          })),
+        );
+      }
 
       return {
         success: true,
@@ -157,6 +205,44 @@ export async function replyToEmail(data: z.infer<typeof replyEmailSchema>) {
         })),
       );
 
+      // Handle attachments if provided
+      if (validated.attachmentIds && validated.attachmentIds.length > 0) {
+        // Verify user has access to all documents
+        const accessibleDocuments = await tx
+          .select({ id: document.id })
+          .from(document)
+          .where(
+            and(
+              inArray(document.id, validated.attachmentIds),
+              eq(document.status, "active"),
+              or(
+                eq(document.uploadedBy, currentUser.id),
+                eq(document.public, true),
+                and(
+                  eq(document.departmental, true),
+                  eq(document.department, currentUser.department),
+                ),
+              ),
+            ),
+          );
+
+        if (accessibleDocuments.length !== validated.attachmentIds.length) {
+          return {
+            success: false,
+            data: null,
+            error: "You don't have access to one or more documents",
+          };
+        }
+
+        // Attach documents to email
+        await tx.insert(emailAttachment).values(
+          validated.attachmentIds.map((documentId) => ({
+            emailId: newEmail.id,
+            documentId,
+          })),
+        );
+      }
+
       return {
         success: true,
         error: null,
@@ -230,6 +316,44 @@ export async function forwardEmail(data: z.infer<typeof forwardEmailSchema>) {
           recipientId,
         })),
       );
+
+      // Handle attachments if provided
+      if (validated.attachmentIds && validated.attachmentIds.length > 0) {
+        // Verify user has access to all documents
+        const accessibleDocuments = await tx
+          .select({ id: document.id })
+          .from(document)
+          .where(
+            and(
+              inArray(document.id, validated.attachmentIds),
+              eq(document.status, "active"),
+              or(
+                eq(document.uploadedBy, currentUser.id),
+                eq(document.public, true),
+                and(
+                  eq(document.departmental, true),
+                  eq(document.department, currentUser.department),
+                ),
+              ),
+            ),
+          );
+
+        if (accessibleDocuments.length !== validated.attachmentIds.length) {
+          return {
+            success: false,
+            data: null,
+            error: "You don't have access to one or more documents",
+          };
+        }
+
+        // Attach documents to email
+        await tx.insert(emailAttachment).values(
+          validated.attachmentIds.map((documentId) => ({
+            emailId: newEmail.id,
+            documentId,
+          })),
+        );
+      }
 
       return {
         success: true,
@@ -1288,6 +1412,354 @@ export async function getEmailStats() {
       data: null,
       error:
         error instanceof Error ? error.message : "Failed to get email stats",
+    };
+  }
+}
+
+// Email Attachment Functions
+
+const attachDocumentSchema = z.object({
+  emailId: z.number(),
+  documentId: z.number(),
+});
+
+export async function attachDocumentToEmail(
+  data: z.infer<typeof attachDocumentSchema>,
+) {
+  try {
+    const currentUser = await getUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        data: null,
+        error: "Log in to continue",
+      };
+    }
+
+    const validated = attachDocumentSchema.parse(data);
+
+    return await db.transaction(async (tx) => {
+      // Check if email exists and user has access
+      const emailRecord = await tx.query.email.findFirst({
+        where: eq(email.id, validated.emailId),
+        with: {
+          sender: true,
+          recipients: true,
+        },
+      });
+
+      if (!emailRecord) {
+        return {
+          success: false,
+          data: null,
+          error: "Email not found",
+        };
+      }
+
+      // Check if user is sender or recipient
+      const isSender = emailRecord.senderId === currentUser.id;
+      const isRecipient = emailRecord.recipients.some(
+        (r) => r.recipientId === currentUser.id,
+      );
+
+      if (!isSender && !isRecipient) {
+        return {
+          success: false,
+          data: null,
+          error: "You don't have access to this email",
+        };
+      }
+
+      // Check if document exists and user has access
+      const documentRecord = await tx.query.document.findFirst({
+        where: eq(document.id, validated.documentId),
+      });
+
+      if (!documentRecord) {
+        return {
+          success: false,
+          data: null,
+          error: "Document not found",
+        };
+      }
+
+      // Check if user has access to the document
+      const hasDocumentAccess =
+        documentRecord.uploadedBy === currentUser.id ||
+        documentRecord.public ||
+        (documentRecord.departmental &&
+          documentRecord.department === currentUser.department);
+
+      if (!hasDocumentAccess) {
+        return {
+          success: false,
+          data: null,
+          error: "You don't have access to this document",
+        };
+      }
+
+      // Check if document is already attached
+      const existingAttachment = await tx.query.emailAttachment.findFirst({
+        where: and(
+          eq(emailAttachment.emailId, validated.emailId),
+          eq(emailAttachment.documentId, validated.documentId),
+        ),
+      });
+
+      if (existingAttachment) {
+        return {
+          success: false,
+          data: null,
+          error: "Document is already attached to this email",
+        };
+      }
+
+      // Attach the document
+      const [attachment] = await tx
+        .insert(emailAttachment)
+        .values({
+          emailId: validated.emailId,
+          documentId: validated.documentId,
+        })
+        .returning();
+
+      return {
+        success: true,
+        data: attachment,
+        error: null,
+      };
+    });
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to attach document",
+    };
+  }
+}
+
+export async function getEmailAttachments(emailId: number) {
+  try {
+    const currentUser = await getUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        data: null,
+        error: "Log in to continue",
+      };
+    }
+
+    return await db.transaction(async (tx) => {
+      // Check if email exists and user has access
+      const emailRecord = await tx.query.email.findFirst({
+        where: eq(email.id, emailId),
+        with: {
+          sender: true,
+          recipients: true,
+        },
+      });
+
+      if (!emailRecord) {
+        return {
+          success: false,
+          data: null,
+          error: "Email not found",
+        };
+      }
+
+      // Check if user is sender or recipient
+      const isSender = emailRecord.senderId === currentUser.id;
+      const isRecipient = emailRecord.recipients.some(
+        (r) => r.recipientId === currentUser.id,
+      );
+
+      if (!isSender && !isRecipient) {
+        return {
+          success: false,
+          data: null,
+          error: "You don't have access to this email",
+        };
+      }
+
+      // Get attachments with document details
+      const attachments = await tx
+        .select({
+          id: emailAttachment.id,
+          emailId: emailAttachment.emailId,
+          documentId: emailAttachment.documentId,
+          createdAt: emailAttachment.createdAt,
+          documentTitle: document.title,
+          documentDescription: document.description,
+          documentFileName: document.originalFileName,
+          documentMimeType: documentVersions.mimeType,
+          documentFileSize: documentVersions.fileSize,
+          documentFilePath: documentVersions.filePath,
+          documentUploader: employees.name,
+          documentUploaderEmail: employees.email,
+        })
+        .from(emailAttachment)
+        .leftJoin(document, eq(emailAttachment.documentId, document.id))
+        .leftJoin(
+          documentVersions,
+          eq(document.currentVersionId, documentVersions.id),
+        )
+        .leftJoin(employees, eq(document.uploadedBy, employees.id))
+        .where(eq(emailAttachment.emailId, emailId))
+        .orderBy(desc(emailAttachment.createdAt));
+
+      return {
+        success: true,
+        data: attachments,
+        error: null,
+      };
+    });
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to get attachments",
+    };
+  }
+}
+
+export async function removeAttachmentFromEmail(attachmentId: number) {
+  try {
+    const currentUser = await getUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        data: null,
+        error: "Log in to continue",
+      };
+    }
+
+    return await db.transaction(async (tx) => {
+      // Get attachment with email details
+      const attachment = await tx.query.emailAttachment.findFirst({
+        where: eq(emailAttachment.id, attachmentId),
+        with: {
+          email: {
+            with: {
+              sender: true,
+              recipients: true,
+            },
+          },
+        },
+      });
+
+      if (!attachment) {
+        return {
+          success: false,
+          data: null,
+          error: "Attachment not found",
+        };
+      }
+
+      // Check if user is sender or recipient
+      const isSender = attachment.email.senderId === currentUser.id;
+      const isRecipient = attachment.email.recipients.some(
+        (r) => r.recipientId === currentUser.id,
+      );
+
+      if (!isSender && !isRecipient) {
+        return {
+          success: false,
+          data: null,
+          error: "You don't have access to this email",
+        };
+      }
+
+      // Only sender can remove attachments
+      if (!isSender) {
+        return {
+          success: false,
+          data: null,
+          error: "Only the sender can remove attachments",
+        };
+      }
+
+      // Remove the attachment
+      await tx
+        .delete(emailAttachment)
+        .where(eq(emailAttachment.id, attachmentId));
+
+      return {
+        success: true,
+        data: null,
+        error: null,
+      };
+    });
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to remove attachment",
+    };
+  }
+}
+
+export async function getAccessibleDocumentsForAttachment() {
+  try {
+    const currentUser = await getUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        data: null,
+        error: "Log in to continue",
+      };
+    }
+
+    // Get documents that the user can attach (documents they have access to)
+    const documents = await db
+      .select({
+        id: document.id,
+        title: document.title,
+        description: document.description,
+        originalFileName: document.originalFileName,
+        department: document.department,
+        public: document.public,
+        departmental: document.departmental,
+        createdAt: document.createdAt,
+        uploader: employees.name,
+        uploaderEmail: employees.email,
+        fileSize: documentVersions.fileSize,
+        mimeType: documentVersions.mimeType,
+      })
+      .from(document)
+      .leftJoin(employees, eq(document.uploadedBy, employees.id))
+      .leftJoin(
+        documentVersions,
+        eq(document.currentVersionId, documentVersions.id),
+      )
+      .where(
+        and(
+          eq(document.status, "active"),
+          or(
+            eq(document.uploadedBy, currentUser.id),
+            eq(document.public, true),
+            and(
+              eq(document.departmental, true),
+              eq(document.department, currentUser.department),
+            ),
+          ),
+        ),
+      )
+      .orderBy(desc(document.updatedAt))
+      .limit(50); // Limit to recent documents for performance
+
+    return {
+      success: true,
+      data: documents,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : "Failed to get documents",
     };
   }
 }

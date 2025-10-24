@@ -1,10 +1,12 @@
+/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <> */
+/** biome-ignore-all lint/suspicious/noExplicitAny: <> */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Send, X } from "lucide-react";
+import { Loader2, Send, X, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -26,7 +28,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { replyToEmail, forwardEmail } from "@/actions/mail/email";
+import {
+  replyToEmail,
+  forwardEmail,
+  getAccessibleDocumentsForAttachment,
+} from "@/actions/mail/email";
 
 const replyForwardSchema = z.object({
   recipientIds: z
@@ -34,6 +40,7 @@ const replyForwardSchema = z.object({
     .min(1, "At least one recipient is required"),
   subject: z.string().min(1, "Subject is required").max(500),
   body: z.string().min(1, "Body is required"),
+  attachmentIds: z.array(z.number()).optional(),
 });
 
 type ReplyForwardFormData = z.infer<typeof replyForwardSchema>;
@@ -42,6 +49,21 @@ interface User {
   id: number;
   name: string;
   email: string;
+}
+
+interface Document {
+  id: number;
+  title: string;
+  description: string | null;
+  originalFileName: string | null;
+  department: string;
+  public: boolean;
+  departmental: boolean;
+  createdAt: Date;
+  uploader: string | null;
+  uploaderEmail: string | null;
+  fileSize: string | null;
+  mimeType: string | null;
 }
 
 interface OriginalEmail {
@@ -72,8 +94,13 @@ export function ReplyForwardEmail({
   onSuccess,
 }: ReplyForwardEmailProps) {
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+  const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [documentSearchQuery, setDocumentSearchQuery] = useState("");
   const [showUserList, setShowUserList] = useState(false);
+  const [showDocumentList, setShowDocumentList] = useState(false);
+  const [documents, setDocuments] = useState<any>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
 
   const getDefaultSubject = () => {
     const prefix = mode === "reply" ? "Re: " : "Fwd: ";
@@ -106,6 +133,7 @@ export function ReplyForwardEmail({
       recipientIds: [originalEmail.senderId],
       subject: getDefaultSubject(),
       body: getDefaultBody(),
+      attachmentIds: [],
     },
   });
 
@@ -115,10 +143,12 @@ export function ReplyForwardEmail({
         ? await replyToEmail({
             ...data,
             parentEmailId: originalEmail.id,
+            attachmentIds: selectedDocuments.map((doc) => doc.id),
           })
         : await forwardEmail({
             ...data,
             parentEmailId: originalEmail.id,
+            attachmentIds: selectedDocuments.map((doc) => doc.id),
           });
 
     if (result.success) {
@@ -127,7 +157,9 @@ export function ReplyForwardEmail({
       );
       form.reset();
       setSelectedUsers([]);
+      setSelectedDocuments([]);
       setSearchQuery("");
+      setDocumentSearchQuery("");
       onOpenChange(false);
       onSuccess?.();
     } else {
@@ -148,6 +180,48 @@ export function ReplyForwardEmail({
     setShowUserList(false);
   };
 
+  // Load accessible documents when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadDocuments();
+    }
+  }, [open]);
+
+  const loadDocuments = async () => {
+    setLoadingDocuments(true);
+    const result = await getAccessibleDocumentsForAttachment();
+    if (result.success) {
+      setDocuments(result.data || []);
+    } else {
+      toast.error(result.error || "Failed to load documents");
+    }
+    setLoadingDocuments(false);
+  };
+
+  const handleDocumentSelect = (document: Document) => {
+    if (!selectedDocuments.find((d) => d.id === document.id)) {
+      const newSelectedDocuments = [...selectedDocuments, document];
+      setSelectedDocuments(newSelectedDocuments);
+      form.setValue(
+        "attachmentIds",
+        newSelectedDocuments.map((d) => d.id),
+      );
+    }
+    setDocumentSearchQuery("");
+    setShowDocumentList(false);
+  };
+
+  const handleDocumentRemove = (documentId: number) => {
+    const newSelectedDocuments = selectedDocuments.filter(
+      (d) => d.id !== documentId,
+    );
+    setSelectedDocuments(newSelectedDocuments);
+    form.setValue(
+      "attachmentIds",
+      newSelectedDocuments.map((d) => d.id),
+    );
+  };
+
   const handleUserRemove = (userId: number) => {
     const newSelectedUsers = selectedUsers.filter((u) => u.id !== userId);
     setSelectedUsers(newSelectedUsers);
@@ -164,11 +238,28 @@ export function ReplyForwardEmail({
       !selectedUsers.find((u) => u.id === user.id),
   );
 
+  const filteredDocuments = documents.filter(
+    (document: any) =>
+      (document.title
+        .toLowerCase()
+        .includes(documentSearchQuery.toLowerCase()) ||
+        document.description
+          ?.toLowerCase()
+          .includes(documentSearchQuery.toLowerCase()) ||
+        document.originalFileName
+          ?.toLowerCase()
+          .includes(documentSearchQuery.toLowerCase())) &&
+      !selectedDocuments.find((d) => d.id === document.id),
+  );
+
   const handleClose = () => {
     form.reset();
     setSelectedUsers([]);
+    setSelectedDocuments([]);
     setSearchQuery("");
+    setDocumentSearchQuery("");
     setShowUserList(false);
+    setShowDocumentList(false);
     onOpenChange(false);
   };
 
@@ -262,6 +353,88 @@ export function ReplyForwardEmail({
                   <FormLabel>Subject</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter subject" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="attachmentIds"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Attachments</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[42px]">
+                        {selectedDocuments.map((document) => (
+                          <Badge
+                            key={document.id}
+                            variant="secondary"
+                            className="gap-1"
+                          >
+                            <FileText className="h-3 w-3" />
+                            {document.title}
+                            <button
+                              type="button"
+                              onClick={() => handleDocumentRemove(document.id)}
+                              className="ml-1 hover:text-destructive"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                        <div className="relative flex-1 min-w-[200px]">
+                          <Input
+                            value={documentSearchQuery}
+                            onChange={(e) => {
+                              setDocumentSearchQuery(e.target.value);
+                              setShowDocumentList(true);
+                            }}
+                            onFocus={() => setShowDocumentList(true)}
+                            placeholder="Search documents..."
+                            className="border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                            disabled={loadingDocuments}
+                          />
+                          {showDocumentList &&
+                            documentSearchQuery &&
+                            filteredDocuments.length > 0 && (
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
+                                {filteredDocuments.map((document: any) => (
+                                  <button
+                                    key={document.id}
+                                    type="button"
+                                    onClick={() =>
+                                      handleDocumentSelect(document)
+                                    }
+                                    className="w-full text-left px-3 py-2 hover:bg-muted transition-colors"
+                                  >
+                                    <div className="font-medium">
+                                      {document.title}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {document.originalFileName ||
+                                        document.description ||
+                                        "No description"}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {document.uploader} •{" "}
+                                      {document.department}
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                      {loadingDocuments && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Loading documents...
+                        </div>
+                      )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

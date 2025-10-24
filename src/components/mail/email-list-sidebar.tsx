@@ -5,6 +5,7 @@ import { Mail, MailOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { LoadMoreButton } from "./load-more-button";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -32,9 +33,18 @@ interface Email {
 interface EmailListSidebarProps {
   emails: Email[];
   folder: "inbox" | "sent" | "archive" | "trash";
+  onLoadMore?: () => void;
+  loading?: boolean;
+  hasMore?: boolean;
 }
 
-export function EmailListSidebar({ emails, folder }: EmailListSidebarProps) {
+export function EmailListSidebar({
+  emails,
+  folder,
+  onLoadMore,
+  loading = false,
+  hasMore = false,
+}: EmailListSidebarProps) {
   const searchParams = useSearchParams();
   const selectedId = Number(searchParams.get("id"));
 
@@ -222,6 +232,15 @@ export function EmailListSidebar({ emails, folder }: EmailListSidebarProps) {
           </Link>
         );
       })}
+
+      {onLoadMore && (
+        <LoadMoreButton
+          onClick={onLoadMore}
+          loading={loading}
+          hasMore={hasMore}
+          className="border-t"
+        />
+      )}
     </div>
   );
 }
