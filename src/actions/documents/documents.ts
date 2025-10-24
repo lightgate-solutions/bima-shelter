@@ -17,6 +17,7 @@ import {
 } from "@/db/schema";
 import { DrizzleQueryError, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { upstashIndex } from "@/lib/upstash-client";
 
 export async function getActiveFolderDocuments(
   folderId: number,
@@ -226,6 +227,7 @@ export async function deleteDocumentAction(
         tx
           .delete(documentVersions)
           .where(eq(documentVersions.documentId, documentId)),
+        upstashIndex.delete(doc.upstashId),
       ]);
 
       await tx.delete(document).where(eq(document.id, documentId));
@@ -993,7 +995,7 @@ export async function searchEmployeesForShare(query: string, limit = 8) {
       })
       .from(employees)
       .where(
-        sql`(${employees.name} ILIKE ${"%" + q + "%"} OR ${employees.email} ILIKE ${"%" + q + "%"}) AND ${employees.id} <> ${user.id}`,
+        sql`(${employees.name} ILIKE ${`%${q}%`} OR ${employees.email} ILIKE ${`%${q}%`}) AND ${employees.id} <> ${user.id}`,
       )
       .limit(limit);
 
@@ -1507,10 +1509,6 @@ export async function getAllAccessibleDocuments(page = 1, pageSize = 20) {
   }
 }
 
-/**
- * Get all archived documents I own or have access to (public, departmental, or explicit share).
- * Flat list, paginated.
- */
 export async function getMyArchivedDocuments(page = 1, pageSize = 20) {
   const user = await getUser();
   if (!user) throw new Error("User not logged in");

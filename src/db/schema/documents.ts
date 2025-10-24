@@ -8,6 +8,7 @@ import {
   numeric,
   boolean,
   foreignKey,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { employees } from "./hr";
 
@@ -46,6 +47,7 @@ export const document = pgTable(
     id: serial("id").primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
+    upstashId: uuid("upstash_id").notNull().defaultRandom(),
     originalFileName: text("original_file_name"),
     department: text("department").notNull(),
     departmental: boolean("departmental").default(false),

@@ -11,7 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye, Search, Sparkles } from "lucide-react";
+import { Eye, Search } from "lucide-react";
+import Link from "next/link";
 
 interface SearchResultType {
   id: string;
@@ -44,32 +45,6 @@ export function SearchResults({ results }: { results: SearchResultType[] }) {
             Enter keywords, document title, or tags to find what you're looking
             for across all documents
           </p>
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 bg-transparent hover:cursor-pointer"
-            >
-              <Sparkles className="h-4 w-4" />
-              Try "Personal"
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 bg-transparent hover:cursor-pointer"
-            >
-              <Sparkles className="h-4 w-4" />
-              Try "Reports"
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 bg-transparent hover:cursor-pointer"
-            >
-              <Sparkles className="h-4 w-4" />
-              Try "2025"
-            </Button>
-          </div>
         </div>
       ) : (
         <div className="space-y-6">
@@ -121,10 +96,14 @@ export function SearchResults({ results }: { results: SearchResultType[] }) {
                       {result.metadata.department}
                     </TableCell>
                     <TableCell className="text-right capitalize">
-                      <Button variant="link" className="hover:cursor-pointer">
-                        <Eye size={16} />
-                        Open
-                      </Button>
+                      <Link
+                        href={`/documents/${Number(result.metadata.documentId)}`}
+                      >
+                        <Button variant="link" className="hover:cursor-pointer">
+                          <Eye size={16} />
+                          Open
+                        </Button>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}
