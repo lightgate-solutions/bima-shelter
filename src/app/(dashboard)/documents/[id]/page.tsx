@@ -32,6 +32,14 @@ export default async function Page({
   const accessLevel = await getMyDocumentAccess(documentId);
   if (accessLevel.error) return null;
 
+  if (accessLevel.success.level === "none") {
+    return (
+      <div className="h-screen flex justify-center items-center">
+        User doesnt have permission to view this document
+      </div>
+    );
+  }
+
   const doc = await db
     .select({
       id: document.id,
