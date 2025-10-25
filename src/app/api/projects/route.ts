@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <> */
+
 import { db } from "@/db";
 import { employees, projects } from "@/db/schema";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
     const total = Number(totalResult.length);
 
     // Map sortBy to actual column names
-    const columnMap: Record<string, typeof projects.id> = {
+    const columnMap: any = {
       id: projects.id,
       name: projects.name,
       code: projects.code,
