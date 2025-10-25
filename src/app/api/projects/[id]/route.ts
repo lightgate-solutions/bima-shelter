@@ -5,10 +5,11 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const id = Number(params.id);
+    const { id: projectId } = await params;
+    const id = Number(projectId);
     const [row] = await db
       .select({
         id: projects.id,
@@ -41,10 +42,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const id = Number(params.id);
+    const { id: projectId } = await params;
+    const id = Number(projectId);
     const body = await request.json();
     const {
       name,
@@ -88,10 +90,11 @@ export async function PUT(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const id = Number(params.id);
+    const { id: projectId } = await params;
+    const id = Number(projectId);
     const [deleted] = await db
       .delete(projects)
       .where(eq(projects.id, id))

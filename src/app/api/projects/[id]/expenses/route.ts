@@ -5,10 +5,11 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const projectId = Number(params.id);
+    const { id } = await params;
+    const projectId = Number(id);
     const rows = await db
       .select()
       .from(expenses)
@@ -25,10 +26,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const projectId = Number(params.id);
+    const { id } = await params;
+    const projectId = Number(id);
     const body = await request.json();
     const { title, amount, spentAt, notes } = body ?? {};
     if (!title)
@@ -55,13 +57,14 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const projectId = Number(params.id);
+    const { id } = await params;
+    const projectId = Number(id);
     const body = await request.json();
-    const { id, title, amount, spentAt, notes } = body ?? {};
-    if (!id)
+    const { id: expenseId, title, amount, spentAt, notes } = body ?? {};
+    if (!expenseId)
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     const [updated] = await db
       .update(expenses)
@@ -72,7 +75,10 @@ export async function PUT(
         notes,
       })
       .where(
-        and(eq(expenses.projectId, projectId), eq(expenses.id, Number(id))),
+        and(
+          eq(expenses.projectId, projectId),
+          eq(expenses.id, Number(expenseId)),
+        ),
       )
       .returning();
     return NextResponse.json({ expense: updated });
@@ -87,18 +93,22 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const projectId = Number(params.id);
+    const { id } = await params;
+    const projectId = Number(id);
     const body = await request.json();
-    const { id } = body ?? {};
-    if (!id)
+    const { id: expenseId } = body ?? {};
+    if (!expenseId)
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     await db
       .delete(expenses)
       .where(
-        and(eq(expenses.projectId, projectId), eq(expenses.id, Number(id))),
+        and(
+          eq(expenses.projectId, projectId),
+          eq(expenses.id, Number(expenseId)),
+        ),
       );
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -5,10 +5,11 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const projectId = Number(params.id);
+    const { id } = await params;
+    const projectId = Number(id);
     const rows = await db
       .select()
       .from(milestones)
@@ -25,10 +26,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const projectId = Number(params.id);
+    const { id } = await params;
+    const projectId = Number(id);
     const body = await request.json();
     const { title, description, dueDate } = body ?? {};
     if (!title)
@@ -55,13 +57,20 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const projectId = Number(params.id);
+    const { id } = await params;
+    const projectId = Number(id);
     const body = await request.json();
-    const { id, title, description, dueDate, completed } = body ?? {};
-    if (!id)
+    const {
+      id: milestoneId,
+      title,
+      description,
+      dueDate,
+      completed,
+    } = body ?? {};
+    if (!milestoneId)
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     const [updated] = await db
       .update(milestones)
@@ -72,7 +81,10 @@ export async function PUT(
         completed: completed ? 1 : 0,
       })
       .where(
-        and(eq(milestones.projectId, projectId), eq(milestones.id, Number(id))),
+        and(
+          eq(milestones.projectId, projectId),
+          eq(milestones.id, Number(milestoneId)),
+        ),
       )
       .returning();
     return NextResponse.json({ milestone: updated });
@@ -87,18 +99,22 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const projectId = Number(params.id);
+    const { id } = await params;
+    const projectId = Number(id);
     const body = await request.json();
-    const { id } = body ?? {};
-    if (!id)
+    const { id: milestoneId } = body ?? {};
+    if (!milestoneId)
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     await db
       .delete(milestones)
       .where(
-        and(eq(milestones.projectId, projectId), eq(milestones.id, Number(id))),
+        and(
+          eq(milestones.projectId, projectId),
+          eq(milestones.id, Number(milestoneId)),
+        ),
       );
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -44,10 +44,24 @@ export async function GET(request: NextRequest) {
       .where(where);
     const total = Number(totalResult.length);
 
+    // Map sortBy to actual column names
+    const columnMap: Record<string, typeof projects.id> = {
+      id: projects.id,
+      name: projects.name,
+      code: projects.code,
+      description: projects.description,
+      location: projects.location,
+      status: projects.status,
+      budgetPlanned: projects.budgetPlanned,
+      budgetActual: projects.budgetActual,
+      supervisorId: projects.supervisorId,
+      createdAt: projects.createdAt,
+      updatedAt: projects.updatedAt,
+    };
+
+    const orderColumn = columnMap[sortBy] || projects.createdAt;
     const order =
-      sortDirection === "asc"
-        ? asc(projects[sortBy as keyof typeof projects])
-        : desc(projects[sortBy as keyof typeof projects]);
+      sortDirection === "asc" ? asc(orderColumn) : desc(orderColumn);
 
     const rows = await db
       .select({

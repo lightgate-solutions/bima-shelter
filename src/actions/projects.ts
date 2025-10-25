@@ -17,14 +17,25 @@ export async function listProjects(params: {
   page?: number;
   limit?: number;
   q?: string;
-  sortBy?: keyof typeof projects | "createdAt" | "name" | "code";
+  sortBy?:
+    | "id"
+    | "name"
+    | "code"
+    | "description"
+    | "location"
+    | "status"
+    | "budgetPlanned"
+    | "budgetActual"
+    | "supervisorId"
+    | "createdAt"
+    | "updatedAt";
   sortDirection?: "asc" | "desc";
 }) {
   const page = params.page ?? 1;
   const limit = params.limit ?? 10;
   const offset = (page - 1) * limit;
   const q = params.q ?? "";
-  const sortBy = (params.sortBy as string) ?? "createdAt";
+  const sortBy = params.sortBy ?? "createdAt";
   const sortDirection = params.sortDirection === "asc" ? "asc" : "desc";
 
   const where = q
@@ -42,9 +53,7 @@ export async function listProjects(params: {
   const total = totalRows.length;
 
   const order =
-    sortDirection === "asc"
-      ? asc(projects[sortBy as keyof typeof projects])
-      : desc(projects[sortBy as keyof typeof projects]);
+    sortDirection === "asc" ? asc(projects[sortBy]) : desc(projects[sortBy]);
 
   const rows = await db
     .select()

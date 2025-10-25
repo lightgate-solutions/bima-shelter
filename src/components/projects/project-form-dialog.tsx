@@ -32,6 +32,9 @@ type Props = {
     description: string | null;
     location: string | null;
     supervisorId: number | null;
+    status?: string;
+    budgetPlanned?: number;
+    budgetActual?: number;
   } | null;
   onCompleted?: () => void;
 };

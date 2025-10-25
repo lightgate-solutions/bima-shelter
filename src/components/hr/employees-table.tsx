@@ -102,11 +102,10 @@ export default function EmployeesTable() {
                     <div>
                       <p className="font-medium">{employee.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {employee.dateOfBirth}
+                        {employee.dateOfBirth || "N/A"}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {" "}
-                        {employee.staffNumber}
+                        {employee.staffNumber || "N/A"}
                       </p>
                     </div>
                   </TableCell>
