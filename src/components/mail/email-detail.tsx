@@ -1,6 +1,8 @@
+/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <> */
+/** biome-ignore-all lint/suspicious/noExplicitAny: <> */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatDistanceToNow, format } from "date-fns";
 import {
   Archive,
@@ -13,6 +15,8 @@ import {
   Trash2,
   Undo2,
   X,
+  FileText,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -31,6 +35,8 @@ import {
   restoreEmailFromTrash,
   deleteSentEmail,
   permanentlyDeleteEmail,
+  getEmailAttachments,
+  removeAttachmentFromEmail,
 } from "@/actions/mail/email";
 import {
   AlertDialog,
@@ -52,6 +58,21 @@ interface Recipient {
   image?: string | null;
   isRead: boolean;
   readAt?: Date | null;
+}
+
+interface Attachment {
+  id: number;
+  emailId: number;
+  documentId: number;
+  createdAt: Date;
+  documentTitle: string;
+  documentDescription: string | null;
+  documentFileName: string | null;
+  documentMimeType: string | null;
+  documentFileSize: string | null;
+  documentFilePath: string | null;
+  documentUploader: string | null;
+  documentUploaderEmail: string | null;
 }
 
 interface EmailData {
@@ -99,6 +120,8 @@ export function EmailDetail({
   const [deleteAction, setDeleteAction] = useState<
     "trash" | "permanent" | "sent"
   >("trash");
+  const [attachments, setAttachments] = useState<any>([]);
+  const [loadingAttachments, setLoadingAttachments] = useState(false);
 
   const getInitials = (name: string) => {
     return name
@@ -107,6 +130,40 @@ export function EmailDetail({
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  // Load attachments when component mounts
+  useEffect(() => {
+    loadAttachments();
+  }, [email.id]);
+
+  const loadAttachments = async () => {
+    setLoadingAttachments(true);
+    const result = await getEmailAttachments(email.id);
+    if (result.success) {
+      setAttachments(result.data || []);
+    } else {
+      toast.error(result.error || "Failed to load attachments");
+    }
+    setLoadingAttachments(false);
+  };
+
+  const handleRemoveAttachment = async (attachmentId: number) => {
+    setIsLoading(true);
+    const result = await removeAttachmentFromEmail(attachmentId);
+    if (result.success) {
+      toast.success("Attachment removed");
+      loadAttachments(); // Reload attachments
+      onUpdate?.(); // Refresh the email list
+    } else {
+      toast.error(result.error || "Failed to remove attachment");
+    }
+    setIsLoading(false);
+  };
+
+  const handleViewAttachment = (attachment: Attachment) => {
+    // Open document in new tab
+    window.open(`/documents/${attachment.documentId}`, "_blank");
   };
 
   const handleArchive = async () => {
@@ -445,6 +502,86 @@ export function EmailDetail({
                   <div className="whitespace-pre-wrap">{email.body}</div>
                 </CardContent>
               </Card>
+
+              {/* Attachments Section */}
+              {attachments.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Attachments ({attachments.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {attachments.map((attachment: any) => (
+                        <div
+                          key={attachment.id}
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="flex-shrink-0">
+                              <FileText className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">
+                                {attachment.documentTitle}
+                              </div>
+                              <div className="text-sm text-muted-foreground truncate">
+                                {attachment.documentFileName ||
+                                  attachment.documentDescription ||
+                                  "No description"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {attachment.documentFileSize &&
+                                  `${attachment.documentFileSize} bytes`}
+                                {attachment.documentUploader &&
+                                  ` • Uploaded by ${attachment.documentUploader}`}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewAttachment(attachment)}
+                              className="gap-1"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View
+                            </Button>
+                            {email.isSender && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleRemoveAttachment(attachment.id)
+                                }
+                                disabled={isLoading}
+                                className="gap-1 text-destructive hover:text-destructive"
+                              >
+                                <X className="h-4 w-4" />
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {loadingAttachments && (
+                <Card>
+                  <CardContent className="flex items-center justify-center py-8">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading attachments...
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </ScrollArea>

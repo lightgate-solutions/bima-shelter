@@ -196,7 +196,7 @@ export function UserAddDialog({
         <div className="grid gap-2">
           <Label htmlFor="name">Name</Label>
           <Input
-            id="name"
+            name="name"
             value={formData.name}
             onChange={(e) => {
               setFormData((p) => ({ ...p, name: e.target.value }));
@@ -209,7 +209,7 @@ export function UserAddDialog({
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
           <Input
-            id="email"
+            name="email"
             type="email"
             value={formData.email}
             onChange={(e) => {
@@ -226,7 +226,7 @@ export function UserAddDialog({
         <div className="grid gap-2">
           <Label htmlFor="password">Password</Label>
           <Input
-            id="password"
+            name="password"
             type="password"
             value={formData.password}
             onChange={(e) => {
@@ -249,7 +249,7 @@ export function UserAddDialog({
               validateField("role", value);
             }}
           >
-            <SelectTrigger id="role" className="w-full">
+            <SelectTrigger name="role" className="w-full">
               <SelectValue placeholder="Select role" />
             </SelectTrigger>
             <SelectContent>
@@ -264,7 +264,7 @@ export function UserAddDialog({
             Is user a manager?
           </Label>
           <Switch
-            id="isManager"
+            name="isManager"
             checked={formData.isManager}
             onCheckedChange={(checked) => {
               setFormData((p) => ({ ...p, isManager: checked }));
@@ -276,7 +276,7 @@ export function UserAddDialog({
         <div className="grid gap-2">
           <Label htmlFor="staffNumber">Staff ID Number</Label>
           <Input
-            id="staffNumber"
+            name="staffNumber"
             value={employeeData.staffNumber}
             onChange={(e) => {
               setEmployeeData((p) => ({ ...p, staffNumber: e.target.value }));
@@ -292,7 +292,7 @@ export function UserAddDialog({
         <div className="grid gap-2">
           <Label htmlFor="department">Department</Label>
           <Input
-            id="department"
+            name="department"
             value={employeeData.department}
             onChange={(e) => {
               setEmployeeData((p) => ({ ...p, department: e.target.value }));
@@ -313,7 +313,7 @@ export function UserAddDialog({
               setEmployeeData((prev) => ({ ...prev, managerId: value }))
             }
           >
-            <SelectTrigger id="managerId" className="w-full">
+            <SelectTrigger name="managerId" className="w-full">
               <SelectValue placeholder="Select employee's manager" />
             </SelectTrigger>
             <SelectContent>
@@ -329,7 +329,7 @@ export function UserAddDialog({
         <div className="grid gap-2">
           <Label htmlFor="phone">Phone</Label>
           <Input
-            id="phone"
+            name="phone"
             value={employeeData.phone}
             onChange={(e) => {
               setEmployeeData((p) => ({ ...p, phone: e.target.value }));
@@ -382,7 +382,7 @@ export function UserAddDialog({
               value: "Married" | "Single" | "Divorced" | "Widowed",
             ) => setEmployeeData((prev) => ({ ...prev, maritalStatus: value }))}
           >
-            <SelectTrigger id="maritalStatus" className="w-full">
+            <SelectTrigger name="maritalStatus" className="w-full">
               <SelectValue placeholder="Select marital status" />
             </SelectTrigger>
             <SelectContent>
@@ -404,7 +404,7 @@ export function UserAddDialog({
               setEmployeeData((prev) => ({ ...prev, employmentType: value }))
             }
           >
-            <SelectTrigger id="employmentType" className="w-full">
+            <SelectTrigger name="employmentType" className="w-full">
               <SelectValue placeholder="Select employment type" />
             </SelectTrigger>
             <SelectContent>
@@ -419,7 +419,7 @@ export function UserAddDialog({
         <div className="grid gap-2 col-span-2">
           <Label htmlFor="address">Address</Label>
           <Textarea
-            id="address"
+            name="address"
             rows={3}
             value={employeeData.address}
             onChange={(e) => {

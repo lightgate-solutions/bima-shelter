@@ -1,6 +1,13 @@
 "use client";
 
-import { BadgeCheck, Bell, ChevronsUpDown, LogOut } from "lucide-react";
+import {
+  BadgeCheck,
+  Bell,
+  ChevronsUpDown,
+  LogOut,
+  Moon,
+  Sun,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -19,8 +26,10 @@ import {
 } from "@/components/ui/sidebar";
 import type { User } from "better-auth";
 import { SignOut } from "@/actions/auth/login";
+import { useTheme } from "next-themes";
 
 export function NavUser({ user }: { user: User }) {
+  const { theme, setTheme, systemTheme } = useTheme();
   const { isMobile } = useSidebar();
 
   return (
@@ -67,6 +76,30 @@ export function NavUser({ user }: { user: User }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              <DropdownMenuItem
+                onClick={() =>
+                  setTheme(
+                    theme === "dark" ||
+                      (theme === "system" && systemTheme === "dark")
+                      ? "light"
+                      : "dark",
+                  )
+                }
+                className="justify-between"
+              >
+                {theme === "dark" ||
+                (theme === "system" && systemTheme === "dark") ? (
+                  <>
+                    <Sun />
+                    Light mode
+                  </>
+                ) : (
+                  <>
+                    <Moon />
+                    Dark mode
+                  </>
+                )}
+              </DropdownMenuItem>
               <DropdownMenuItem>
                 <BadgeCheck />
                 Account

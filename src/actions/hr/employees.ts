@@ -14,7 +14,7 @@ export async function getAllEmployees() {
       id: employees.id,
       email: employees.email,
       role: employees.role,
-      name: employees.role,
+      name: employees.name,
       department: employees.department,
       employmentType: employees.employmentType,
       phone: employees.phone,

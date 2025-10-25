@@ -49,8 +49,20 @@ const data = {
       isActive: false,
       items: [
         {
-          title: "History",
-          url: "/documents/history",
+          title: "Main",
+          url: "/documents",
+        },
+        {
+          title: "Search",
+          url: "/documents/search",
+        },
+        {
+          title: "All Documents",
+          url: "/documents/all",
+        },
+        {
+          title: "Archive",
+          url: "/documents/archive",
         },
       ],
     },
@@ -106,7 +118,7 @@ const data = {
       items: [
         {
           title: "View All",
-          url: "/projects/all",
+          url: "/projects",
         },
       ],
     },

@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <> */
+
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -5,6 +7,13 @@ import { Mail } from "lucide-react";
 import { EmailListSidebar } from "@/components/mail/email-list-sidebar";
 import { EmailDetail } from "@/components/mail/email-detail";
 import { ScrollArea } from "../ui/scroll-area";
+import { useMailPagination } from "@/hooks/use-mail-pagination";
+import {
+  getInboxEmails,
+  getSentEmails,
+  getArchivedEmails,
+  getTrashEmails,
+} from "@/actions/mail/email";
 
 type Folder = "inbox" | "sent" | "archive" | "trash";
 
@@ -71,6 +80,33 @@ export function MailContent({
 }: MailContentProps) {
   const router = useRouter();
 
+  // Get the appropriate fetch function based on folder
+  const getFetchFunction = (folder: Folder) => {
+    switch (folder) {
+      case "inbox":
+        return getInboxEmails;
+      case "sent":
+        return getSentEmails;
+      case "archive":
+        return getArchivedEmails;
+      case "trash":
+        return getTrashEmails;
+      default:
+        return getInboxEmails;
+    }
+  };
+
+  const {
+    emails: paginatedEmails,
+    loading,
+    hasMore,
+    loadMore,
+  } = useMailPagination({
+    initialEmails: emails,
+    folder,
+    fetchFunction: getFetchFunction(folder),
+  });
+
   const handleBack = () => {
     router.push(`/mail/${folder}`);
   };
@@ -87,25 +123,22 @@ export function MailContent({
     router.refresh();
   };
 
-  const FolderHeader = () => (
-    <div className="p-4 border-b flex-shrink-0">
-      <h1 className="text-base font-semibold capitalize">{folder}</h1>
-      <p className="text-xs text-muted-foreground">
-        {emails.length} email{emails.length !== 1 ? "s" : ""}
-      </p>
-    </div>
-  );
-
   return (
     <div className="h-full w-full">
       <div className="hidden md:grid md:h-full md:grid-cols-3">
         <div className="flex h-full flex-col border-r col-span-1 bg-background">
           <div className="sticky top-0 z-10 bg-background">
-            <FolderHeader />
+            <FolderHeader pageLength={paginatedEmails.length} folder={folder} />
           </div>
 
           <ScrollArea className="h-screen">
-            <EmailListSidebar emails={emails} folder={folder} />
+            <EmailListSidebar
+              emails={paginatedEmails}
+              folder={folder}
+              onLoadMore={loadMore}
+              loading={loading}
+              hasMore={hasMore}
+            />
           </ScrollArea>
         </div>
 
@@ -130,3 +163,18 @@ export function MailContent({
     </div>
   );
 }
+
+const FolderHeader = ({
+  pageLength,
+  folder,
+}: {
+  pageLength: number;
+  folder: any;
+}) => (
+  <div className="p-4 border-b flex-shrink-0">
+    <h1 className="text-base font-semibold capitalize">{folder}</h1>
+    <p className="text-xs text-muted-foreground">
+      {pageLength} email{pageLength !== 1 ? "s" : ""}
+    </p>
+  </div>
+);
