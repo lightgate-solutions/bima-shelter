@@ -1,5 +1,9 @@
 # BIMA SHELTERS MANAGEMENT SOFTWARE
 
+## To-Do
+
+- Ensure to update r2 public url when live
+
 ## Repo Architecture
 
 - `src/app/(dashboard)/` folder: where all pages will be created
