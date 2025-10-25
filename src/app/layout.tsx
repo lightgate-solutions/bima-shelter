@@ -31,7 +31,7 @@ export default function RootLayout({
       >
         <NextTopLoader />
         <div>{children}</div>
-        <SonnerToaster />
+        <SonnerToaster richColors position="top-center" />
       </body>
     </html>
   );
