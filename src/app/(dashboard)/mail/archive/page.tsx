@@ -29,7 +29,7 @@ export default async function ArchivePage({ searchParams }: PageProps) {
 
   // Fetch all data in parallel
   const [emailsResult, statsResult, usersResult] = await Promise.all([
-    getArchivedEmails(1, 50),
+    getArchivedEmails(1, 20),
     getEmailStats(),
     getAllEmployees(),
   ]);

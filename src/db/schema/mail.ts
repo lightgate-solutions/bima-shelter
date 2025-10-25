@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { employees } from "./hr";
+import { document } from "./documents";
 
 export const email = pgTable(
   "email",
@@ -69,11 +70,30 @@ export const emailRelations = relations(email, ({ one, many }) => ({
     references: [employees.id],
   }),
   recipients: many(emailRecipient),
+  attachments: many(emailAttachment),
   parentEmail: one(email, {
     fields: [email.parentEmailId],
     references: [email.id],
   }),
 }));
+
+export const emailAttachment = pgTable(
+  "email_attachment",
+  {
+    id: serial("id").primaryKey(),
+    emailId: integer("email_id")
+      .notNull()
+      .references(() => email.id, { onDelete: "cascade" }),
+    documentId: integer("document_id")
+      .notNull()
+      .references(() => document.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("email_attachment_email_id_idx").on(table.emailId),
+    index("email_attachment_document_id_idx").on(table.documentId),
+  ],
+);
 
 export const emailRecipientRelations = relations(emailRecipient, ({ one }) => ({
   email: one(email, {
@@ -85,3 +105,17 @@ export const emailRecipientRelations = relations(emailRecipient, ({ one }) => ({
     references: [employees.id],
   }),
 }));
+
+export const emailAttachmentRelations = relations(
+  emailAttachment,
+  ({ one }) => ({
+    email: one(email, {
+      fields: [emailAttachment.emailId],
+      references: [email.id],
+    }),
+    document: one(document, {
+      fields: [emailAttachment.documentId],
+      references: [document.id],
+    }),
+  }),
+);

@@ -21,7 +21,7 @@ export default async function RootLayout({
   if (!session) redirect("/auth/login");
 
   return (
-    <section>
+    <section className="p-1">
       <SidebarProvider>
         <AppSidebar user={session.user} />
         <SidebarInset>
