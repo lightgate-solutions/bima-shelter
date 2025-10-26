@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     const total = Number(totalResult.length);
 
     // Map sortBy to actual column names
-    const columnMap: Record<string, typeof projects.id> = {
+    const columnMap: Record<string, any> = {
       id: projects.id,
       name: projects.name,
       code: projects.code,
