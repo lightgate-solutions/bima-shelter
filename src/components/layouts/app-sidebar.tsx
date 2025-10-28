@@ -74,6 +74,10 @@ const data = {
           title: "To-Do",
           url: "/tasks/todo",
         },
+        {
+          title: "History",
+          url: "/tasks/history",
+        },
       ],
     },
     {

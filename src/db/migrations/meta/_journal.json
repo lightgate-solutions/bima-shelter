@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1760480290479,
-      "tag": "0000_strong_plazm",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1760482330346,
-      "tag": "0001_magical_cable",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1760964827382,
-      "tag": "0002_deep_sheva_callister",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1760966021244,
-      "tag": "0003_flippant_boom_boom",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1760966587126,
-      "tag": "0004_great_chamber",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1760967721017,
-      "tag": "0005_dapper_ravenous",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1760967896487,
-      "tag": "0006_optimal_lila_cheney",
+      "when": 1761111798123,
+      "tag": "0000_workable_spiral",
       "breakpoints": true
     }
   ]

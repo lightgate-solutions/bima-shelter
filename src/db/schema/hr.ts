@@ -11,6 +11,9 @@ import {
   boolean,
 } from "drizzle-orm/pg-core";
 
+import { tasks } from "./tasks/tasks";
+import { taskSubmissions } from "./tasks/taskSubmissions";
+import { taskReviews } from "./tasks/tasksReviews";
 export const employmentTypeEnum = pgEnum("employment_type", [
   "Full-time",
   "Part-time",
@@ -32,15 +35,18 @@ export const employees = pgTable(
     authId: text("auth_id").notNull().default(""),
     email: text("email").notNull().unique(),
     phone: text("phone"),
+
     staffNumber: text("staff_number").notNull(),
     role: text("role").notNull(),
     isManager: boolean("is_manager").notNull().default(false),
+
     department: text("department"),
     managerId: integer("manager_id"),
     dateOfBirth: date("date_of_birth"),
     address: text("address"),
     maritalStatus: maritalStatusEnum("marital_status"),
     employmentType: employmentTypeEnum("employment_type"),
+
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -50,9 +56,21 @@ export const employees = pgTable(
   ],
 );
 
-export const managerRelations = relations(employees, ({ one }) => ({
+export const employeeRelations = relations(employees, ({ one, many }) => ({
   manager: one(employees, {
     fields: [employees.managerId],
     references: [employees.id],
   }),
+
+  tasksAssigned: many(tasks, {
+    relationName: "assignedTo",
+  }),
+
+  tasksCreated: many(tasks, {
+    relationName: "assignedBy",
+  }),
+
+  taskSubmissions: many(taskSubmissions),
+
+  taskReviewsGiven: many(taskReviews),
 }));

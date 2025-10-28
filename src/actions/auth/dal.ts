@@ -1,3 +1,4 @@
+"use server";
 import "server-only";
 import { headers } from "next/headers";
 import { cache } from "react";
