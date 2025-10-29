@@ -195,7 +195,11 @@ export async function deleteTask(employeeId: number, taskId: number) {
 }
 
 export async function getTasksForEmployee(
-  where: ReturnType<typeof or> | ReturnType<typeof eq> | undefined,
+  where:
+    | ReturnType<typeof or>
+    | ReturnType<typeof eq>
+    | ReturnType<typeof and>
+    | undefined,
   order: ReturnType<typeof asc> | ReturnType<typeof desc>,
   limit: number = 10,
   offset: number = 0,
@@ -239,4 +243,9 @@ export async function getTaskByManager(managerId: number, taskId: number) {
     .where(and(eq(tasks.id, taskId), eq(tasks.assignedBy, managerId)))
     .limit(1)
     .then((res) => res[0]);
+}
+
+// Returns all tasks created by a given manager
+export async function getTasksByManager(managerId: number) {
+  return await db.select().from(tasks).where(eq(tasks.assignedBy, managerId));
 }

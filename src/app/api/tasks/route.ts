@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
     const taskIds = all_tasks.map((t) => t.id);
     const assigneesMap = new Map<
       number,
-      { id: number; email: string | null; name: string | null }[]
+      { id: number | null; email: string | null; name: string | null }[]
     >();
     if (taskIds.length) {
       const assigneesRows = await db
