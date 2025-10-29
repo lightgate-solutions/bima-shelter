@@ -14,8 +14,16 @@ type Props = {
   user: User | null;
 };
 
+type ViewTask = Task & {
+  assignedToEmail?: string | null;
+  assignedByEmail?: string | null;
+  assignedToName?: string | null;
+  assignedByName?: string | null;
+  assignees?: { id: number; email: string | null; name: string | null }[];
+};
+
 export function TaskView({ taskId, user }: Props) {
-  const [task, setTask] = useState<Task | null>(null);
+  const [task, setTask] = useState<ViewTask | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,11 +108,34 @@ export function TaskView({ taskId, user }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <div className="text-muted-foreground text-xs">Assigned to</div>
-              <div className="text-sm font-medium">#{task.assignedTo}</div>
+              {Array.isArray(task.assignees) && task.assignees.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {task.assignees.map((a) => (
+                    <span
+                      key={a.id}
+                      className="rounded bg-muted px-1.5 py-0.5 text-xs"
+                    >
+                      {a.name ?? a.email ?? "Employee"} (#{a.id})
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm font-medium">
+                  {task.assignedToEmail || task.assignedToName
+                    ? `${task.assignedToName ?? task.assignedToEmail} `
+                    : ""}
+                  #{task.assignedTo}
+                </div>
+              )}
             </div>
             <div className="space-y-1">
               <div className="text-muted-foreground text-xs">Assigned by</div>
-              <div className="text-sm font-medium">#{task.assignedBy}</div>
+              <div className="text-sm font-medium">
+                {task.assignedByEmail || task.assignedByName
+                  ? `${task.assignedByName ?? task.assignedByEmail} `
+                  : ""}
+                #{task.assignedBy}
+              </div>
             </div>
             <div className="space-y-1">
               <div className="text-muted-foreground text-xs">Due date</div>

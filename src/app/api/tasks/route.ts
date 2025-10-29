@@ -3,7 +3,7 @@ import { getTasksForEmployee, createTask } from "@/actions/tasks/tasks";
 import type { CreateTask, Task } from "@/types";
 import { and, asc, desc, eq, ilike, or, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { tasks, taskAssignees } from "@/db/schema";
+import { tasks, taskAssignees, employees } from "@/db/schema";
 
 export async function POST(request: NextRequest) {
   try {
@@ -114,7 +114,60 @@ export async function GET(request: NextRequest) {
       limit,
       offset,
     );
-    return NextResponse.json({ tasks: all_tasks }, { status: 200 });
+    // Enrich with emails and names for assignedTo/assignedBy
+    const ids = Array.from(
+      new Set(
+        all_tasks
+          .flatMap((t) => [t.assignedTo, t.assignedBy])
+          .filter(Boolean) as number[],
+      ),
+    );
+    let map = new Map<number, { email: string | null; name: string | null }>();
+    if (ids.length) {
+      const rows = await db
+        .select({
+          id: employees.id,
+          email: employees.email,
+          name: employees.name,
+        })
+        .from(employees)
+        .where(inArray(employees.id, ids));
+      map = new Map(rows.map((r) => [r.id, { email: r.email, name: r.name }]));
+    }
+
+    // Build assignees map for these tasks
+    const taskIds = all_tasks.map((t) => t.id);
+    const assigneesMap = new Map<
+      number,
+      { id: number; email: string | null; name: string | null }[]
+    >();
+    if (taskIds.length) {
+      const assigneesRows = await db
+        .select({
+          taskId: taskAssignees.taskId,
+          id: employees.id,
+          email: employees.email,
+          name: employees.name,
+        })
+        .from(taskAssignees)
+        .leftJoin(employees, eq(employees.id, taskAssignees.employeeId))
+        .where(inArray(taskAssignees.taskId, taskIds));
+      for (const r of assigneesRows) {
+        const list = assigneesMap.get(r.taskId) ?? [];
+        list.push({ id: r.id, email: r.email, name: r.name });
+        assigneesMap.set(r.taskId, list);
+      }
+    }
+
+    const enriched = all_tasks.map((t) => ({
+      ...t,
+      assignedToEmail: map.get(t.assignedTo || -1)?.email ?? null,
+      assignedByEmail: map.get(t.assignedBy || -1)?.email ?? null,
+      assignedToName: map.get(t.assignedTo || -1)?.name ?? null,
+      assignedByName: map.get(t.assignedBy || -1)?.name ?? null,
+      assignees: assigneesMap.get(t.id) ?? [],
+    }));
+    return NextResponse.json({ tasks: enriched }, { status: 200 });
   } catch (error) {
     console.error("Error fetching tasks:", error);
     return NextResponse.json(

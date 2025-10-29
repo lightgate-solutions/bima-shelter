@@ -76,6 +76,7 @@ export async function getManagerTeamSubmissions(managerId: number) {
       submittedFiles: taskSubmissions.submittedFiles,
       submittedAt: taskSubmissions.submittedAt,
       employeeName: employees.name,
+      employeeEmail: employees.email,
       taskTitle: tasks.title,
     })
     .from(taskSubmissions)

@@ -64,7 +64,15 @@ const ManagerSubmissionsPage = async () => {
           {submissions.map((s) => (
             <TableRow key={s.id}>
               <TableCell>{formatDate(s.submittedAt)}</TableCell>
-              <TableCell>{s.employeeName ?? `#${s.submittedBy}`}</TableCell>
+              <TableCell>
+                {s.employeeName || s.employeeEmail ? (
+                  <>
+                    {s.employeeName ?? s.employeeEmail} {`(#${s.submittedBy})`}
+                  </>
+                ) : (
+                  `#${s.submittedBy}`
+                )}
+              </TableCell>
               <TableCell>
                 {s.taskTitle ? s.taskTitle : `Task #${s.taskId}`}
               </TableCell>

@@ -6,6 +6,9 @@ import {
   updateTask,
 } from "@/actions/tasks/tasks";
 import type { CreateTask } from "@/types";
+import { db } from "@/db";
+import { employees, taskAssignees } from "@/db/schema";
+import { eq, inArray } from "drizzle-orm";
 
 export async function GET(
   _request: NextRequest,
@@ -31,7 +34,55 @@ export async function GET(
     if (!task) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
-    return NextResponse.json({ task });
+    // Enrich with emails
+    const ids = [task.assignedTo, task.assignedBy].filter(Boolean) as number[];
+    // Load assignees for this task
+    const assigneesRows = await db
+      .select({
+        id: employees.id,
+        email: employees.email,
+        name: employees.name,
+      })
+      .from(taskAssignees)
+      .leftJoin(employees, eq(employees.id, taskAssignees.employeeId))
+      .where(eq(taskAssignees.taskId, id));
+    if (ids.length) {
+      const rows = await db
+        .select({
+          id: employees.id,
+          email: employees.email,
+          name: employees.name,
+        })
+        .from(employees)
+        .where(inArray(employees.id, ids));
+      const map = new Map(
+        rows.map((r) => [r.id, { email: r.email, name: r.name }]),
+      );
+      return NextResponse.json({
+        task: {
+          ...task,
+          assignedToEmail: map.get(task.assignedTo || -1)?.email ?? null,
+          assignedByEmail: map.get(task.assignedBy || -1)?.email ?? null,
+          assignedToName: map.get(task.assignedTo || -1)?.name ?? null,
+          assignedByName: map.get(task.assignedBy || -1)?.name ?? null,
+          assignees: assigneesRows.map((r) => ({
+            id: r.id,
+            email: r.email,
+            name: r.name,
+          })),
+        },
+      });
+    }
+    return NextResponse.json({
+      task: {
+        ...task,
+        assignees: assigneesRows.map((r) => ({
+          id: r.id,
+          email: r.email,
+          name: r.name,
+        })),
+      },
+    });
   } catch (error) {
     console.error("Error fetching task:", error);
     return NextResponse.json(
@@ -118,7 +169,54 @@ export async function PUT(
       return NextResponse.json({ message: updated.success.reason });
     }
 
-    return NextResponse.json({ task });
+    // Enrich with emails for the updated object if available
+    if (task) {
+      const ids = [task.assignedTo, task.assignedBy].filter(
+        Boolean,
+      ) as number[];
+      const assigneesRows = await db
+        .select({
+          id: employees.id,
+          email: employees.email,
+          name: employees.name,
+        })
+        .from(taskAssignees)
+        .leftJoin(employees, eq(employees.id, taskAssignees.employeeId))
+        .where(eq(taskAssignees.taskId, id));
+      if (ids.length) {
+        const rows = await db
+          .select({
+            id: employees.id,
+            email: employees.email,
+            name: employees.name,
+          })
+          .from(employees)
+          .where(inArray(employees.id, ids));
+        const map = new Map(
+          rows.map((r) => [r.id, { email: r.email, name: r.name }]),
+        );
+        return NextResponse.json({
+          task: {
+            ...task,
+            assignedToEmail: map.get(task.assignedTo || -1)?.email ?? null,
+            assignedByEmail: map.get(task.assignedBy || -1)?.email ?? null,
+            assignedToName: map.get(task.assignedTo || -1)?.name ?? null,
+            assignedByName: map.get(task.assignedBy || -1)?.name ?? null,
+            assignees: assigneesRows.map((r) => ({
+              id: r.id,
+              email: r.email,
+              name: r.name,
+            })),
+          },
+        });
+      }
+    }
+    return NextResponse.json({
+      task: {
+        ...task,
+        assignees: [],
+      },
+    });
   } catch (error) {
     console.error("Error updating task:", error);
     return NextResponse.json(

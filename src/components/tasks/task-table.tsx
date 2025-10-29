@@ -43,8 +43,16 @@ import { UpdateTaskStatus } from "./update-task-status";
 import { TaskView } from "./task-view";
 import { TaskChatDialog } from "./task-chat-dialog";
 
+type UITask = Task & {
+  assignedToEmail?: string | null;
+  assignedByEmail?: string | null;
+  assignedToName?: string | null;
+  assignedByName?: string | null;
+  assignees?: { id: number; email: string | null; name: string | null }[];
+};
+
 export function TasksTable() {
-  const [items, setItems] = useState<Task[]>([]);
+  const [items, setItems] = useState<UITask[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [page, setPage] = useState<number>(1);
   const [limit, _setLimit] = useState<number>(10);
@@ -228,7 +236,25 @@ export function TasksTable() {
                 <TableRow key={task.id}>
                   <TableCell>{task.title}</TableCell>
                   {user?.isManager ? (
-                    <TableCell>#{task.assignedTo ?? "—"}</TableCell>
+                    <TableCell>
+                      {Array.isArray(task.assignees) &&
+                      task.assignees.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {task.assignees.map((a) => (
+                            <span
+                              key={a.id}
+                              className="rounded bg-muted px-1.5 py-0.5 text-xs"
+                            >
+                              {a.name ?? a.email ?? "Employee"} (#{a.id})
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          No assignees
+                        </span>
+                      )}
+                    </TableCell>
                   ) : null}
                   <TableCell>{task.status}</TableCell>
                   <TableCell>{task.priority ?? "N/A"}</TableCell>
