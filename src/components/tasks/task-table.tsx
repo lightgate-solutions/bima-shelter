@@ -33,13 +33,15 @@ import {
 } from "@/components/ui/pagination";
 import { Separator } from "@/components/ui/separator";
 import { TaskFormDialog } from "./task-form-dialog";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, MessageSquare } from "lucide-react";
 import { getUser } from "@/actions/auth/dal";
 import type { User, Task } from "@/types";
 import { Button } from "../ui/button";
 import { ConfirmationDialog } from "../ui/confirmation-dialog";
 import { UpdateTask } from "./update-task";
+import { UpdateTaskStatus } from "./update-task-status";
 import { TaskView } from "./task-view";
+import { TaskChatDialog } from "./task-chat-dialog";
 
 export function TasksTable() {
   const [items, setItems] = useState<Task[]>([]);
@@ -183,35 +185,39 @@ export function TasksTable() {
             </SelectContent>
           </Select>
           <RefreshButton />
-          <Dialog>
-            <DialogTrigger>
-              <Button>New Task</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <TaskFormDialog
-                user={user}
-                onCompleted={() => {
-                  load();
-                  document.getElementById("close-create-task")?.click();
-                }}
-                trigger={null}
-              />
-              <DialogClose asChild>
-                <button
-                  type="button"
-                  id="close-create-task"
-                  className="hidden"
-                ></button>
-              </DialogClose>
-            </DialogContent>
-          </Dialog>
+          {user?.isManager ? (
+            <Dialog>
+              <DialogTrigger>
+                <Button>New Task</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <TaskFormDialog
+                  user={user}
+                  onCompleted={() => {
+                    load();
+                    document.getElementById("close-create-task")?.click();
+                  }}
+                  trigger={null}
+                />
+                <DialogClose asChild>
+                  <button
+                    type="button"
+                    id="close-create-task"
+                    className="hidden"
+                  ></button>
+                </DialogClose>
+              </DialogContent>
+            </Dialog>
+          ) : null}
         </div>
       </div>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Title</TableHead>
+            {user?.isManager ? <TableHead>Assigned To</TableHead> : null}
             <TableHead>Status</TableHead>
+            <TableHead>Priority</TableHead>
             <TableHead>Due Date</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -221,10 +227,29 @@ export function TasksTable() {
             ? items.map((task) => (
                 <TableRow key={task.id}>
                   <TableCell>{task.title}</TableCell>
+                  {user?.isManager ? (
+                    <TableCell>#{task.assignedTo ?? "—"}</TableCell>
+                  ) : null}
                   <TableCell>{task.status}</TableCell>
+                  <TableCell>{task.priority ?? "N/A"}</TableCell>
                   <TableCell>{task.dueDate ?? "N/A"}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
+                      <TaskChatDialog
+                        taskId={task.id}
+                        user={user}
+                        title={`Chat • ${task.title}`}
+                        trigger={
+                          <Button
+                            variant={"ghost"}
+                            size={"icon"}
+                            aria-label="Open chat"
+                            title="Chat"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
                       <Dialog>
                         <DialogTrigger>
                           <Button variant={"ghost"} size={"icon"}>
@@ -235,47 +260,82 @@ export function TasksTable() {
                           <TaskView taskId={task.id} user={user} />
                         </DialogContent>
                       </Dialog>
-                      <Dialog>
-                        <DialogTrigger>
-                          <Button variant={"ghost"}>
-                            <Pencil className="cursor-pointer" />
+                      {user?.isManager ? (
+                        <>
+                          <Dialog>
+                            <DialogTrigger>
+                              <Button variant={"ghost"}>
+                                <Pencil className="cursor-pointer" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <UpdateTask
+                                taskId={task.id}
+                                user={user}
+                                onUpdated={(updated) => {
+                                  setItems((prev) =>
+                                    prev.map((t) =>
+                                      t.id === updated.id
+                                        ? { ...t, ...updated }
+                                        : t,
+                                    ),
+                                  );
+                                  document
+                                    .getElementById(`close-update-${task.id}`)
+                                    ?.click();
+                                }}
+                              />
+                              <DialogClose asChild>
+                                <button
+                                  type="button"
+                                  id={`close-update-${task.id}`}
+                                  className="hidden"
+                                ></button>
+                              </DialogClose>
+                            </DialogContent>
+                          </Dialog>
+                          <Button
+                            variant={"ghost"}
+                            size={"icon"}
+                            onClick={() => openDelete(task.id)}
+                            aria-label="Delete task"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <UpdateTask
-                            taskId={task.id}
-                            user={user}
-                            onUpdated={(updated) => {
-                              setItems((prev) =>
-                                prev.map((t) =>
-                                  t.id === updated.id
-                                    ? { ...t, ...updated }
-                                    : t,
-                                ),
-                              );
-                              document
-                                .getElementById(`close-update-${task.id}`)
-                                ?.click();
-                            }}
-                          />
-                          <DialogClose asChild>
-                            <button
-                              type="button"
-                              id={`close-update-${task.id}`}
-                              className="hidden"
-                            ></button>
-                          </DialogClose>
-                        </DialogContent>
-                      </Dialog>
-                      <Button
-                        variant={"ghost"}
-                        size={"icon"}
-                        onClick={() => openDelete(task.id)}
-                        aria-label="Delete task"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        </>
+                      ) : (
+                        <Dialog>
+                          <DialogTrigger>
+                            <Button variant={"ghost"}>Update Status</Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <UpdateTaskStatus
+                              taskId={task.id}
+                              user={user}
+                              onUpdated={(updated) => {
+                                setItems((prev) =>
+                                  prev.map((t) =>
+                                    t.id === updated.id
+                                      ? { ...t, ...updated }
+                                      : t,
+                                  ),
+                                );
+                                document
+                                  .getElementById(`close-status-${task.id}`)
+                                  ?.click();
+                              }}
+                            />
+                            <DialogClose asChild>
+                              <button
+                                type="button"
+                                id={`close-status-${task.id}`}
+                                className="hidden"
+                              ></button>
+                            </DialogClose>
+                          </DialogContent>
+                        </Dialog>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

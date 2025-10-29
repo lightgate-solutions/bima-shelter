@@ -20,15 +20,7 @@ import {
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { DateTimePicker } from "../ui/date-time";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
+// Removed table-based assignee selector
 import type { User } from "@/types";
 
 type Props = {
@@ -45,7 +37,7 @@ const TaskSchema = z.object({
     .enum(["all", "Pending", "In Progress", "Completed", "Overdue"])
     .optional(),
   dueDate: z.preprocess((v) => (v instanceof Date ? v : undefined), z.date()),
-  assignedTo: z.number(),
+  assignees: z.array(z.number()).min(1, "Select at least one employee"),
   assignedBy: z.number().optional(),
 });
 type TaskInput = z.infer<typeof TaskSchema>;
@@ -63,7 +55,7 @@ export function TaskFormDialog({
     priority: TaskInput["priority"];
     status: TaskInput["status"];
     dueDate: Date | undefined;
-    assignedTo: number | null;
+    assignees: number[];
   };
   const [info, setInfo] = useState<FormInfo>({
     title: "",
@@ -71,65 +63,55 @@ export function TaskFormDialog({
     priority: "Medium",
     status: "Pending",
     dueDate: date,
-    assignedTo: null,
+    assignees: [],
   });
   const [errors, setErrors] = useState<FormErrors>({});
-  const [assignedTo, setAssignedTo] = useState<number | null>(null);
+  const [assignees, setAssignees] = useState<number[]>([]);
   const [subordinates, setSubordinates] = useState<
     Array<{ id: number; name: string; email: string; department: string }>
   >([]);
-  const [q, setQ] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
 
-  const fetchSubordinates = useCallback(
-    async (query: string) => {
-      const id = user?.id;
-      console.log(id);
-      if (!id) return;
-      setLoading(true);
-      try {
-        const response = await fetch(
-          `/api/hr/employees/subordinates?employeeId=${id}&q=${encodeURIComponent(query || "")}`,
-        );
-        const data = await response.json();
-        setSubordinates(data.subordinates || []);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [user?.id],
-  );
-
-  // Debounced search as user types
-  useEffect(() => {
-    if (!q.trim()) {
-      setSubordinates([]);
-      setSearched(false);
-      return;
+  const fetchSubordinates = useCallback(async () => {
+    const id = user?.id;
+    console.log(id);
+    if (!id) return;
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `/api/hr/employees/subordinates?employeeId=${id}`,
+      );
+      const data = await response.json();
+      setSubordinates(data.subordinates || []);
+    } finally {
+      setLoading(false);
     }
-    const t = setTimeout(() => {
-      fetchSubordinates(q);
-      setSearched(true);
-    }, 400);
-    return () => clearTimeout(t);
-  }, [q, fetchSubordinates]);
+  }, [user?.id]);
 
-  const handleSearch = () => {
-    fetchSubordinates(q);
-    setSearched(true);
+  useEffect(() => {
+    fetchSubordinates();
+  }, [fetchSubordinates]);
+
+  const addAssignee = (id: number) => {
+    setAssignees((prev) => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id];
+      setInfo((pi) => ({ ...pi, assignees: next }));
+      setErrors((e) => ({ ...e, assignees: undefined }));
+      return next;
+    });
   };
-
-  const toggleAssignee = (id: number) => {
-    setAssignedTo((prev) => {
-      const next = prev === id ? null : id;
-      setInfo((prevInfo) => ({ ...prevInfo, assignedTo: next }));
-      setErrors((e) => ({ ...e, assignedTo: undefined }));
+  const removeAssignee = (id: number) => {
+    setAssignees((prev) => {
+      const next = prev.filter((x) => x !== id);
+      setInfo((pi) => ({ ...pi, assignees: next }));
       return next;
     });
   };
 
-  const selectedAssignee = subordinates.find((s) => s.id === assignedTo);
+  const selectedAssignees = subordinates.filter((s) =>
+    assignees.includes(s.id),
+  );
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -138,7 +120,6 @@ export function TaskFormDialog({
       setLoading(true);
       const payload: Partial<TaskInput> = {
         ...info,
-        assignedTo: info.assignedTo ?? undefined,
         dueDate: info.dueDate,
         assignedBy: user?.id ?? undefined,
       };
@@ -150,8 +131,8 @@ export function TaskFormDialog({
           const key = issue.path[0] as keyof TaskInput | undefined;
           if (key) {
             // Provide clearer messages for required fields
-            if (key === "assignedTo") {
-              fieldErrors[key] = "Assigned employee is required";
+            if (key === "assignees") {
+              fieldErrors[key] = "Select at least one employee";
             } else if (key === "dueDate") {
               fieldErrors[key] = "Due date is required";
             } else {
@@ -165,13 +146,13 @@ export function TaskFormDialog({
       const response = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(result.data),
+        body: JSON.stringify({ ...result.data }),
       });
       if (!response.ok) {
         const data = await response.json();
         console.error("Error response:", data);
         setErrors({
-          assignedTo: data.error?.reason || "Failed to submit task",
+          assignees: data.error?.reason || "Failed to submit task",
         });
         return;
       }
@@ -289,106 +270,53 @@ export function TaskFormDialog({
       </div>
 
       <div className="mt-6">
-        <h3 className="text-sm font-medium mb-2">Assign Employee</h3>
+        <h3 className="text-sm font-medium mb-2">Assign Employees</h3>
+        {errors.assignees ? (
+          <p className="text-sm text-red-500 mb-2">{errors.assignees}</p>
+        ) : null}
 
-        <div className="flex items-center gap-2 mb-3">
-          <Input
-            placeholder="Search employees by name or email..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleSearch();
-              }
-            }}
-            className="max-w-sm"
-          />
-          <Button type="button" onClick={handleSearch} disabled={loading}>
-            {loading ? "Searching..." : "Search"}
-          </Button>
-          {q ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setQ("");
-                setSubordinates([]);
-                setSearched(false);
-              }}
-              disabled={loading}
-            >
-              Clear
-            </Button>
-          ) : null}
+        <div className="max-w-sm">
+          <Select onValueChange={(val) => addAssignee(Number(val))}>
+            <SelectTrigger>
+              <SelectValue
+                placeholder={loading ? "Loading..." : "Add employee"}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {subordinates.map((s) => (
+                <SelectItem key={s.id} value={String(s.id)}>
+                  {s.name} ({s.email})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedAssignees.length === 0 ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              No employees selected.
+            </p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {selectedAssignees.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between rounded border px-2 py-1 text-sm"
+                >
+                  <span>
+                    {s.name} ({s.email})
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    type="button"
+                    onClick={() => removeAssignee(s.id)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-
-        {selectedAssignee ? (
-          <div className="text-sm mb-3">
-            Assigned to: {selectedAssignee.name} ({selectedAssignee.email})
-          </div>
-        ) : null}
-        {errors.assignedTo ? (
-          <p className="text-sm text-red-500 mb-3">{errors.assignedTo}</p>
-        ) : null}
-
-        {loading ? (
-          <p>Loading employees...</p>
-        ) : !searched ? (
-          <p>Start typing a name or email, then press Enter or click Search.</p>
-        ) : subordinates.length === 0 ? (
-          <p>No employees found.</p>
-        ) : (
-          <div>
-            <Table>
-              <TableCaption>
-                A list of employees you can assign tasks.
-              </TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[200px]">Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Assign</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {subordinates.map((subordinate) => (
-                  <TableRow key={subordinate.id}>
-                    <TableCell className="font-medium">
-                      {subordinate.name}
-                    </TableCell>
-                    <TableCell>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          name="assignedTo"
-                          checked={assignedTo === subordinate.id}
-                          onChange={() => toggleAssignee(subordinate.id)}
-                        />
-                        <span>{subordinate.email}</span>
-                      </label>
-                    </TableCell>
-                    <TableCell>{subordinate.department}</TableCell>
-                    <TableCell>
-                      <Button
-                        type="button"
-                        variant={
-                          assignedTo === subordinate.id
-                            ? "secondary"
-                            : "outline"
-                        }
-                        onClick={() => toggleAssignee(subordinate.id)}
-                      >
-                        {assignedTo === subordinate.id ? "Unassign" : "Assign"}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
 
         {/* Submit actions moved after Assign Employee section */}
         <div className="mt-4">

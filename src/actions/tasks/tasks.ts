@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { tasks } from "@/db/schema";
+import { tasks, taskAssignees } from "@/db/schema";
 import { getEmployee } from "../hr/employees";
 import {
   and,
@@ -9,12 +9,15 @@ import {
   type desc,
   DrizzleQueryError,
   eq,
-  type or,
+  or,
+  inArray,
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { CreateTask } from "@/types";
 
-export async function createTask(taskData: CreateTask) {
+type CreateTaskWithAssignees = CreateTask & { assignees?: number[] };
+
+export async function createTask(taskData: CreateTaskWithAssignees) {
   try {
     const manager = await getEmployee(taskData.assignedBy);
     if (!manager || !manager.isManager) {
@@ -24,9 +27,24 @@ export async function createTask(taskData: CreateTask) {
       };
     }
 
-    await db.insert(tasks).values({
-      ...taskData,
-    });
+    const assignees = (taskData.assignees || []).filter(Boolean);
+    const firstAssignee = assignees[0] ?? taskData.assignedTo ?? null;
+
+    const [created] = await db
+      .insert(tasks)
+      .values({
+        ...taskData,
+        assignedTo: firstAssignee ?? undefined,
+      })
+      .returning({ id: tasks.id });
+
+    if (created?.id && assignees.length) {
+      const rows = assignees.map((empId) => ({
+        taskId: created.id,
+        employeeId: empId,
+      }));
+      await db.insert(taskAssignees).values(rows);
+    }
 
     revalidatePath("/tasks/history");
     return {
@@ -64,8 +82,44 @@ export async function updateTask(
 
   type TaskInsert = typeof tasks.$inferInsert;
   type TaskUpdate = Partial<TaskInsert>;
+  // Enforce permissions:
+  // - Managers can update any fields on tasks they created
+  // - Employees can only update the status of tasks they are assigned to
+  let allowedUpdates: Partial<CreateTask> = { ...updates };
+  if (!employee.isManager) {
+    // Filter down to only status for non-managers
+    allowedUpdates = {} as Partial<CreateTask>;
+    if (typeof updates.status !== "undefined") {
+      allowedUpdates.status = updates.status;
+    }
+    // If nothing to update after filtering, exit early
+    if (Object.keys(allowedUpdates).length === 0) {
+      return {
+        success: null,
+        error: { reason: "Employees can only update task status" },
+      };
+    }
+    // Ensure employee has access to this task (either directly assigned or via assignees table)
+    const taskVisible = await getTaskForEmployee(employeeId, taskId);
+    if (!taskVisible) {
+      return {
+        success: null,
+        error: { reason: "You are not assigned to this task" },
+      };
+    }
+  } else {
+    // Manager path: ensure the task belongs to this manager
+    const taskOwned = await getTaskByManager(employeeId, taskId);
+    if (!taskOwned) {
+      return {
+        success: null,
+        error: { reason: "You can only update tasks you created" },
+      };
+    }
+  }
+
   const processedUpdates: TaskUpdate = {
-    ...updates,
+    ...allowedUpdates,
     updatedAt: new Date(),
   } as TaskUpdate;
 
@@ -78,10 +132,18 @@ export async function updateTask(
   }
 
   try {
-    await db
-      .update(tasks)
-      .set(normalized as unknown as TaskUpdate)
-      .where(eq(tasks.id, taskId));
+    // Additional safety: if employee is a manager, optionally ensure they own the task; otherwise just by id
+    if (employee.isManager) {
+      await db
+        .update(tasks)
+        .set(normalized as unknown as TaskUpdate)
+        .where(eq(tasks.id, taskId));
+    } else {
+      await db
+        .update(tasks)
+        .set(normalized as unknown as TaskUpdate)
+        .where(eq(tasks.id, taskId));
+    }
 
     revalidatePath("/tasks/history");
     return {
@@ -149,10 +211,23 @@ export async function getTasksForEmployee(
 }
 
 export async function getTaskForEmployee(employeeId: number, taskId: number) {
+  // A task is visible to an employee if either it's directly assignedTo them
+  // or they appear in task_assignees for that task.
+  const ids = await db
+    .select({ id: taskAssignees.taskId })
+    .from(taskAssignees)
+    .where(eq(taskAssignees.employeeId, employeeId));
+  const taskIds = ids.map((r) => r.id);
+
   return await db
     .select()
     .from(tasks)
-    .where(and(eq(tasks.id, taskId), eq(tasks.assignedTo, employeeId)))
+    .where(
+      and(
+        eq(tasks.id, taskId),
+        or(eq(tasks.assignedTo, employeeId), inArray(tasks.id, taskIds)),
+      ),
+    )
     .limit(1)
     .then((res) => res[0]);
 }

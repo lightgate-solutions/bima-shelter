@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "@/db";
-import { taskSubmissions } from "@/db/schema";
+import { employees, taskReviews, taskSubmissions, tasks } from "@/db/schema";
 import { getEmployee } from "../hr/employees";
-import { DrizzleQueryError, eq } from "drizzle-orm";
+import { DrizzleQueryError, and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 type NewSubmission = typeof taskSubmissions.$inferInsert;
@@ -63,4 +63,67 @@ export async function getSubmissionById(submissionId: number) {
     .where(eq(taskSubmissions.id, submissionId))
     .limit(1)
     .then((res) => res[0]);
+}
+
+export async function getManagerTeamSubmissions(managerId: number) {
+  // All submissions for tasks assigned by this manager
+  const rows = await db
+    .select({
+      id: taskSubmissions.id,
+      taskId: taskSubmissions.taskId,
+      submittedBy: taskSubmissions.submittedBy,
+      submissionNote: taskSubmissions.submissionNote,
+      submittedFiles: taskSubmissions.submittedFiles,
+      submittedAt: taskSubmissions.submittedAt,
+      employeeName: employees.name,
+      taskTitle: tasks.title,
+    })
+    .from(taskSubmissions)
+    .leftJoin(tasks, eq(tasks.id, taskSubmissions.taskId))
+    .leftJoin(employees, eq(employees.id, taskSubmissions.submittedBy))
+    .where(eq(tasks.assignedBy, managerId))
+    .orderBy(desc(taskSubmissions.submittedAt));
+  return rows;
+}
+
+export async function createSubmissionReview(args: {
+  submissionId: number;
+  taskId: number;
+  reviewedBy: number;
+  status: "Accepted" | "Rejected";
+  reviewNote?: string;
+}) {
+  try {
+    // Validate the reviewer is the manager who assigned the task
+    const t = await db
+      .select({ assignedBy: tasks.assignedBy })
+      .from(tasks)
+      .where(and(eq(tasks.id, args.taskId)))
+      .limit(1)
+      .then((r) => r[0]);
+    if (!t || t.assignedBy !== args.reviewedBy) {
+      return {
+        success: null,
+        error: {
+          reason: "Only the assigning manager can review this submission",
+        },
+      };
+    }
+
+    await db.insert(taskReviews).values({
+      taskId: args.taskId,
+      submissionId: args.submissionId,
+      reviewedBy: args.reviewedBy,
+      status: args.status,
+      reviewNote: args.reviewNote,
+    });
+
+    revalidatePath(`/tasks/manager`);
+    return { success: { reason: "Review submitted" }, error: null };
+  } catch (err) {
+    if (err instanceof DrizzleQueryError) {
+      return { success: null, error: { reason: err.cause?.message } };
+    }
+    return { success: null, error: { reason: "An unexpected error occurred" } };
+  }
 }

@@ -1,13 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getTasksForEmployee, createTask } from "@/actions/tasks/tasks";
 import type { CreateTask, Task } from "@/types";
-import { and, asc, desc, eq, ilike, or } from "drizzle-orm";
-import { tasks } from "@/db/schema";
+import { and, asc, desc, eq, ilike, or, inArray } from "drizzle-orm";
+import { db } from "@/db";
+import { tasks, taskAssignees } from "@/db/schema";
 
 export async function POST(request: NextRequest) {
   try {
-    const body: CreateTask = await request.json();
-    const created = await createTask(body);
+    const body = (await request.json()) as Partial<CreateTask> & {
+      assignees?: number[];
+    };
+    const created = await createTask(
+      body as CreateTask & { assignees?: number[] },
+    );
 
     if (!created.success) {
       return NextResponse.json(
@@ -67,7 +72,16 @@ export async function GET(request: NextRequest) {
 
     let where: ReturnType<typeof or> | ReturnType<typeof eq> | undefined;
     if (role === "employee") {
-      where = eq(tasks.assignedTo, parseInt(employeeId || "0"));
+      const eid = parseInt(employeeId || "0");
+      // Fetch tasks where employee is explicitly assigned via join table
+      const rows = await db
+        .select({ id: taskAssignees.taskId })
+        .from(taskAssignees)
+        .where(eq(taskAssignees.employeeId, eid));
+      const ids = rows.map((r) => r.id);
+      where = ids.length
+        ? or(eq(tasks.assignedTo, eid), inArray(tasks.id, ids))
+        : eq(tasks.assignedTo, eid);
     } else if (role === "manager") {
       where = eq(tasks.assignedBy, parseInt(employeeId || "0"));
     }

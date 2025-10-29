@@ -26,6 +26,8 @@ import { NavMain } from "./nav-main";
 import { NavProjects } from "./nav-projects";
 import { NavUser } from "./nav-user";
 import type { User } from "better-auth";
+import { useEffect, useMemo, useState } from "react";
+import { getUser as getEmployee } from "@/actions/auth/dal";
 
 const data = {
   org: [
@@ -65,21 +67,7 @@ const data = {
         },
       ],
     },
-    {
-      title: "Task/Performance",
-      url: "/tasks",
-      icon: AlarmClockCheck,
-      items: [
-        {
-          title: "To-Do",
-          url: "/tasks/todo",
-        },
-        {
-          title: "History",
-          url: "/tasks/history",
-        },
-      ],
-    },
+    // Task/Performance is customized per role at runtime
     {
       title: "Mail",
       url: "/mail",
@@ -153,13 +141,47 @@ export function AppSidebar({
   user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & { user: User }) {
+  const [isManager, setIsManager] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const emp = await getEmployee();
+        if (active) setIsManager(!!emp?.isManager);
+      } catch {
+        if (active) setIsManager(null);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const navItems = useMemo(() => {
+    const base = data.navMain.filter((i) => i.title !== "Task/Performance");
+    const taskItem = {
+      title: "Task/Performance",
+      url: "/tasks",
+      icon: AlarmClockCheck,
+      items: isManager
+        ? [
+            { title: "History", url: "/tasks/history" },
+            { title: "Task Item", url: "/tasks" },
+            { title: "Task Submission", url: "/tasks/manager" },
+          ]
+        : [{ title: "To-Do", url: "/tasks/employee" }],
+    };
+    return [...base, taskItem];
+  }, [isManager]);
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.org} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navItems} />
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>

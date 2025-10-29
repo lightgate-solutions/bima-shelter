@@ -1,6 +1,5 @@
 import { TasksCard } from "@/components/tasks/task-cards";
 import { TasksTable } from "@/components/tasks/task-table";
-import React from "react";
 
 const HistoryPage = async () => {
   return (

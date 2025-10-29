@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import type { Task, User } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { TaskChatDialog } from "@/components/tasks/task-chat-dialog";
+import { Button } from "../ui/button";
+import { MessageSquare } from "lucide-react";
+import { TaskSubmit } from "@/components/tasks/task-submit";
 
 type Props = {
   taskId: number;
@@ -63,7 +67,10 @@ export function TaskView({ taskId, user }: Props) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-xl font-semibold">Task details</h3>
+        <Separator />
+
+        {/* Employee submission area (hidden for managers) */}
+        <TaskSubmit taskId={taskId} user={user} />
         <p className="text-sm text-muted-foreground">Full task information</p>
       </div>
       <Separator />
@@ -117,6 +124,20 @@ export function TaskView({ taskId, user }: Props) {
                 {formatDate(task.updatedAt)}
               </div>
             </div>
+          </div>
+
+          <div className="pt-2">
+            <TaskChatDialog
+              taskId={taskId}
+              user={user}
+              title={task ? `Chat • ${task.title}` : "Task Chat"}
+              trigger={
+                <Button variant="outline" className="gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Open chat
+                </Button>
+              }
+            />
           </div>
         </div>
       )}

@@ -10,5 +10,6 @@ export default defineConfig({
     url: process.env.DATABASE_URL || "",
   },
   verbose: true,
-  strict: true,
+  // Disable strict to avoid aggressive NOT NULL drops on primary keys during push
+  strict: false,
 });
