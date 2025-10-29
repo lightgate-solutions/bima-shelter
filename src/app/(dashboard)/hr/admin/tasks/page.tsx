@@ -4,6 +4,9 @@ export const metadata = {
   title: "All Tasks • Admin",
 };
 
+// Ensure this segment is always resolved at runtime
+export const dynamic = "force-dynamic";
+
 export default function AdminTasksPage() {
   return (
     <div className="space-y-4">
