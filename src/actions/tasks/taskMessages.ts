@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { taskMessages, tasks, taskAssignees, employees } from "@/db/schema";
-import { DrizzleQueryError, eq } from "drizzle-orm";
+import { DrizzleQueryError, and, desc, eq, gt, lt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 type NewMessage = typeof taskMessages.$inferInsert;
@@ -66,4 +66,70 @@ export const getMessagesForTask = async (taskId: number) => {
     .leftJoin(employees, eq(employees.id, taskMessages.senderId))
     .where(eq(taskMessages.taskId, taskId))
     .orderBy(taskMessages.createdAt);
+};
+
+// Fetch latest N messages for a task, sorted ascending (oldest->newest)
+export const getRecentMessagesForTask = async (taskId: number, limit = 50) => {
+  const rows = await db
+    .select({
+      id: taskMessages.id,
+      taskId: taskMessages.taskId,
+      senderId: taskMessages.senderId,
+      content: taskMessages.content,
+      createdAt: taskMessages.createdAt,
+      senderName: employees.name,
+      senderEmail: employees.email,
+    })
+    .from(taskMessages)
+    .leftJoin(employees, eq(employees.id, taskMessages.senderId))
+    .where(eq(taskMessages.taskId, taskId))
+    .orderBy(desc(taskMessages.id))
+    .limit(limit);
+  // Return ascending for UI
+  return rows.reverse();
+};
+
+// Fetch messages newer than a given id for a task (incremental fetch)
+export const getMessagesForTaskSince = async (
+  taskId: number,
+  afterId: number,
+) => {
+  return await db
+    .select({
+      id: taskMessages.id,
+      taskId: taskMessages.taskId,
+      senderId: taskMessages.senderId,
+      content: taskMessages.content,
+      createdAt: taskMessages.createdAt,
+      senderName: employees.name,
+      senderEmail: employees.email,
+    })
+    .from(taskMessages)
+    .leftJoin(employees, eq(employees.id, taskMessages.senderId))
+    .where(and(eq(taskMessages.taskId, taskId), gt(taskMessages.id, afterId)))
+    .orderBy(taskMessages.id);
+};
+
+// Optional: Fetch older messages before a given id (for "load older")
+export const getMessagesForTaskBefore = async (
+  taskId: number,
+  beforeId: number,
+  limit = 50,
+) => {
+  const rows = await db
+    .select({
+      id: taskMessages.id,
+      taskId: taskMessages.taskId,
+      senderId: taskMessages.senderId,
+      content: taskMessages.content,
+      createdAt: taskMessages.createdAt,
+      senderName: employees.name,
+      senderEmail: employees.email,
+    })
+    .from(taskMessages)
+    .leftJoin(employees, eq(employees.id, taskMessages.senderId))
+    .where(and(eq(taskMessages.taskId, taskId), lt(taskMessages.id, beforeId)))
+    .orderBy(desc(taskMessages.id))
+    .limit(limit);
+  return rows;
 };

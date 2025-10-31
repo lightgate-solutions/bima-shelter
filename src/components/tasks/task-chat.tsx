@@ -27,37 +27,95 @@ export default function TaskChat({ taskId, user }: Props) {
   const mounted = useRef(true);
   const pollRef = useRef<number | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const lastIdRef = useRef<number>(0);
+  const optimisticKeyRef = useRef<number>(-1);
 
-  const fetchMessages = useCallback(async () => {
+  const fetchInitial = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/tasks/${taskId}/messages`);
+      const res = await fetch(`/api/tasks/${taskId}/messages?limit=50`, {
+        cache: "no-store",
+      });
       if (!res.ok) return;
       const data = await res.json();
       if (!mounted.current) return;
-      setMessages(data.messages || []);
-      // Scroll to bottom after loading new messages
+      const list: Message[] = data.messages || [];
+      setMessages(list);
+      lastIdRef.current = list.length ? list[list.length - 1].id : 0;
       setTimeout(
         () => endRef.current?.scrollIntoView({ behavior: "smooth" }),
         0,
       );
     } catch (err) {
-      console.error("Error fetching messages:", err);
+      console.error("Error fetching messages (initial):", err);
     } finally {
       if (mounted.current) setLoading(false);
     }
   }, [taskId]);
 
+  const fetchAfter = useCallback(async () => {
+    const lastId = lastIdRef.current;
+    if (!lastId) {
+      // No messages yet, fetch the latest one (if any)
+      try {
+        const res = await fetch(`/api/tasks/${taskId}/messages?limit=1`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!mounted.current) return;
+        const recent: Message[] = data.messages || [];
+        if (recent.length > 0) {
+          setMessages((prev) => {
+            const merged = [...prev.filter((m) => m.id > 0), ...recent];
+            lastIdRef.current = merged[merged.length - 1].id;
+            return merged;
+          });
+          setTimeout(
+            () => endRef.current?.scrollIntoView({ behavior: "smooth" }),
+            0,
+          );
+        }
+      } catch (err) {
+        console.error("Error fetching recent message:", err);
+      }
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/tasks/${taskId}/messages?afterId=${lastId}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!mounted.current) return;
+      const incoming: Message[] = data.messages || [];
+      if (incoming.length > 0) {
+        setMessages((prev) => {
+          const next = [...prev, ...incoming];
+          lastIdRef.current = next[next.length - 1].id;
+          return next;
+        });
+        setTimeout(
+          () => endRef.current?.scrollIntoView({ behavior: "smooth" }),
+          0,
+        );
+      }
+    } catch (err) {
+      console.error("Error fetching new messages:", err);
+    }
+  }, [taskId]);
+
   useEffect(() => {
     mounted.current = true;
-    fetchMessages();
-    // poll every 5 seconds
-    pollRef.current = window.setInterval(fetchMessages, 5000);
+    fetchInitial();
+    // poll for new messages every 3.5 seconds
+    pollRef.current = window.setInterval(fetchAfter, 3500);
     return () => {
       mounted.current = false;
       if (pollRef.current) window.clearInterval(pollRef.current);
     };
-  }, [fetchMessages]);
+  }, [fetchInitial, fetchAfter]);
 
   // Auto-scroll is handled after data updates to avoid extra dependencies in hooks
 
@@ -68,22 +126,37 @@ export default function TaskChat({ taskId, user }: Props) {
     if (!v) return;
     setSending(true);
     try {
+      // optimistic append
+      const optimisticId = optimisticKeyRef.current--;
+      const optimistic: Message = {
+        id: optimisticId,
+        taskId,
+        senderId: user.id,
+        content: v,
+        createdAt: new Date().toISOString(),
+        senderName: user.name ?? undefined,
+        senderEmail: user.email ?? undefined,
+      } as unknown as Message;
+      setMessages((prev) => [...prev, optimistic]);
+      setTimeout(
+        () => endRef.current?.scrollIntoView({ behavior: "smooth" }),
+        0,
+      );
       const res = await fetch(`/api/tasks/${taskId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: v }),
       });
       if (!res.ok) {
-        // TODO: show error
-      } else {
-        const data = await res.json();
-        setMessages(data.messages || []);
-        setText("");
-        setTimeout(
-          () => endRef.current?.scrollIntoView({ behavior: "smooth" }),
-          0,
-        );
+        // rollback optimistic on error
+        setMessages((prev) => prev.filter((m) => m.id > 0));
+        return;
       }
+      // Regardless of POST body, fetch new messages after lastId
+      setText("");
+      await fetchAfter();
+      // remove any remaining optimistic items (negative ids)
+      setMessages((prev) => prev.filter((m) => m.id > 0));
     } finally {
       setSending(false);
     }

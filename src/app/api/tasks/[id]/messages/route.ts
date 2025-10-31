@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { headers } from "next/headers";
 import {
   createTaskMessage,
-  getMessagesForTask,
+  getMessagesForTaskSince,
+  getRecentMessagesForTask,
 } from "@/actions/tasks/taskMessages";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
@@ -10,7 +11,7 @@ import { employees } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } },
 ) {
   try {
@@ -18,7 +19,16 @@ export async function GET(
     if (!id)
       return NextResponse.json({ error: "Invalid task id" }, { status: 400 });
 
-    const messages = await getMessagesForTask(id);
+    const searchParams = request.nextUrl.searchParams;
+    const afterId = Number(searchParams.get("afterId") || "");
+    const limit = Number(searchParams.get("limit") || "");
+
+    const messages =
+      afterId && Number.isFinite(afterId)
+        ? await getMessagesForTaskSince(id, afterId)
+        : limit && Number.isFinite(limit)
+          ? await getRecentMessagesForTask(id, Math.max(1, limit))
+          : await getRecentMessagesForTask(id, 50);
     return NextResponse.json({ messages });
   } catch (err) {
     console.error("Error fetching messages:", err);
@@ -75,9 +85,7 @@ export async function POST(
     if (res.error) {
       return NextResponse.json({ error: res.error.reason }, { status: 400 });
     }
-
-    const messages = await getMessagesForTask(id);
-    return NextResponse.json({ messages });
+    return NextResponse.json({ message: "ok" });
   } catch (err) {
     console.error("Error posting message:", err);
     return NextResponse.json(
