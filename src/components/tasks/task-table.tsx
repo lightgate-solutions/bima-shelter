@@ -142,6 +142,10 @@ export function TasksTable() {
     setRefreshing(true);
     try {
       await load();
+      // Also notify stats/cards to refresh on manual refresh
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("tasks:changed"));
+      }
     } finally {
       setRefreshing(false);
     }
