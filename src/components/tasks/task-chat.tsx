@@ -17,6 +17,7 @@ type Message = {
   createdAt: string;
   senderName?: string | null;
   senderEmail?: string | null;
+  pending?: boolean;
 };
 
 export default function TaskChat({ taskId, user }: Props) {
@@ -28,7 +29,6 @@ export default function TaskChat({ taskId, user }: Props) {
   const pollRef = useRef<number | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const lastIdRef = useRef<number>(0);
-  const optimisticKeyRef = useRef<number>(-1);
 
   const fetchInitial = useCallback(async () => {
     setLoading(true);
@@ -39,62 +39,34 @@ export default function TaskChat({ taskId, user }: Props) {
       if (!res.ok) return;
       const data = await res.json();
       if (!mounted.current) return;
-      const list: Message[] = data.messages || [];
-      setMessages(list);
-      lastIdRef.current = list.length ? list[list.length - 1].id : 0;
-      setTimeout(
-        () => endRef.current?.scrollIntoView({ behavior: "smooth" }),
-        0,
-      );
+      const msgs: Message[] = data.messages || [];
+      setMessages(msgs);
+      lastIdRef.current = msgs.length ? msgs[msgs.length - 1].id : 0;
+      setTimeout(() => endRef.current?.scrollIntoView({ behavior: "auto" }), 0);
     } catch (err) {
-      console.error("Error fetching messages (initial):", err);
+      console.error("Error fetching messages:", err);
     } finally {
       if (mounted.current) setLoading(false);
     }
   }, [taskId]);
 
-  const fetchAfter = useCallback(async () => {
-    const lastId = lastIdRef.current;
-    if (!lastId) {
-      // No messages yet, fetch the latest one (if any)
-      try {
-        const res = await fetch(`/api/tasks/${taskId}/messages?limit=1`, {
-          cache: "no-store",
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!mounted.current) return;
-        const recent: Message[] = data.messages || [];
-        if (recent.length > 0) {
-          setMessages((prev) => {
-            const merged = [...prev.filter((m) => m.id > 0), ...recent];
-            lastIdRef.current = merged[merged.length - 1].id;
-            return merged;
-          });
-          setTimeout(
-            () => endRef.current?.scrollIntoView({ behavior: "smooth" }),
-            0,
-          );
-        }
-      } catch (err) {
-        console.error("Error fetching recent message:", err);
-      }
-      return;
-    }
+  const fetchNew = useCallback(async () => {
     try {
-      const res = await fetch(
-        `/api/tasks/${taskId}/messages?afterId=${lastId}`,
-        { cache: "no-store" },
-      );
+      const afterId = lastIdRef.current;
+      const url = afterId
+        ? `/api/tasks/${taskId}/messages?afterId=${afterId}`
+        : `/api/tasks/${taskId}/messages?limit=50`;
+      const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) return;
       const data = await res.json();
       if (!mounted.current) return;
-      const incoming: Message[] = data.messages || [];
-      if (incoming.length > 0) {
+      const newMsgs: Message[] = data.messages || [];
+      if (newMsgs.length > 0) {
+        lastIdRef.current = newMsgs[newMsgs.length - 1].id;
         setMessages((prev) => {
-          const next = [...prev, ...incoming];
-          lastIdRef.current = next[next.length - 1].id;
-          return next;
+          const existing = new Set(prev.map((m) => m.id));
+          const dedup = newMsgs.filter((m) => !existing.has(m.id));
+          return dedup.length > 0 ? [...prev, ...dedup] : prev;
         });
         setTimeout(
           () => endRef.current?.scrollIntoView({ behavior: "smooth" }),
@@ -109,54 +81,84 @@ export default function TaskChat({ taskId, user }: Props) {
   useEffect(() => {
     mounted.current = true;
     fetchInitial();
-    // poll for new messages every 3.5 seconds
-    pollRef.current = window.setInterval(fetchAfter, 3500);
+    // Poll new messages every 3 seconds for snappier updates
+    pollRef.current = window.setInterval(fetchNew, 3000);
     return () => {
       mounted.current = false;
       if (pollRef.current) window.clearInterval(pollRef.current);
     };
-  }, [fetchInitial, fetchAfter]);
+  }, [fetchInitial, fetchNew]);
 
   // Auto-scroll is handled after data updates to avoid extra dependencies in hooks
 
   async function handleSend(e?: React.FormEvent) {
     e?.preventDefault();
+    if (sending) return; // avoid double submit
     if (!user?.id) return;
     const v = text.trim();
     if (!v) return;
     setSending(true);
+    // Optimistic UI: append a pending message
+    const tempId = -Date.now();
+    const optimistic: Message = {
+      id: tempId,
+      taskId,
+      senderId: user.id,
+      content: v,
+      createdAt: new Date().toISOString(),
+      senderName: user.name ?? null,
+      senderEmail: user.email ?? null,
+      pending: true,
+    } as unknown as Message;
+    setMessages((prev) => [...prev, optimistic]);
+    setText("");
+    setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 0);
     try {
-      // optimistic append
-      const optimisticId = optimisticKeyRef.current--;
-      const optimistic: Message = {
-        id: optimisticId,
-        taskId,
-        senderId: user.id,
-        content: v,
-        createdAt: new Date().toISOString(),
-        senderName: user.name ?? undefined,
-        senderEmail: user.email ?? undefined,
-      } as unknown as Message;
-      setMessages((prev) => [...prev, optimistic]);
-      setTimeout(
-        () => endRef.current?.scrollIntoView({ behavior: "smooth" }),
-        0,
-      );
       const res = await fetch(`/api/tasks/${taskId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: v }),
       });
-      if (!res.ok) {
-        // rollback optimistic on error
-        setMessages((prev) => prev.filter((m) => m.id > 0));
-        return;
+      if (res.ok) {
+        const data = await res.json();
+        const newMsg: Message | undefined = data?.message;
+        if (newMsg) {
+          // Replace the optimistic message with the actual one
+          setMessages((prev) => {
+            const replaced = prev.map((m) => (m.id === tempId ? newMsg : m));
+            // Ensure no duplicate entries with same id exist (race with poll)
+            const seen = new Set<number>();
+            const unique: Message[] = [];
+            for (const m of replaced) {
+              if (seen.has(m.id)) continue;
+              seen.add(m.id);
+              unique.push(m);
+            }
+            return unique;
+          });
+          lastIdRef.current = Math.max(lastIdRef.current, newMsg.id);
+        } else if (data?.messages) {
+          // Fallback compatibility: server returned full list
+          const msgs: Message[] = data.messages || [];
+          setMessages((prev) => {
+            // Merge uniquely to avoid duplicates
+            const existing = new Set(prev.map((m) => m.id));
+            const merged = [...prev];
+            for (const m of msgs) {
+              if (!existing.has(m.id)) merged.push(m);
+            }
+            return merged;
+          });
+          lastIdRef.current = msgs.length ? msgs[msgs.length - 1].id : 0;
+        } else {
+          // As a fallback, fetch new messages since previous last id
+          await fetchNew();
+        }
+      } else {
+        // On error, remove optimistic message and keep input
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        setText(v);
       }
-      // Regardless of POST body, fetch new messages after lastId
-      setText("");
-      await fetchAfter();
-      // remove any remaining optimistic items (negative ids)
-      setMessages((prev) => prev.filter((m) => m.id > 0));
     } finally {
       setSending(false);
     }
@@ -167,9 +169,6 @@ export default function TaskChat({ taskId, user }: Props) {
       <h5 className="text-sm font-medium">Discussion</h5>
       <ScrollArea className="h-64 rounded border bg-muted/20 p-2">
         <div className="space-y-2">
-          {loading && (
-            <div className="text-sm text-muted-foreground">Loading…</div>
-          )}
           {messages.length === 0 && !loading && (
             <div className="text-sm text-muted-foreground">No messages yet</div>
           )}
@@ -214,7 +213,7 @@ export default function TaskChat({ taskId, user }: Props) {
           className="btn btn-primary px-3"
           disabled={!user || sending}
         >
-          {sending ? "Sending…" : "Send"}
+          Send
         </button>
       </form>
     </div>

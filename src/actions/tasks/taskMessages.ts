@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { taskMessages, tasks, taskAssignees, employees } from "@/db/schema";
-import { DrizzleQueryError, and, desc, eq, gt, lt } from "drizzle-orm";
+import { DrizzleQueryError, and, eq, gt, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 type NewMessage = typeof taskMessages.$inferInsert;
@@ -38,11 +38,38 @@ export const createTaskMessage = async (msg: NewMessage) => {
       }
     }
 
-    await db.insert(taskMessages).values({ ...msg });
+    const inserted = await db
+      .insert(taskMessages)
+      .values({ ...msg })
+      .returning({
+        id: taskMessages.id,
+        taskId: taskMessages.taskId,
+        senderId: taskMessages.senderId,
+        content: taskMessages.content,
+        createdAt: taskMessages.createdAt,
+      });
     // Revalidate task page so task view will pick up new messages if necessary
     revalidatePath(`/tasks/${msg.taskId}`);
 
-    return { success: { reason: "Message posted" }, error: null };
+    // Enrich with sender details for immediate UI render
+    let senderName: string | null | undefined = null;
+    let senderEmail: string | null | undefined = null;
+    try {
+      const emp = await db
+        .select({ name: employees.name, email: employees.email })
+        .from(employees)
+        .where(eq(employees.id, msg.senderId))
+        .limit(1)
+        .then((r) => r[0]);
+      senderName = emp?.name ?? null;
+      senderEmail = emp?.email ?? null;
+    } catch {}
+
+    const message = inserted?.[0]
+      ? { ...inserted[0], senderName, senderEmail }
+      : null;
+
+    return { success: { reason: "Message posted", message }, error: null };
   } catch (err) {
     if (err instanceof DrizzleQueryError) {
       return { success: null, error: { reason: err.cause?.message } };
@@ -51,50 +78,15 @@ export const createTaskMessage = async (msg: NewMessage) => {
   }
 };
 
-export const getMessagesForTask = async (taskId: number) => {
-  return await db
-    .select({
-      id: taskMessages.id,
-      taskId: taskMessages.taskId,
-      senderId: taskMessages.senderId,
-      content: taskMessages.content,
-      createdAt: taskMessages.createdAt,
-      senderName: employees.name,
-      senderEmail: employees.email,
-    })
-    .from(taskMessages)
-    .leftJoin(employees, eq(employees.id, taskMessages.senderId))
-    .where(eq(taskMessages.taskId, taskId))
-    .orderBy(taskMessages.createdAt);
-};
-
-// Fetch latest N messages for a task, sorted ascending (oldest->newest)
-export const getRecentMessagesForTask = async (taskId: number, limit = 50) => {
-  const rows = await db
-    .select({
-      id: taskMessages.id,
-      taskId: taskMessages.taskId,
-      senderId: taskMessages.senderId,
-      content: taskMessages.content,
-      createdAt: taskMessages.createdAt,
-      senderName: employees.name,
-      senderEmail: employees.email,
-    })
-    .from(taskMessages)
-    .leftJoin(employees, eq(employees.id, taskMessages.senderId))
-    .where(eq(taskMessages.taskId, taskId))
-    .orderBy(desc(taskMessages.id))
-    .limit(limit);
-  // Return ascending for UI
-  return rows.reverse();
-};
-
-// Fetch messages newer than a given id for a task (incremental fetch)
-export const getMessagesForTaskSince = async (
+export const getMessagesForTask = async (
   taskId: number,
-  afterId: number,
+  opts?: { afterId?: number; limit?: number },
 ) => {
-  return await db
+  const whereBase = eq(taskMessages.taskId, taskId);
+  const where = opts?.afterId
+    ? and(whereBase, gt(taskMessages.id, opts.afterId))
+    : whereBase;
+  const baseSelect = db
     .select({
       id: taskMessages.id,
       taskId: taskMessages.taskId,
@@ -106,30 +98,15 @@ export const getMessagesForTaskSince = async (
     })
     .from(taskMessages)
     .leftJoin(employees, eq(employees.id, taskMessages.senderId))
-    .where(and(eq(taskMessages.taskId, taskId), gt(taskMessages.id, afterId)))
-    .orderBy(taskMessages.id);
-};
+    .where(where);
 
-// Optional: Fetch older messages before a given id (for "load older")
-export const getMessagesForTaskBefore = async (
-  taskId: number,
-  beforeId: number,
-  limit = 50,
-) => {
-  const rows = await db
-    .select({
-      id: taskMessages.id,
-      taskId: taskMessages.taskId,
-      senderId: taskMessages.senderId,
-      content: taskMessages.content,
-      createdAt: taskMessages.createdAt,
-      senderName: employees.name,
-      senderEmail: employees.email,
-    })
-    .from(taskMessages)
-    .leftJoin(employees, eq(employees.id, taskMessages.senderId))
-    .where(and(eq(taskMessages.taskId, taskId), lt(taskMessages.id, beforeId)))
-    .orderBy(desc(taskMessages.id))
-    .limit(limit);
-  return rows;
+  if (opts?.limit && !opts.afterId) {
+    // Initial load: get latest N messages by id desc, then reverse for ascending display
+    const newestFirst = await baseSelect
+      .orderBy(desc(taskMessages.id))
+      .limit(opts.limit);
+    return newestFirst.slice().reverse();
+  }
+  // Default: ascending by createdAt for deterministic order
+  return await baseSelect.orderBy(taskMessages.createdAt);
 };

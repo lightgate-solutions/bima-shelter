@@ -2,8 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { headers } from "next/headers";
 import {
   createTaskMessage,
-  getMessagesForTaskSince,
-  getRecentMessagesForTask,
+  getMessagesForTask,
 } from "@/actions/tasks/taskMessages";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
@@ -20,15 +19,13 @@ export async function GET(
       return NextResponse.json({ error: "Invalid task id" }, { status: 400 });
 
     const searchParams = request.nextUrl.searchParams;
-    const afterId = Number(searchParams.get("afterId") || "");
-    const limit = Number(searchParams.get("limit") || "");
+    const afterId = Number(searchParams.get("afterId")) || undefined;
+    const limit = Number(searchParams.get("limit")) || undefined;
 
-    const messages =
-      afterId && Number.isFinite(afterId)
-        ? await getMessagesForTaskSince(id, afterId)
-        : limit && Number.isFinite(limit)
-          ? await getRecentMessagesForTask(id, Math.max(1, limit))
-          : await getRecentMessagesForTask(id, 50);
+    const messages = await getMessagesForTask(id, {
+      afterId,
+      limit: limit && limit > 0 ? limit : undefined,
+    });
     return NextResponse.json({ messages });
   } catch (err) {
     console.error("Error fetching messages:", err);
@@ -85,7 +82,8 @@ export async function POST(
     if (res.error) {
       return NextResponse.json({ error: res.error.reason }, { status: 400 });
     }
-    return NextResponse.json({ message: "ok" });
+    // Return only the newly created message for lighter payloads
+    return NextResponse.json({ message: res.success?.message });
   } catch (err) {
     console.error("Error posting message:", err);
     return NextResponse.json(
