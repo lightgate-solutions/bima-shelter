@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getTasksForEmployee, createTask } from "@/actions/tasks/tasks";
 import type { CreateTask, Task } from "@/types";
-import { and, asc, desc, eq, ilike, or, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, inArray, lt, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { tasks, taskAssignees, employees } from "@/db/schema";
 
@@ -98,9 +98,19 @@ export async function GET(request: NextRequest) {
         : or(ilike(tasks.title, `%${q}%`), ilike(tasks.description, `%${q}%`));
     }
     if (status && status !== "all") {
-      where = where
-        ? and(where, eq(tasks.status, status as StatusType))
-        : eq(tasks.status, status as StatusType);
+      if (status === "Overdue") {
+        const today = new Date();
+        const todayStr = today.toISOString().slice(0, 10);
+        const overdueCond = and(
+          lt(tasks.dueDate, todayStr),
+          ne(tasks.status, "Completed" as StatusType),
+        );
+        where = where ? and(where, overdueCond) : overdueCond;
+      } else {
+        where = where
+          ? and(where, eq(tasks.status, status as StatusType))
+          : eq(tasks.status, status as StatusType);
+      }
     }
     console.log("Status: ", status);
     if (priority) {
@@ -159,14 +169,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const enriched = all_tasks.map((t) => ({
-      ...t,
-      assignedToEmail: map.get(t.assignedTo || -1)?.email ?? null,
-      assignedByEmail: map.get(t.assignedBy || -1)?.email ?? null,
-      assignedToName: map.get(t.assignedTo || -1)?.name ?? null,
-      assignedByName: map.get(t.assignedBy || -1)?.name ?? null,
-      assignees: assigneesMap.get(t.id) ?? [],
-    }));
+    const now = new Date();
+    const enriched = all_tasks.map((t) => {
+      const isOverdue =
+        t.dueDate && new Date(t.dueDate) < now && t.status !== "Completed";
+      return {
+        ...t,
+        status: isOverdue ? ("Overdue" as StatusType) : t.status,
+        assignedToEmail: map.get(t.assignedTo || -1)?.email ?? null,
+        assignedByEmail: map.get(t.assignedBy || -1)?.email ?? null,
+        assignedToName: map.get(t.assignedTo || -1)?.name ?? null,
+        assignedByName: map.get(t.assignedBy || -1)?.name ?? null,
+        assignees: assigneesMap.get(t.id) ?? [],
+      };
+    });
     return NextResponse.json({ tasks: enriched }, { status: 200 });
   } catch (error) {
     console.error("Error fetching tasks:", error);

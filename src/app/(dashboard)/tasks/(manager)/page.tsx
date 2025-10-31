@@ -1,4 +1,5 @@
 import { TasksTable } from "@/components/tasks/task-table";
+import { TasksCard } from "@/components/tasks/task-cards";
 
 export default function ManagerTasksPage() {
   return (
@@ -8,6 +9,9 @@ export default function ManagerTasksPage() {
         View, create, and manage tasks across your team. Open a task to chat,
         review progress, and make updates.
       </p>
+      <div className="mb-4">
+        <TasksCard />
+      </div>
       <TasksTable />
     </div>
   );

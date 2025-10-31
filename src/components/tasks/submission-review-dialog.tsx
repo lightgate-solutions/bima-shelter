@@ -71,6 +71,9 @@ export function SubmissionReviewDialog({
       setGrade("");
       setNote("");
       onCompleted?.();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("tasks:changed"));
+      }
     } catch (_e: unknown) {
       setError("Network error");
     } finally {

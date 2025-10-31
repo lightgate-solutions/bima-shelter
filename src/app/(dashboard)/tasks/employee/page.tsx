@@ -1,4 +1,5 @@
 import { TasksTable } from "@/components/tasks/task-table";
+import { TasksCard } from "@/components/tasks/task-cards";
 
 export default function TodoPage() {
   return (
@@ -8,6 +9,9 @@ export default function TodoPage() {
         View and update the status of tasks assigned to you. You can chat with
         your manager and teammates and submit your work from the task view.
       </p>
+      <div className="mb-4">
+        <TasksCard />
+      </div>
       <TasksTable />
     </div>
   );

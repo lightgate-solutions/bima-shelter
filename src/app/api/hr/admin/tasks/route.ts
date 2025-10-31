@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { employees, taskAssignees, tasks } from "@/db/schema";
-import { and, asc, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, lt, ne } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
@@ -93,8 +93,18 @@ export async function GET(request: NextRequest) {
     }
 
     if (status && status !== "all") {
-      const statusWhere = eq(tasks.status, status as StatusType);
-      where = where ? and(where, statusWhere) : statusWhere;
+      if (status === "Overdue") {
+        const today = new Date();
+        const todayStr = today.toISOString().slice(0, 10);
+        const overdueCond = and(
+          lt(tasks.dueDate, todayStr),
+          ne(tasks.status, "Completed" as StatusType),
+        );
+        where = where ? and(where, overdueCond) : overdueCond;
+      } else {
+        const statusWhere = eq(tasks.status, status as StatusType);
+        where = where ? and(where, statusWhere) : statusWhere;
+      }
     }
 
     if (priority) {
@@ -152,14 +162,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const enriched = all.map((t) => ({
-      ...t,
-      assignedToEmail: map.get(t.assignedTo || -1)?.email ?? null,
-      assignedByEmail: map.get(t.assignedBy || -1)?.email ?? null,
-      assignedToName: map.get(t.assignedTo || -1)?.name ?? null,
-      assignedByName: map.get(t.assignedBy || -1)?.name ?? null,
-      assignees: assigneesMap.get(t.id) ?? [],
-    }));
+    const now2 = new Date();
+    const enriched = all.map((t) => {
+      const isOverdue =
+        t.dueDate && new Date(t.dueDate) < now2 && t.status !== "Completed";
+      return {
+        ...t,
+        status: isOverdue ? ("Overdue" as StatusType) : t.status,
+        assignedToEmail: map.get(t.assignedTo || -1)?.email ?? null,
+        assignedByEmail: map.get(t.assignedBy || -1)?.email ?? null,
+        assignedToName: map.get(t.assignedTo || -1)?.name ?? null,
+        assignedByName: map.get(t.assignedBy || -1)?.name ?? null,
+        assignees: assigneesMap.get(t.id) ?? [],
+      };
+    });
 
     return NextResponse.json({ tasks: enriched }, { status: 200 });
   } catch (error) {

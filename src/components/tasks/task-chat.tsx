@@ -15,6 +15,8 @@ type Message = {
   senderId: number;
   content: string;
   createdAt: string;
+  senderName?: string | null;
+  senderEmail?: string | null;
 };
 
 export default function TaskChat({ taskId, user }: Props) {
@@ -109,7 +111,10 @@ export default function TaskChat({ taskId, user }: Props) {
                   className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${isMine ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                 >
                   <div className="text-[10px] opacity-75 mb-1">
-                    #{m.senderId} • {new Date(m.createdAt).toLocaleString()}
+                    {m.senderName
+                      ? `${m.senderName} (#${m.senderId})`
+                      : `#${m.senderId}`}{" "}
+                    • {new Date(m.createdAt).toLocaleString()}
                   </div>
                   <div className="whitespace-pre-wrap break-words">
                     {m.content}

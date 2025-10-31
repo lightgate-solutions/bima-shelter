@@ -39,7 +39,6 @@ import type { User, Task } from "@/types";
 import { Button } from "../ui/button";
 import { ConfirmationDialog } from "../ui/confirmation-dialog";
 import { UpdateTask } from "./update-task";
-import { UpdateTaskStatus } from "./update-task-status";
 import { TaskView } from "./task-view";
 import { TaskChatDialog } from "./task-chat-dialog";
 
@@ -131,6 +130,10 @@ export function TasksTable() {
       setDeleting(false);
       setConfirmOpen(false);
       setDeleteId(null);
+      // notify stats/cards to refresh
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("tasks:changed"));
+      }
     }
   };
 
@@ -204,6 +207,9 @@ export function TasksTable() {
                   onCompleted={() => {
                     load();
                     document.getElementById("close-create-task")?.click();
+                    if (typeof window !== "undefined") {
+                      window.dispatchEvent(new Event("tasks:changed"));
+                    }
                   }}
                   trigger={null}
                 />
@@ -309,6 +315,11 @@ export function TasksTable() {
                                   document
                                     .getElementById(`close-update-${task.id}`)
                                     ?.click();
+                                  if (typeof window !== "undefined") {
+                                    window.dispatchEvent(
+                                      new Event("tasks:changed"),
+                                    );
+                                  }
                                 }}
                               />
                               <DialogClose asChild>
@@ -331,36 +342,64 @@ export function TasksTable() {
                           </Button>
                         </>
                       ) : (
-                        <Dialog>
-                          <DialogTrigger>
-                            <Button variant={"ghost"}>Update Status</Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <UpdateTaskStatus
-                              taskId={task.id}
-                              user={user}
-                              onUpdated={(updated) => {
-                                setItems((prev) =>
-                                  prev.map((t) =>
-                                    t.id === updated.id
-                                      ? { ...t, ...updated }
-                                      : t,
-                                  ),
-                                );
-                                document
-                                  .getElementById(`close-status-${task.id}`)
-                                  ?.click();
-                              }}
-                            />
-                            <DialogClose asChild>
-                              <button
-                                type="button"
-                                id={`close-status-${task.id}`}
-                                className="hidden"
-                              ></button>
-                            </DialogClose>
-                          </DialogContent>
-                        </Dialog>
+                        <Button
+                          variant={"ghost"}
+                          disabled={
+                            task.status === "In Progress" ||
+                            task.status === "Completed" ||
+                            task.status === "Overdue"
+                          }
+                          onClick={async () => {
+                            if (!user?.id) return;
+                            try {
+                              const res = await fetch(
+                                `/api/tasks/${task.id}?employeeId=${user.id}&role=employee`,
+                                {
+                                  method: "PUT",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    status: "In Progress",
+                                  }),
+                                },
+                              );
+                              if (res.ok) {
+                                const body = await res.json().catch(() => ({}));
+                                const updated = body?.task as Task | undefined;
+                                if (updated) {
+                                  setItems((prev) =>
+                                    prev.map((t) =>
+                                      t.id === updated.id
+                                        ? { ...t, ...updated }
+                                        : t,
+                                    ),
+                                  );
+                                } else {
+                                  // Fallback optimistic update
+                                  setItems((prev) =>
+                                    prev.map((t) =>
+                                      t.id === task.id
+                                        ? { ...t, status: "In Progress" }
+                                        : t,
+                                    ),
+                                  );
+                                }
+                                if (typeof window !== "undefined") {
+                                  window.dispatchEvent(
+                                    new Event("tasks:changed"),
+                                  );
+                                }
+                              }
+                            } catch (e) {
+                              console.error("Failed to start task", e);
+                            }
+                          }}
+                        >
+                          {task.status === "Pending"
+                            ? "Start Task"
+                            : "Start Task"}
+                        </Button>
                       )}
                     </div>
                   </TableCell>

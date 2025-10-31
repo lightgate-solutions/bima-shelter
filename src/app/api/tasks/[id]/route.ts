@@ -15,7 +15,7 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   try {
-    const id = Number(params.id);
+    const id = Number((await params).id);
     const { searchParams } = _request.nextUrl;
     const employeeId = Number(searchParams.get("employeeId"));
     const role = searchParams.get("role");
@@ -97,7 +97,7 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   try {
-    const id = Number(params.id);
+    const id = Number((await params).id);
     const { searchParams } = _request.nextUrl;
     const employeeId = Number(searchParams.get("employeeId"));
     if (!employeeId) {

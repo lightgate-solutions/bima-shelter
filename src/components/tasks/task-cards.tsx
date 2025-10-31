@@ -5,21 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function TasksCard() {
   const [stats, setStats] = useState<{
-    total: number;
-    actual: number;
-    expenses: number;
+    active: number;
+    pending: number;
+    inProgress: number;
   } | null>(null);
-  const [filters, setFilters] = useState<{ q?: string; status?: string }>({});
+  // Reserved for future filtering needs
+  // const [filters, setFilters] = useState<{ q?: string; status?: string }>({});
 
   useEffect(() => {
     let mounted = true;
-    async function load(next?: { q?: string; status?: string }) {
-      const q = next?.q ?? filters.q ?? "";
-      const status = next?.status ?? filters.status ?? "";
-      const params = new URLSearchParams();
-      if (q) params.set("q", q);
-      if (status) params.set("status", status);
-      const res = await fetch(`/api/tasks/stats?${params.toString()}`, {
+    async function load() {
+      // Currently no filters applied on stats API; reserved for future
+      const res = await fetch(`/api/tasks/stats`, {
         cache: "no-store",
       });
       const data = await res.json();
@@ -27,25 +24,21 @@ export function TasksCard() {
     }
     load();
     const handler = () => load();
-    const filtersHandler = (e: Event) => {
-      const detail = (e as CustomEvent).detail || {};
-      setFilters(detail);
-      load(detail);
+    // Listen for task-specific events; keep legacy listeners no-op safe
+    window.addEventListener("tasks:changed", handler);
+    // Also poll periodically so other users' changes reflect across sessions
+    const intervalId = window.setInterval(load, 8000); // 8s lightweight polling
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") load();
     };
-    window.addEventListener("projects:changed", handler);
-    window.addEventListener(
-      "projects:filters",
-      filtersHandler as EventListener,
-    );
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       mounted = false;
-      window.removeEventListener("projects:changed", handler);
-      window.removeEventListener(
-        "projects:filters",
-        filtersHandler as EventListener,
-      );
+      window.removeEventListener("tasks:changed", handler);
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [filters.q, filters.status]);
+  }, []);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -55,7 +48,7 @@ export function TasksCard() {
           {/* <Folder className="text-primary" /> */}
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-semibold">{stats?.total ?? 0}</div>
+          <div className="text-2xl font-semibold">{stats?.active ?? 0}</div>
         </CardContent>
       </Card>
       <Card>
@@ -64,9 +57,7 @@ export function TasksCard() {
           {/* <Banknote className="text-primary" /> */}
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-semibold">
-            {(stats?.actual ?? 0).toLocaleString()}
-          </div>
+          <div className="text-2xl font-semibold">{stats?.pending ?? 0}</div>
         </CardContent>
       </Card>
       <Card>
@@ -75,9 +66,7 @@ export function TasksCard() {
           {/* <Receipt className="text-primary" /> */}
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-semibold">
-            {(stats?.expenses ?? 0).toLocaleString()}
-          </div>
+          <div className="text-2xl font-semibold">{stats?.inProgress ?? 0}</div>
         </CardContent>
       </Card>
     </div>

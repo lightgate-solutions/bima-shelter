@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { taskReviews } from "@/db/schema";
+import { taskReviews, tasks } from "@/db/schema";
 import { getEmployee } from "../hr/employees";
 import { DrizzleQueryError, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -22,6 +22,30 @@ export const reviewTask = async (reviewData: NewReview) => {
     await db.insert(taskReviews).values({
       ...reviewData,
     });
+
+    // Status side-effects based on review decision
+    if (reviewData.status === "Accepted") {
+      // Accepted -> Completed
+      await db
+        .update(tasks)
+        .set({ status: "Completed", updatedAt: new Date() })
+        .where(eq(tasks.id, reviewData.taskId));
+    } else if (reviewData.status === "Rejected") {
+      // Rejected -> keep task In Progress (don’t downgrade a Completed task)
+      const current = await db
+        .select({ status: tasks.status })
+        .from(tasks)
+        .where(eq(tasks.id, reviewData.taskId))
+        .limit(1)
+        .then((r) => r[0]);
+
+      if (current && current.status !== "Completed") {
+        await db
+          .update(tasks)
+          .set({ status: "In Progress", updatedAt: new Date() })
+          .where(eq(tasks.id, reviewData.taskId));
+      }
+    }
 
     revalidatePath("/tasks");
     return {

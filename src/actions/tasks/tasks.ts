@@ -90,7 +90,14 @@ export async function updateTask(
     // Filter down to only status for non-managers
     allowedUpdates = {} as Partial<CreateTask>;
     if (typeof updates.status !== "undefined") {
-      allowedUpdates.status = updates.status;
+      // Employees can only set status to "In Progress"
+      if (updates.status !== "In Progress") {
+        return {
+          success: null,
+          error: { reason: "Employees can only start tasks (In Progress)" },
+        };
+      }
+      allowedUpdates.status = "In Progress" as CreateTask["status"];
     }
     // If nothing to update after filtering, exit early
     if (Object.keys(allowedUpdates).length === 0) {
@@ -100,11 +107,23 @@ export async function updateTask(
       };
     }
     // Ensure employee has access to this task (either directly assigned or via assignees table)
-    const taskVisible = await getTaskForEmployee(employeeId, taskId);
-    if (!taskVisible) {
+    const currentTask = await getTaskForEmployee(employeeId, taskId);
+    if (!currentTask) {
       return {
         success: null,
         error: { reason: "You are not assigned to this task" },
+      };
+    }
+    // Only allow transition Pending -> In Progress
+    if (
+      typeof updates.status !== "undefined" &&
+      (currentTask.status === "In Progress" ||
+        currentTask.status === "Completed" ||
+        currentTask.status === "Overdue")
+    ) {
+      return {
+        success: null,
+        error: { reason: "Task cannot be started in its current status" },
       };
     }
   } else {

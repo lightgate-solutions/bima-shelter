@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { taskMessages, tasks, taskAssignees } from "@/db/schema";
+import { taskMessages, tasks, taskAssignees, employees } from "@/db/schema";
 import { DrizzleQueryError, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -53,8 +53,17 @@ export const createTaskMessage = async (msg: NewMessage) => {
 
 export const getMessagesForTask = async (taskId: number) => {
   return await db
-    .select()
+    .select({
+      id: taskMessages.id,
+      taskId: taskMessages.taskId,
+      senderId: taskMessages.senderId,
+      content: taskMessages.content,
+      createdAt: taskMessages.createdAt,
+      senderName: employees.name,
+      senderEmail: employees.email,
+    })
     .from(taskMessages)
+    .leftJoin(employees, eq(employees.id, taskMessages.senderId))
     .where(eq(taskMessages.taskId, taskId))
     .orderBy(taskMessages.createdAt);
 };

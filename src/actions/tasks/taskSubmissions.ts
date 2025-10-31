@@ -119,7 +119,32 @@ export async function createSubmissionReview(args: {
       reviewNote: args.reviewNote,
     });
 
+    // Mirror status side-effects here too to keep behavior consistent
+    if (args.status === "Accepted") {
+      // Accepted -> Completed
+      await db
+        .update(tasks)
+        .set({ status: "Completed", updatedAt: new Date() })
+        .where(eq(tasks.id, args.taskId));
+    } else if (args.status === "Rejected") {
+      // Rejected -> ensure task remains In Progress (don’t downgrade a Completed task)
+      const current = await db
+        .select({ status: tasks.status })
+        .from(tasks)
+        .where(eq(tasks.id, args.taskId))
+        .limit(1)
+        .then((r) => r[0]);
+
+      if (current && current.status !== "Completed") {
+        await db
+          .update(tasks)
+          .set({ status: "In Progress", updatedAt: new Date() })
+          .where(eq(tasks.id, args.taskId));
+      }
+    }
+
     revalidatePath(`/tasks/manager`);
+    revalidatePath(`/tasks`);
     return { success: { reason: "Review submitted" }, error: null };
   } catch (err) {
     if (err instanceof DrizzleQueryError) {
