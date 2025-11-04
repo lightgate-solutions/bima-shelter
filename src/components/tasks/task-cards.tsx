@@ -14,29 +14,39 @@ export function TasksCard() {
 
   useEffect(() => {
     let mounted = true;
+    let loading = false;
+    let debounceTimer: number | null = null;
+
     async function load() {
-      // Currently no filters applied on stats API; reserved for future
-      const res = await fetch(`/api/tasks/stats`, {
-        cache: "no-store",
-      });
-      const data = await res.json();
-      if (mounted) setStats(data);
+      // Prevent concurrent or rapid-fire requests
+      if (loading) return;
+      loading = true;
+      try {
+        const res = await fetch(`/api/tasks/stats`, {
+          cache: "no-store",
+        });
+        const data = await res.json();
+        if (mounted) setStats(data);
+      } finally {
+        loading = false;
+      }
     }
-    load();
-    const handler = () => load();
-    // Listen for task-specific events; keep legacy listeners no-op safe
-    window.addEventListener("tasks:changed", handler);
-    // Also poll periodically so other users' changes reflect across sessions
-    const intervalId = window.setInterval(load, 8000); // 8s lightweight polling
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") load();
+
+    // Debounced load to prevent rapid-fire calls
+    const debouncedLoad = () => {
+      if (debounceTimer) window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(load, 300);
     };
-    document.addEventListener("visibilitychange", onVisibility);
+
+    load(); // Initial load
+
+    // Listen only for explicit task refresh events (e.g., table refresh button or CRUD actions)
+    window.addEventListener("tasks:changed", debouncedLoad);
+
     return () => {
       mounted = false;
-      window.removeEventListener("tasks:changed", handler);
-      window.clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", onVisibility);
+      if (debounceTimer) window.clearTimeout(debounceTimer);
+      window.removeEventListener("tasks:changed", debouncedLoad);
     };
   }, []);
 

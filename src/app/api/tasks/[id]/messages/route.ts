@@ -14,7 +14,7 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   try {
-    const id = Number(params.id);
+    const id = Number((await params).id);
     if (!id)
       return NextResponse.json({ error: "Invalid task id" }, { status: 400 });
 
@@ -41,7 +41,7 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   try {
-    const id = Number(params.id);
+    const id = Number((await params).id);
     if (!id)
       return NextResponse.json({ error: "Invalid task id" }, { status: 400 });
 

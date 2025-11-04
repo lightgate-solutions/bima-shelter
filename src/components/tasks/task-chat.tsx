@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import type { User } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   taskId: number;
@@ -26,9 +27,9 @@ export default function TaskChat({ taskId, user }: Props) {
   const [sending, setSending] = useState(false);
   const [text, setText] = useState("");
   const mounted = useRef(true);
-  const pollRef = useRef<number | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const lastIdRef = useRef<number>(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchInitial = useCallback(async () => {
     setLoading(true);
@@ -80,14 +81,22 @@ export default function TaskChat({ taskId, user }: Props) {
 
   useEffect(() => {
     mounted.current = true;
+    // Load messages only when chat opens (component mounts)
     fetchInitial();
-    // Poll new messages every 3 seconds for snappier updates
-    pollRef.current = window.setInterval(fetchNew, 3000);
     return () => {
       mounted.current = false;
-      if (pollRef.current) window.clearInterval(pollRef.current);
     };
-  }, [fetchInitial, fetchNew]);
+  }, [fetchInitial]);
+
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await fetchNew();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshing, fetchNew]);
 
   // Auto-scroll is handled after data updates to avoid extra dependencies in hooks
 
@@ -166,7 +175,19 @@ export default function TaskChat({ taskId, user }: Props) {
 
   return (
     <div className="space-y-2 border rounded p-3">
-      <h5 className="text-sm font-medium">Discussion</h5>
+      <div className="flex items-center justify-between">
+        <h5 className="text-sm font-medium">Discussion</h5>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          aria-label="Refresh chat"
+          title="Refresh"
+        >
+          {refreshing ? "Refreshing…" : "Refresh"}
+        </Button>
+      </div>
       <ScrollArea className="h-64 rounded border bg-muted/20 p-2">
         <div className="space-y-2">
           {messages.length === 0 && !loading && (
