@@ -1,0 +1,2 @@
+ALTER TABLE "notifications" ADD COLUMN "sender_id" serial NOT NULL;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_sender_id_employees_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."employees"("id") ON DELETE set null ON UPDATE no action;

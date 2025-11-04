@@ -4,6 +4,8 @@
 
 import { db } from "@/db";
 import { email, emailRecipient, employees } from "@/db/schema";
+// import { notifications } from "@/db/schema/notifications";
+import { createNotification } from "../notification/notification";
 import { and, eq, or, ilike, sql, desc, inArray } from "drizzle-orm";
 import * as z from "zod";
 import { getUser } from "../auth/dal";
@@ -39,20 +41,19 @@ const searchEmailSchema = z.object({
   folder: z.enum(["inbox", "sent", "archive", "trash"]).optional(),
 });
 
-export async function sendEmail(data: z.infer<typeof sendEmailSchema>) {
+export async function sendEmail(
+  data: z.infer<typeof sendEmailSchema>,
+  create_notif = true,
+) {
   try {
     const currentUser = await getUser();
-
     if (!currentUser) {
-      return {
-        success: false,
-        data: null,
-        error: "Log in to continue",
-      };
+      return { success: false, data: null, error: "Log in to continue" };
     }
 
     const validated = sendEmailSchema.parse(data);
-    return await db.transaction(async (tx) => {
+
+    const emailRecord = await db.transaction(async (tx) => {
       const recipients = await tx
         .select({ id: employees.id })
         .from(employees)
@@ -83,13 +84,28 @@ export async function sendEmail(data: z.infer<typeof sendEmailSchema>) {
         })),
       );
 
-      return {
-        success: true,
-        data: newEmail,
-        error: null,
-      };
+      return newEmail;
     });
+
+    console.log(emailRecord);
+
+    if (create_notif && "id" in emailRecord) {
+      await createNotification({
+        user_id: currentUser.id,
+        title: "New message received",
+        message: `${currentUser.name} sent you a message: "${validated.subject}"`,
+        notification_type: "message",
+        reference_id: emailRecord.id,
+      });
+    }
+
+    return {
+      success: true,
+      data: emailRecord,
+      error: null,
+    };
   } catch (error) {
+    console.error(error);
     return {
       success: false,
       data: null,
