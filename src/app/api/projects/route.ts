@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <> */
+
 import { db } from "@/db";
 import { employees, projects } from "@/db/schema";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
@@ -39,10 +41,10 @@ export async function GET(request: NextRequest) {
     }
 
     const totalResult = await db
-      .select({ count: projects.id })
+      .select({ count: sql<number>`count(*)` })
       .from(projects)
       .where(where);
-    const total = Number(totalResult.length);
+    const total = totalResult[0].count;
 
     // Map sortBy to actual column names
     const columnMap: Record<string, any> = {

@@ -26,7 +26,7 @@ export default async function InboxPage({ searchParams }: PageProps) {
   const emailId = params.id;
 
   // Fetch emails
-  const emailsResult = await getInboxEmails(1, 50);
+  const emailsResult = await getInboxEmails(1, 20);
 
   let selectedEmail = null;
   if (emailId) {

@@ -1,5 +1,6 @@
 "use server";
 import { db } from "@/db";
+import { documentFolders } from "@/db/schema";
 import { employees } from "@/db/schema/hr";
 import { auth } from "@/lib/auth";
 import { APIError } from "better-auth/api";
@@ -175,24 +176,38 @@ export async function createUser(data: {
         : userData.data.dateOfBirth.toISOString().split("T")[0]
       : null;
 
-    await db.insert(employees).values({
-      name: data.name,
-      email: data.email,
-      authId: user.user.id,
-      phone: userData.data?.phone ?? "",
-      staffNumber: userData.data?.staffNumber ?? "",
-      role: user.user.role ?? "user",
-      isManager: data.isManager,
-      department: userData.data?.department ?? null,
-      managerId: parsedManagerId,
-      dateOfBirth: dobValue,
-      address: userData.data?.address ?? null,
-      maritalStatus: userData.data?.maritalStatus ?? null,
-      employmentType: userData.data?.employmentType ?? null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    await db.transaction(async (tx) => {
+      const [emp] = await tx
+        .insert(employees)
+        .values({
+          name: data.name,
+          email: data.email,
+          authId: user.user.id,
+          phone: userData.data?.phone ?? "",
+          staffNumber: userData.data?.staffNumber ?? "",
+          role: user.user.role ?? "user",
+          isManager: data.isManager,
+          department: userData.data?.department ?? "general",
+          managerId: parsedManagerId,
+          dateOfBirth: dobValue,
+          documentCount: 0,
+          address: userData.data?.address ?? null,
+          maritalStatus: userData.data?.maritalStatus ?? null,
+          employmentType: userData.data?.employmentType ?? null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
 
+      await tx.insert(documentFolders).values({
+        name: "personal",
+        createdBy: emp.id,
+        department: emp.department,
+        root: true,
+        public: false,
+        departmental: false,
+      });
+    });
     return {
       success: { reason: "User created successfully" },
       error: null,
