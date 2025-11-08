@@ -6,3 +6,4 @@ export * from "./documents";
 export * from "./notifications";
 export * from "./notification-preferences";
 export * from "./payments";
+export * from "./tasks";

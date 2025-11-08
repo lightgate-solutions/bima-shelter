@@ -24,6 +24,15 @@ export async function getAllEmployees() {
     .from(employees);
 }
 
+export async function getEmployee(employeeId: number) {
+  return await db
+    .select()
+    .from(employees)
+    .where(eq(employees.id, employeeId))
+    .limit(1)
+    .then((res) => res[0]);
+}
+
 export async function updateEmployee(
   employeeId: number,
   updates: Partial<{

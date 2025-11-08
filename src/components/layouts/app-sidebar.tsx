@@ -1,7 +1,6 @@
 "use client";
 
 import type * as React from "react";
-import { useState, useEffect } from "react";
 import axios from "axios";
 import {
   AlarmClockCheck,
@@ -29,6 +28,8 @@ import { NavMain } from "./nav-main";
 import { NavProjects } from "./nav-projects";
 import { NavUser } from "./nav-user";
 import type { User } from "better-auth";
+import { useEffect, useMemo, useState } from "react";
+import { getSessionRole, getUser as getEmployee } from "@/actions/auth/dal";
 
 const data = {
   org: [
@@ -80,17 +81,7 @@ const data = {
         },
       ],
     },
-    {
-      title: "Task/Performance",
-      url: "/tasks",
-      icon: AlarmClockCheck,
-      items: [
-        {
-          title: "To-Do",
-          url: "/tasks/todo",
-        },
-      ],
-    },
+    // Task/Performance is customized per role at runtime
     {
       title: "Mail",
       url: "/mail",
@@ -137,6 +128,10 @@ const data = {
         {
           title: "View Employees",
           url: "/hr/employees",
+        },
+        {
+          title: "All Tasks",
+          url: "/hr/admin/tasks",
         },
       ],
     },
@@ -190,13 +185,55 @@ export function AppSidebar({
 
     getNotificationsCount();
   }, []);
+  const [isManager, setIsManager] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const emp = await getEmployee();
+        if (active) setIsManager(!!emp?.isManager);
+        const role = await getSessionRole();
+        if (active) setIsAdmin(role === "admin");
+      } catch {
+        if (active) {
+          setIsManager(null);
+          setIsAdmin(false);
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const navItems = useMemo(() => {
+    const base = data.navMain.filter((i) => i.title !== "Task/Performance");
+    // Hide Task/Performance entirely for admins
+    if (isAdmin) return base;
+    const taskItem = {
+      title: "Task/Performance",
+      url: "/tasks",
+      icon: AlarmClockCheck,
+      items: isManager
+        ? [
+            { title: "History", url: "/tasks/history" },
+            { title: "Task Item", url: "/tasks" },
+            { title: "Task Submission", url: "/tasks/manager" },
+          ]
+        : [{ title: "To-Do", url: "/tasks/employee" }],
+    };
+    return [...base, taskItem];
+  }, [isManager, isAdmin]);
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.org} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} unreadCount={unreadCount} />
+        <NavMain items={navItems} unreadCount={unreadCount} />
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>

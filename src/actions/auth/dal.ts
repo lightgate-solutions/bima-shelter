@@ -1,3 +1,4 @@
+"use server";
 import "server-only";
 import { headers } from "next/headers";
 import { cache } from "react";
@@ -38,4 +39,9 @@ export const getUser = cache(async () => {
     .limit(1);
 
   return user;
+});
+
+export const getSessionRole = cache(async () => {
+  const session = await auth.api.getSession({ headers: await headers() });
+  return session?.user?.role ?? null;
 });
