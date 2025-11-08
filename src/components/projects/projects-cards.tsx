@@ -16,10 +16,11 @@ export function ProjectsCards() {
     let mounted = true;
     async function load(next?: { q?: string; status?: string }) {
       const q = next?.q ?? filters.q ?? "";
-      const status = next?.status ?? filters.status ?? "";
+      // Always filter by in-progress status for cards (ongoing projects only)
+      const status = "in-progress";
       const params = new URLSearchParams();
       if (q) params.set("q", q);
-      if (status) params.set("status", status);
+      params.set("status", status);
       const res = await fetch(`/api/projects/stats?${params.toString()}`, {
         cache: "no-store",
       });
@@ -46,7 +47,7 @@ export function ProjectsCards() {
         filtersHandler as EventListener,
       );
     };
-  }, [filters.q, filters.status]);
+  }, [filters.q]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -57,6 +58,9 @@ export function ProjectsCards() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-semibold">{stats?.total ?? 0}</div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Ongoing projects only
+          </p>
         </CardContent>
       </Card>
       <Card>
@@ -68,6 +72,9 @@ export function ProjectsCards() {
           <div className="text-2xl font-semibold">
             ₦{(stats?.actual ?? 0).toLocaleString()}
           </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Ongoing projects only
+          </p>
         </CardContent>
       </Card>
       <Card>
@@ -79,6 +86,9 @@ export function ProjectsCards() {
           <div className="text-2xl font-semibold">
             ₦{(stats?.expenses ?? 0).toLocaleString()}
           </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Ongoing projects only
+          </p>
         </CardContent>
       </Card>
     </div>

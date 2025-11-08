@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { employees, projects } from "@/db/schema";
-import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -13,11 +13,17 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
     const q = searchParams.get("q") || "";
     const status = searchParams.get("status") || "";
+    const dateFrom = searchParams.get("dateFrom") || "";
+    const dateTo = searchParams.get("dateTo") || "";
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortDirection =
       searchParams.get("sortDirection") === "asc" ? "asc" : "desc";
 
-    let where: ReturnType<typeof or> | ReturnType<typeof eq> | undefined;
+    let where:
+      | ReturnType<typeof or>
+      | ReturnType<typeof eq>
+      | ReturnType<typeof and>
+      | undefined;
     if (q) {
       where = or(
         ilike(projects.name, `%${q}%`),
@@ -38,6 +44,20 @@ export async function GET(request: NextRequest) {
             projects.status,
             status as "pending" | "in-progress" | "completed",
           );
+    }
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      where = where
+        ? and(where, gte(projects.createdAt, fromDate))
+        : gte(projects.createdAt, fromDate);
+    }
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      where = where
+        ? and(where, lte(projects.createdAt, toDate))
+        : lte(projects.createdAt, toDate);
     }
 
     const totalResult = await db

@@ -5,12 +5,9 @@ import axios from "axios";
 import {
   AlarmClockCheck,
   Folder,
-  Frame,
   GalleryVerticalEnd,
   Landmark,
   Mail,
-  Map as MapIcon,
-  PieChart,
   TvMinimal,
   Users,
   Warehouse,
@@ -25,7 +22,6 @@ import {
 } from "@/components/ui/sidebar";
 import { TeamSwitcher } from "./team-switcher";
 import { NavMain } from "./nav-main";
-import { NavProjects } from "./nav-projects";
 import { NavUser } from "./nav-user";
 import type { User } from "better-auth";
 import { useEffect, useMemo, useState } from "react";
@@ -78,6 +74,10 @@ const data = {
         {
           title: "Payroll",
           url: "/finance/payroll",
+        },
+        {
+          title: "Company Expenses",
+          url: "/finance/expenses",
         },
       ],
     },
@@ -151,23 +151,6 @@ const data = {
       ],
     },
   ],
-  projects: [
-    {
-      name: "Asokoro Mall",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Efab - Maitama Extension",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Sokoto University",
-      url: "#",
-      icon: MapIcon,
-    },
-  ],
 };
 
 export function AppSidebar({
@@ -234,7 +217,6 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navItems} unreadCount={unreadCount} />
-        <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

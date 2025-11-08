@@ -50,7 +50,7 @@ interface UseMailPaginationProps {
 
 export function useMailPagination({
   initialEmails,
-  folder,
+  folder: _folder,
   fetchFunction,
 }: UseMailPaginationProps) {
   const [emails, setEmails] = useState<Email[]>(initialEmails);
