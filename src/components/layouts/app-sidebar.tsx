@@ -1,6 +1,8 @@
 "use client";
 
 import type * as React from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   AlarmClockCheck,
   Folder,
@@ -13,6 +15,7 @@ import {
   TvMinimal,
   Users,
   Warehouse,
+  Bell,
 } from "lucide-react";
 import {
   Sidebar,
@@ -137,6 +140,21 @@ const data = {
         },
       ],
     },
+    {
+      title: "Notifications",
+      url: "/notifications",
+      icon: Bell,
+      items: [
+        {
+          title: "View Notifications",
+          url: "/notification",
+        },
+        {
+          title: "Notifications Preferences",
+          url: "/notification-preferences",
+        },
+      ],
+    },
   ],
   projects: [
     {
@@ -161,13 +179,24 @@ export function AppSidebar({
   user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & { user: User }) {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const getNotificationsCount = async () => {
+      const res = await axios.get("/api/notification/unread-count");
+      // console.log(res, "response")
+      setUnreadCount(res.data.count);
+    };
+
+    getNotificationsCount();
+  }, []);
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.org} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={data.navMain} unreadCount={unreadCount} />
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>

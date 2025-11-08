@@ -14,9 +14,11 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
+import React from "react";
 
 export function NavMain({
   items,
+  unreadCount = 0,
 }: {
   items: {
     title: string;
@@ -28,6 +30,7 @@ export function NavMain({
       url: string;
     }[];
   }[];
+  unreadCount?: number;
 }) {
   return (
     <SidebarGroup>
@@ -48,7 +51,22 @@ export function NavMain({
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton tooltip={item.title}>
-                      {item.icon && <item.icon />}
+                      {/* {item.icon && <item.icon />} */}
+
+                      {item.title === "Notifications" ? (
+                        <div className="relative">
+                          {item.icon &&
+                            React.createElement(item.icon, {
+                              className: "h-5 w-5",
+                            })}
+                          {unreadCount > 0 && (
+                            <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500" />
+                          )}
+                        </div>
+                      ) : (
+                        item.icon &&
+                        React.createElement(item.icon, { className: "h-5 w-5" })
+                      )}
                       <span>{item.title}</span>
                       <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>

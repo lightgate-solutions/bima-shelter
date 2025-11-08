@@ -3,3 +3,6 @@ export * from "./hr";
 export * from "./mail";
 export * from "./projects";
 export * from "./documents";
+export * from "./notifications";
+export * from "./notification-preferences";
+export * from "./payments";
