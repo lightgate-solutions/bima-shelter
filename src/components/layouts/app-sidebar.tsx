@@ -25,7 +25,7 @@ import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 import type { User } from "better-auth";
 import { useEffect, useMemo, useState } from "react";
-import { getSessionRole, getUser as getEmployee } from "@/actions/auth/dal";
+import { getUser as getEmployee } from "@/actions/auth/dal";
 
 const data = {
   org: [
@@ -169,7 +169,6 @@ export function AppSidebar({
     getNotificationsCount();
   }, []);
   const [isManager, setIsManager] = useState<boolean | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     let active = true;
@@ -177,12 +176,9 @@ export function AppSidebar({
       try {
         const emp = await getEmployee();
         if (active) setIsManager(!!emp?.isManager);
-        const role = await getSessionRole();
-        if (active) setIsAdmin(role === "admin");
       } catch {
         if (active) {
           setIsManager(null);
-          setIsAdmin(false);
         }
       }
     })();
@@ -193,8 +189,6 @@ export function AppSidebar({
 
   const navItems = useMemo(() => {
     const base = data.navMain.filter((i) => i.title !== "Task/Performance");
-    // Hide Task/Performance entirely for admins
-    if (isAdmin) return base;
     const taskItem = {
       title: "Task/Performance",
       url: "/tasks",
@@ -208,7 +202,7 @@ export function AppSidebar({
         : [{ title: "To-Do", url: "/tasks/employee" }],
     };
     return [...base, taskItem];
-  }, [isManager, isAdmin]);
+  }, [isManager]);
 
   return (
     <Sidebar collapsible="icon" {...props}>
