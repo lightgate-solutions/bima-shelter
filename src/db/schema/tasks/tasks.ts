@@ -10,7 +10,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { taskStatusEnum, taskPriorityEnum } from "./enums";
 import { employees } from "../hr";
-import { taskSubmissions } from "./taskSubmissions";
 
 export const tasks = pgTable(
   "tasks",
@@ -42,14 +41,15 @@ export const tasks = pgTable(
   ],
 );
 
-export const taskRelations = relations(tasks, ({ one, many }) => ({
+export const taskRelations = relations(tasks, ({ one }) => ({
   assignedTo: one(employees, {
     fields: [tasks.assignedTo],
     references: [employees.id],
+    relationName: "assignedTo",
   }),
   assignedBy: one(employees, {
     fields: [tasks.assignedBy],
     references: [employees.id],
+    relationName: "assignedBy",
   }),
-  submissions: many(taskSubmissions),
 }));
