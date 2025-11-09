@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import {
@@ -28,6 +28,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 import { ProjectFormDialog } from "./project-form-dialog";
 
 type Project = {
@@ -47,6 +48,8 @@ export function ProjectsTable() {
   const [limit, _setLimit] = useState(10);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [_loading, setLoading] = useState(false);
   const [_editProject, _setEditProject] = useState<Project | null>(null);
 
@@ -54,53 +57,121 @@ export function ProjectsTable() {
     setLoading(true);
     try {
       const statusParam = status === "all" ? "" : status;
-      const res = await fetch(
-        `/api/projects?page=${page}&limit=${limit}&q=${encodeURIComponent(q)}&status=${encodeURIComponent(statusParam)}`,
-      );
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        q: q,
+        status: statusParam,
+      });
+      if (dateFrom) params.append("dateFrom", dateFrom);
+      if (dateTo) params.append("dateTo", dateTo);
+      const res = await fetch(`/api/projects?${params.toString()}`);
       const data = await res.json();
       setItems(data.projects ?? []);
       setTotal(data.total ?? 0);
     } finally {
       setLoading(false);
     }
-  }, [page, limit, q, status]);
+  }, [page, limit, q, status, dateFrom, dateTo]);
+
+  // Reset to page 1 when filters change
+  const prevFiltersRef = useRef({ q, status, dateFrom, dateTo });
+  useEffect(() => {
+    const prevFilters = prevFiltersRef.current;
+    const filtersChanged =
+      prevFilters.q !== q ||
+      prevFilters.status !== status ||
+      prevFilters.dateFrom !== dateFrom ||
+      prevFilters.dateTo !== dateTo;
+
+    if (filtersChanged) {
+      setPage(1);
+      prevFiltersRef.current = { q, status, dateFrom, dateTo };
+    }
+  }, [q, status, dateFrom, dateTo]);
 
   useEffect(() => {
     load();
     if (typeof window !== "undefined") {
-      const detail = { q, status };
+      const detail = { q, status, dateFrom, dateTo };
       window.dispatchEvent(new CustomEvent("projects:filters", { detail }));
     }
-  }, [load, q, status]);
+  }, [load, q, status, dateFrom, dateTo]);
 
   async function onDelete(id: number) {
     await fetch(`/api/projects/${id}`, { method: "DELETE" });
     load();
   }
 
+  const clearDateFilters = () => {
+    setDateFrom("");
+    setDateTo("");
+    setPage(1);
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Search projects..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <Select value={status} onValueChange={(v) => setStatus(v)}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="in-progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-          </SelectContent>
-        </Select>
-        <ProjectFormDialog
-          onCompleted={() => load()}
-          trigger={<Button className="ml-auto">New Project</Button>}
-        />
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search projects..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="flex-1"
+          />
+          <Select value={status} onValueChange={(v) => setStatus(v)}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+          <ProjectFormDialog
+            onCompleted={() => load()}
+            trigger={<Button className="ml-auto">New Project</Button>}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="dateFrom" className="text-sm whitespace-nowrap">
+              From:
+            </Label>
+            <Input
+              id="dateFrom"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-40"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="dateTo" className="text-sm whitespace-nowrap">
+              To:
+            </Label>
+            <Input
+              id="dateTo"
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-40"
+              min={dateFrom || undefined}
+            />
+          </div>
+          {(dateFrom || dateTo) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearDateFilters}
+              className="h-9"
+            >
+              Clear Dates
+            </Button>
+          )}
+        </div>
       </div>
       <Separator />
       <div className="rounded-md border">

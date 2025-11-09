@@ -75,6 +75,10 @@ const data = {
           title: "Payroll",
           url: "/finance/payroll",
         },
+        {
+          title: "Company Expenses",
+          url: "/finance/expenses",
+        },
       ],
     },
     // Task/Performance is customized per role at runtime
