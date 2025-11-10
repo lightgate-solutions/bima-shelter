@@ -40,6 +40,7 @@ import { useState } from "react";
 import EmployeeEditForm from "./employee-edit-dialog";
 import EmployeeProfileView from "./employee-profile-dialog";
 import EmployeeDocuments from "./employee-documents";
+import EmployeeBankDetails from "./employee-bank-details";
 import { Edit, Eye } from "lucide-react";
 import { getAllEmployees } from "@/actions/hr/employees";
 import EmployeesTableSkeleton from "./employees-table-skeleton";
@@ -212,7 +213,14 @@ export default function EmployeesTable() {
                 )}
               </TabsContent>
 
-              <TabsContent value="account">employee account</TabsContent>
+              <TabsContent value="account">
+                {selectedEmployee && (
+                  <EmployeeBankDetails
+                    employeeId={selectedEmployee.id}
+                    employeeName={selectedEmployee.name}
+                  />
+                )}
+              </TabsContent>
 
               <TabsContent value="attendance">Attendance</TabsContent>
 
