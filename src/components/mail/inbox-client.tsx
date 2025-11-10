@@ -9,6 +9,7 @@ import { EmailDetail } from "./email-detail";
 import { ComposeEmail } from "./compose-email";
 import { ReplyForwardEmail } from "./reply-forward-email";
 import { ScrollArea } from "../ui/scroll-area";
+import { BackButton } from "../ui/back-button";
 import { useMailPagination } from "@/hooks/use-mail-pagination";
 import {
   getInboxEmails,
@@ -154,46 +155,51 @@ export function InboxClient({
   };
 
   return (
-    <div className="grid grid-cols-3 h-full">
-      <ScrollArea className="w-80 border-r col-span-1 flex flex-col h-full overflow-hidden">
-        <div className="p-4 border-b flex-shrink-0">
-          <h1 className="text-xl font-bold capitalize">{folder}</h1>
-          <p className="text-xs text-muted-foreground">
-            {paginatedEmails.length} email
-            {paginatedEmails.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          <EmailListSidebar
-            emails={paginatedEmails}
-            folder={folder}
-            onLoadMore={loadMore}
-            loading={loading}
-            hasMore={hasMore}
-          />
-        </div>
-      </ScrollArea>
-
-      <ScrollArea className="flex-1 col-span-2 h-full overflow-hidden">
-        {selectedEmail ? (
-          <EmailDetail
-            email={selectedEmail}
-            onBack={handleBack}
-            onReply={handleReply}
-            onForward={handleForward}
-            onUpdate={handleUpdate}
-            folder={folder}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-            <Mail className="h-16 w-16 mb-4 opacity-20" />
-            <p className="text-lg font-medium">Select an email to read</p>
-            <p className="text-sm">
-              Choose an email from the list to view its contents
+    <div className="h-full w-full flex flex-col">
+      <div className="px-4 pt-4 pb-2 flex-shrink-0">
+        <BackButton />
+      </div>
+      <div className="grid grid-cols-3 flex-1 min-h-0">
+        <ScrollArea className="w-80 border-r col-span-1 flex flex-col h-full overflow-hidden">
+          <div className="p-4 border-b flex-shrink-0">
+            <h1 className="text-xl font-bold capitalize">{folder}</h1>
+            <p className="text-xs text-muted-foreground">
+              {paginatedEmails.length} email
+              {paginatedEmails.length !== 1 ? "s" : ""}
             </p>
           </div>
-        )}
-      </ScrollArea>
+          <div className="flex-1 overflow-y-auto">
+            <EmailListSidebar
+              emails={paginatedEmails}
+              folder={folder}
+              onLoadMore={loadMore}
+              loading={loading}
+              hasMore={hasMore}
+            />
+          </div>
+        </ScrollArea>
+
+        <ScrollArea className="flex-1 col-span-2 h-full overflow-hidden">
+          {selectedEmail ? (
+            <EmailDetail
+              email={selectedEmail}
+              onBack={handleBack}
+              onReply={handleReply}
+              onForward={handleForward}
+              onUpdate={handleUpdate}
+              folder={folder}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <Mail className="h-16 w-16 mb-4 opacity-20" />
+              <p className="text-lg font-medium">Select an email to read</p>
+              <p className="text-sm">
+                Choose an email from the list to view its contents
+              </p>
+            </div>
+          )}
+        </ScrollArea>
+      </div>
 
       <ComposeEmail
         open={showCompose}

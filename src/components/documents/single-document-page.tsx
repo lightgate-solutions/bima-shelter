@@ -71,6 +71,7 @@ import {
 import { Badge } from "../ui/badge";
 import Link from "next/link";
 import { toast } from "sonner";
+import { BackButton } from "../ui/back-button";
 import {
   Dialog,
   DialogContent,
@@ -442,13 +443,16 @@ function DocumentPage({
     <div>
       <div className="min-w-3xl 2xl:min-w-4xl">
         <div className="space-y-6 pb-6">
+          <div className="flex items-start gap-4 mb-4">
+            <BackButton />
+          </div>
           <div className="flex flex-row gap-3">
             <div className="bg-muted p-4 rounded-xl">
               <FileIcon size={40} />
             </div>
             <div>
-              <h2>{doc.title.charAt(0).toUpperCase() + doc.title.slice(1)}</h2>
-              <div>{doc.description ?? "No description available"}</div>
+              <h2 className="text-2xl font-bold">{doc.title.charAt(0).toUpperCase() + doc.title.slice(1)}</h2>
+              <div className="text-muted-foreground">{doc.description ?? "No description available"}</div>
               <div className="text-muted-foreground text-sm">
                 {doc.fileSize} MB • Modified{" "}
                 {doc.updatedAt.toLocaleDateString()}

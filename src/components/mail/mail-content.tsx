@@ -8,6 +8,7 @@ import { EmailListSidebar } from "@/components/mail/email-list-sidebar";
 import { EmailDetail } from "@/components/mail/email-detail";
 import { ScrollArea } from "../ui/scroll-area";
 import { useMailPagination } from "@/hooks/use-mail-pagination";
+import { BackButton } from "../ui/back-button";
 import {
   getInboxEmails,
   getSentEmails,
@@ -124,7 +125,10 @@ export function MailContent({
   };
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full space-y-4">
+      <div className="px-2 pt-2">
+        <BackButton />
+      </div>
       <div className="hidden md:grid md:h-full md:grid-cols-3">
         <div className="flex h-full flex-col border-r col-span-1 bg-background">
           <div className="sticky top-0 z-10 bg-background">
