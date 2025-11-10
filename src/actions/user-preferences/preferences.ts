@@ -104,13 +104,16 @@ export async function updateUserPreferences(
     }
     if (data.sidebarCollapsed !== undefined)
       validatedData.sidebarCollapsed = data.sidebarCollapsed;
-    if (data.defaultView !== undefined) validatedData.defaultView = data.defaultView;
+    if (data.defaultView !== undefined)
+      validatedData.defaultView = data.defaultView;
     if (data.itemsPerPage !== undefined)
       validatedData.itemsPerPage = data.itemsPerPage;
     if (data.profileVisibility !== undefined)
       validatedData.profileVisibility = data.profileVisibility;
-    if (data.emailDigest !== undefined) validatedData.emailDigest = data.emailDigest;
-    if (data.compactMode !== undefined) validatedData.compactMode = data.compactMode;
+    if (data.emailDigest !== undefined)
+      validatedData.emailDigest = data.emailDigest;
+    if (data.compactMode !== undefined)
+      validatedData.compactMode = data.compactMode;
 
     if (existingPrefs.length > 0) {
       await db
@@ -138,4 +141,3 @@ export async function updateUserPreferences(
     };
   }
 }
-

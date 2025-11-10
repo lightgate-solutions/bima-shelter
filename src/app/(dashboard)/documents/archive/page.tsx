@@ -97,8 +97,8 @@ export default async function Page({
           <div>
             <h1 className="text-2xl font-bold">Archive</h1>
             <p className="text-sm text-muted-foreground">
-              View archived folders you created and archived documents you own or
-              have access to.
+              View archived folders you created and archived documents you own
+              or have access to.
             </p>
           </div>
         </div>

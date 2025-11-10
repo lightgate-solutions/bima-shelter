@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, serial, pgEnum, integer } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  serial,
+  pgEnum,
+  integer,
+} from "drizzle-orm/pg-core";
 import { employees } from "./hr";
 
 export const themeEnum = pgEnum("theme", ["light", "dark", "system"]);
@@ -57,4 +64,3 @@ export const userPreferences = pgTable("user_preferences", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
-

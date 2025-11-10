@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useTheme } from "next-themes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,7 +51,7 @@ export function PersonalizationDashboard({
   initialPreferences,
 }: PersonalizationDashboardProps) {
   const { setTheme: setNextTheme } = useTheme();
-  
+
   const [preferences, setPreferences] = useState<UserPreferences>({
     theme: initialPreferences?.theme || "system",
     language: initialPreferences?.language || "en",
@@ -84,11 +90,9 @@ export function PersonalizationDashboard({
     setFormState({});
 
     try {
-      const response = await axios.post(
-        "/api/user-preferences",
-        preferences,
-        { withCredentials: true },
-      );
+      const response = await axios.post("/api/user-preferences", preferences, {
+        withCredentials: true,
+      });
 
       if (response.data.success) {
         setFormState({
@@ -138,7 +142,10 @@ export function PersonalizationDashboard({
             <Layout className="size-4" />
             Layout
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
+          <TabsTrigger
+            value="notifications"
+            className="flex items-center gap-2"
+          >
             <Bell className="size-4" />
             Notifications
           </TabsTrigger>
@@ -158,7 +165,9 @@ export function PersonalizationDashboard({
                 <Input
                   id="name"
                   value={profile.name}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProfile({ ...profile, name: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setProfile({ ...profile, name: e.target.value })
+                  }
                   disabled
                 />
                 <p className="text-xs text-muted-foreground">
@@ -172,7 +181,9 @@ export function PersonalizationDashboard({
                   id="email"
                   type="email"
                   value={profile.email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProfile({ ...profile, email: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setProfile({ ...profile, email: e.target.value })
+                  }
                   disabled
                 />
                 <p className="text-xs text-muted-foreground">
@@ -186,7 +197,9 @@ export function PersonalizationDashboard({
                   id="phone"
                   type="tel"
                   value={profile.phone}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProfile({ ...profile, phone: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setProfile({ ...profile, phone: e.target.value })
+                  }
                   placeholder="Enter your phone number"
                 />
               </div>
@@ -272,7 +285,11 @@ export function PersonalizationDashboard({
                 <Select
                   value={preferences.dateFormat}
                   onValueChange={(
-                    value: "MM/DD/YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD" | "DD MMM YYYY",
+                    value:
+                      | "MM/DD/YYYY"
+                      | "DD/MM/YYYY"
+                      | "YYYY-MM-DD"
+                      | "DD MMM YYYY",
                   ) => setPreferences({ ...preferences, dateFormat: value })}
                 >
                   <SelectTrigger id="dateFormat">
@@ -300,10 +317,18 @@ export function PersonalizationDashboard({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="UTC">UTC</SelectItem>
-                    <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                    <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                    <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                    <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                    <SelectItem value="America/New_York">
+                      Eastern Time (ET)
+                    </SelectItem>
+                    <SelectItem value="America/Chicago">
+                      Central Time (CT)
+                    </SelectItem>
+                    <SelectItem value="America/Denver">
+                      Mountain Time (MT)
+                    </SelectItem>
+                    <SelectItem value="America/Los_Angeles">
+                      Pacific Time (PT)
+                    </SelectItem>
                     <SelectItem value="Europe/London">London (GMT)</SelectItem>
                     <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
                     <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
@@ -394,7 +419,9 @@ export function PersonalizationDashboard({
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="sidebarCollapsed">Sidebar Collapsed by Default</Label>
+                  <Label htmlFor="sidebarCollapsed">
+                    Sidebar Collapsed by Default
+                  </Label>
                   <p className="text-xs text-muted-foreground">
                     Start with the sidebar collapsed
                   </p>
@@ -475,4 +502,3 @@ export function PersonalizationDashboard({
     </div>
   );
 }
-

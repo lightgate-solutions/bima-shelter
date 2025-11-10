@@ -68,7 +68,7 @@ export default async function DashboardPage() {
   const isManager = user.isManager || false;
 
   // Priority: Admin > Manager (if isManager flag) > Role-based > Default Staff
-  
+
   // Admin always gets admin dashboard
   if (normalizedRole === "admin") {
     return <AdminDashboard />;

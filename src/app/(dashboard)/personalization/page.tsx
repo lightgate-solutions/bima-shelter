@@ -19,7 +19,7 @@ type UserPreferences = {
 
 export default async function PersonalizationPage() {
   const user = await getUser();
-  
+
   if (!user) {
     return null;
   }
@@ -61,6 +61,7 @@ export default async function PersonalizationPage() {
     // Continue with null preferences - component will handle defaults
   }
 
-  return <PersonalizationDashboard user={user} initialPreferences={preferences} />;
+  return (
+    <PersonalizationDashboard user={user} initialPreferences={preferences} />
+  );
 }
-

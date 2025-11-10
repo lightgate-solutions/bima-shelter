@@ -2,7 +2,13 @@
 
 import { DashboardStats } from "./dashboard-stats";
 import { Users, UserCheck, ClipboardList } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import Link from "next/link";
 
 export default function HrDashboard() {
@@ -11,9 +17,7 @@ export default function HrDashboard() {
       {/* Header */}
       <div className="flex flex-col gap-3">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">
-            HR Dashboard
-          </h1>
+          <h1 className="text-4xl font-bold tracking-tight">HR Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1.5">
             Human Resources management and employee overview.
           </p>

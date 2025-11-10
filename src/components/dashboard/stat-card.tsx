@@ -57,9 +57,7 @@ export function StatCard({
               <p
                 className={cn(
                   "text-2xl font-bold tracking-tight transition-colors",
-                  isEmpty 
-                    ? "text-foreground" 
-                    : "text-foreground",
+                  isEmpty ? "text-foreground" : "text-foreground",
                 )}
               >
                 {typeof displayValue === "number" && displayValue > 0
@@ -91,9 +89,7 @@ export function StatCard({
               "rounded-lg p-2.5 transition-all duration-200 shrink-0",
               "group-hover:scale-110",
               iconBgColor,
-              isEmpty
-                ? "opacity-30 grayscale"
-                : "opacity-100",
+              isEmpty ? "opacity-30 grayscale" : "opacity-100",
             )}
           >
             <Icon className={cn("size-4 transition-colors", iconColor)} />
