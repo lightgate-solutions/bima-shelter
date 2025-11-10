@@ -41,6 +41,7 @@ import EmployeeEditForm from "./employee-edit-dialog";
 import EmployeeProfileView from "./employee-profile-dialog";
 import EmployeeDocuments from "./employee-documents";
 import EmployeeBankDetails from "./employee-bank-details";
+import EmployeeHistory from "./employee-history";
 import { Edit, Eye } from "lucide-react";
 import { getAllEmployees } from "@/actions/hr/employees";
 import EmployeesTableSkeleton from "./employees-table-skeleton";
@@ -224,7 +225,14 @@ export default function EmployeesTable() {
 
               <TabsContent value="attendance">Attendance</TabsContent>
 
-              <TabsContent value="history">employee hsitory</TabsContent>
+              <TabsContent value="history">
+                {selectedEmployee && (
+                  <EmployeeHistory
+                    employeeId={selectedEmployee.id}
+                    employeeName={selectedEmployee.name}
+                  />
+                )}
+              </TabsContent>
             </Tabs>
           </div>
         </SheetContent>

@@ -67,7 +67,7 @@ export async function saveBankDetails(data: BankDetailsFormValues) {
       return {
         success: false,
         message: "Invalid bank details",
-        errors: error.errors,
+        errors: error.message,
       };
     }
     return { success: false, message: "Failed to save bank details" };
