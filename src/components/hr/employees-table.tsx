@@ -22,17 +22,27 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import EmployeeEditForm from "./employee-edit-dialog";
 import EmployeeProfileView from "./employee-profile-dialog";
+import EmployeeDocuments from "./employee-documents";
 import { Edit, Eye } from "lucide-react";
 import { getAllEmployees } from "@/actions/hr/employees";
+import EmployeesTableSkeleton from "./employees-table-skeleton";
 
 export default function EmployeesTable() {
   const { data: employees = [], isLoading } = useQuery({
@@ -43,21 +53,7 @@ export default function EmployeesTable() {
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [mode, setMode] = useState<"view" | "edit" | null>(null);
 
-  if (employees.length === 0) {
-    return (
-      <div className="p-6 text-center text-muted-foreground">
-        No employees found.
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="p-6 text-center text-muted-foreground">
-        Loading employees...
-      </div>
-    );
-  }
+  if (isLoading) return <EmployeesTableSkeleton />;
 
   if (employees.length === 0) {
     return (
@@ -109,27 +105,15 @@ export default function EmployeesTable() {
                       </p>
                     </div>
                   </TableCell>
-
-                  {/* Role */}
                   <TableCell>
                     <Badge variant="outline">{employee.role}</Badge>
                   </TableCell>
-
-                  {/* Department */}
                   <TableCell>{employee.department || "-"}</TableCell>
-
-                  {/* Email */}
                   <TableCell>{employee.email}</TableCell>
-
-                  {/* Phone */}
                   <TableCell>{employee.phone || "-"}</TableCell>
-
-                  {/* Employment Type */}
                   <TableCell>
                     <Badge>{employee.employmentType || "N/A"}</Badge>
                   </TableCell>
-
-                  {/* Actions */}
                   <TableCell className=" flex text-right space-x-2">
                     <Button
                       size="sm"
@@ -159,8 +143,8 @@ export default function EmployeesTable() {
         </CardContent>
       </Card>
 
-      <Dialog
-        open={!!selectedEmployee && !!mode}
+      <Sheet
+        open={!!selectedEmployee && mode === "view"}
         onOpenChange={(open) => {
           if (!open) {
             setSelectedEmployee(null);
@@ -168,23 +152,92 @@ export default function EmployeesTable() {
           }
         }}
       >
-        <DialogContent className="min-w-[45rem] h-[32rem] overflow-auto">
+        <SheetContent className="overflow-y-auto w-[600px] sm:min-w-4xl p-4">
+          <SheetHeader>
+            <SheetTitle>Employee Details</SheetTitle>
+            <SheetDescription>View employee information</SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-4">
+            <Tabs defaultValue="information" className="gap-4">
+              <TabsList className="bg-background justify-start w-full rounded-none border-b p-0">
+                <TabsTrigger
+                  value="information"
+                  className="border-b-border dark:data-[state=active]:bg-background data-[state=active]:border-border data-[state=active]:border-b-background h-full rounded-none rounded-t border border-transparent data-[state=active]:-mb-0.5 data-[state=active]:shadow-none dark:border-b-0 dark:data-[state=active]:-mb-0.5"
+                >
+                  Information
+                </TabsTrigger>
+
+                <TabsTrigger
+                  value="documents"
+                  className="border-b-border dark:data-[state=active]:bg-background data-[state=active]:border-border data-[state=active]:border-b-background h-full rounded-none rounded-t border border-transparent data-[state=active]:-mb-0.5 data-[state=active]:shadow-none dark:border-b-0 dark:data-[state=active]:-mb-0.5"
+                >
+                  Documents
+                </TabsTrigger>
+
+                <TabsTrigger
+                  value="account"
+                  className="border-b-border dark:data-[state=active]:bg-background data-[state=active]:border-border data-[state=active]:border-b-background h-full rounded-none rounded-t border border-transparent data-[state=active]:-mb-0.5 data-[state=active]:shadow-none dark:border-b-0 dark:data-[state=active]:-mb-0.5"
+                >
+                  Employee Account
+                </TabsTrigger>
+
+                <TabsTrigger
+                  value="attendance"
+                  className="border-b-border dark:data-[state=active]:bg-background data-[state=active]:border-border data-[state=active]:border-b-background h-full rounded-none rounded-t border border-transparent data-[state=active]:-mb-0.5 data-[state=active]:shadow-none dark:border-b-0 dark:data-[state=active]:-mb-0.5"
+                >
+                  Attendance
+                </TabsTrigger>
+
+                <TabsTrigger
+                  value="history"
+                  className="border-b-border dark:data-[state=active]:bg-background data-[state=active]:border-border data-[state=active]:border-b-background h-full rounded-none rounded-t border border-transparent data-[state=active]:-mb-0.5 data-[state=active]:shadow-none dark:border-b-0 dark:data-[state=active]:-mb-0.5"
+                >
+                  Employee History
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="information">
+                {selectedEmployee && (
+                  <EmployeeProfileView employee={selectedEmployee} />
+                )}
+              </TabsContent>
+
+              <TabsContent value="documents">
+                {selectedEmployee && (
+                  <EmployeeDocuments
+                    employeeId={selectedEmployee.id}
+                    employeeName={selectedEmployee.name}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent value="account">employee account</TabsContent>
+
+              <TabsContent value="attendance">Attendance</TabsContent>
+
+              <TabsContent value="history">employee hsitory</TabsContent>
+            </Tabs>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Dialog
+        open={!!selectedEmployee && mode === "edit"}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedEmployee(null);
+            setMode(null);
+          }
+        }}
+      >
+        <DialogContent className="min-w-[45rem] max-h-[80vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>
-              {mode === "view" ? "Employee Profile" : "Edit Employee"}
-            </DialogTitle>
-            <DialogDescription>
-              {mode === "view"
-                ? "Detailed employee information"
-                : "Update employee details"}
-            </DialogDescription>
+            <DialogTitle>Edit Employee</DialogTitle>
+            <DialogDescription>Update employee details</DialogDescription>
           </DialogHeader>
 
-          {mode === "view" && selectedEmployee && (
-            <EmployeeProfileView employee={selectedEmployee} />
-          )}
-
-          {mode === "edit" && selectedEmployee && (
+          {selectedEmployee && (
             <EmployeeEditForm
               employee={selectedEmployee}
               onCloseAction={() => {

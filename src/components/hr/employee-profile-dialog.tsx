@@ -20,7 +20,7 @@ export default function EmployeeProfileView({ employee }: { employee: any }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 text-sm">
+      <div className="grid grid-cols-2 gap-4 ">
         <p>
           <strong>Email:</strong> {employee.email}
         </p>
