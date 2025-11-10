@@ -2,7 +2,13 @@
 
 import { DashboardStats } from "./dashboard-stats";
 import { DollarSign, Receipt, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import Link from "next/link";
 
 export default function FinanceDashboard() {

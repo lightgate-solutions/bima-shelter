@@ -11,8 +11,8 @@ export default function ManagerTasksPage() {
           <div>
             <h2 className="text-2xl font-bold mb-2">Task Item</h2>
             <p className="text-sm text-muted-foreground">
-              View, create, and manage tasks across your team. Open a task to chat,
-              review progress, and make updates.
+              View, create, and manage tasks across your team. Open a task to
+              chat, review progress, and make updates.
             </p>
           </div>
         </div>

@@ -35,7 +35,10 @@ export async function GET() {
 
     const employee = employeeResult[0];
     if (!employee) {
-      return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Employee not found" },
+        { status: 404 },
+      );
     }
 
     const isAdmin = role === "admin";
@@ -54,26 +57,46 @@ export async function GET() {
       const activeTaskWhere = taskScopeWhere
         ? and(taskScopeWhere, ne(tasks.status, "Completed"))
         : ne(tasks.status, "Completed");
-      
+
       const pendingTaskWhere = taskScopeWhere
         ? and(taskScopeWhere, eq(tasks.status, "Pending"))
         : eq(tasks.status, "Pending");
-      
+
       const inProgressTaskWhere = taskScopeWhere
         ? and(taskScopeWhere, eq(tasks.status, "In Progress"))
         : eq(tasks.status, "In Progress");
 
-      const [activeResult, pendingResult, inProgressResult] = await Promise.all([
-        activeTaskWhere
-          ? db.select({ count: sql<number>`count(*)::int` }).from(tasks).where(activeTaskWhere)
-          : db.select({ count: sql<number>`count(*)::int` }).from(tasks).where(ne(tasks.status, "Completed")),
-        pendingTaskWhere
-          ? db.select({ count: sql<number>`count(*)::int` }).from(tasks).where(pendingTaskWhere)
-          : db.select({ count: sql<number>`count(*)::int` }).from(tasks).where(eq(tasks.status, "Pending")),
-        inProgressTaskWhere
-          ? db.select({ count: sql<number>`count(*)::int` }).from(tasks).where(inProgressTaskWhere)
-          : db.select({ count: sql<number>`count(*)::int` }).from(tasks).where(eq(tasks.status, "In Progress")),
-      ]);
+      const [activeResult, pendingResult, inProgressResult] = await Promise.all(
+        [
+          activeTaskWhere
+            ? db
+                .select({ count: sql<number>`count(*)::int` })
+                .from(tasks)
+                .where(activeTaskWhere)
+            : db
+                .select({ count: sql<number>`count(*)::int` })
+                .from(tasks)
+                .where(ne(tasks.status, "Completed")),
+          pendingTaskWhere
+            ? db
+                .select({ count: sql<number>`count(*)::int` })
+                .from(tasks)
+                .where(pendingTaskWhere)
+            : db
+                .select({ count: sql<number>`count(*)::int` })
+                .from(tasks)
+                .where(eq(tasks.status, "Pending")),
+          inProgressTaskWhere
+            ? db
+                .select({ count: sql<number>`count(*)::int` })
+                .from(tasks)
+                .where(inProgressTaskWhere)
+            : db
+                .select({ count: sql<number>`count(*)::int` })
+                .from(tasks)
+                .where(eq(tasks.status, "In Progress")),
+        ],
+      );
 
       taskStats = {
         active: Number(activeResult[0]?.count ?? 0),
@@ -81,11 +104,11 @@ export async function GET() {
         inProgress: Number(inProgressResult[0]?.count ?? 0),
         total: 0,
       };
-      taskStats.total = taskStats.active + taskStats.pending + taskStats.inProgress;
+      taskStats.total =
+        taskStats.active + taskStats.pending + taskStats.inProgress;
     } catch {
       // Keep default values
     }
-
 
     // Document stats - simplified query
     let documentCount = 0;
@@ -199,7 +222,7 @@ export async function GET() {
     );
   } catch {
     return NextResponse.json(
-      { 
+      {
         error: "Failed to fetch dashboard stats",
         tasks: { active: 0, pending: 0, inProgress: 0, total: 0 },
         documents: 0,

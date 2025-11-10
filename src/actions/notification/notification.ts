@@ -96,7 +96,7 @@ export async function getUserNotifications() {
   if (!currentUser) {
     return {
       success: false,
-      data: null,
+      data: [],
       error: "Log in to continue",
     };
   }
@@ -109,7 +109,7 @@ export async function getUserNotifications() {
     .where(eq(notifications.user_id, user_id))
     .orderBy(desc(notifications.created_at));
 
-  return userNotifications;
+  return { success: true, data: userNotifications, error: null };
 }
 
 export async function markNotificationsAsRead(ids: number[]) {

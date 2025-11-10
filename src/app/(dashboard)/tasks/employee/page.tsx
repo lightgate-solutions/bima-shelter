@@ -11,8 +11,9 @@ export default function TodoPage() {
           <div>
             <h2 className="text-2xl font-bold mb-2">My Tasks</h2>
             <p className="text-sm text-muted-foreground">
-              View and update the status of tasks assigned to you. You can chat with
-              your manager and teammates and submit your work from the task view.
+              View and update the status of tasks assigned to you. You can chat
+              with your manager and teammates and submit your work from the task
+              view.
             </p>
           </div>
         </div>

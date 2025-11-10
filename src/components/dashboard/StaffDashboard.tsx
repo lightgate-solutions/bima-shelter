@@ -8,9 +8,7 @@ export default function StaffDashboard() {
       {/* Header */}
       <div className="flex flex-col gap-3">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">
-            Dashboard
-          </h1>
+          <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1.5">
             Welcome back! Here's an overview of your work and activities.
           </p>

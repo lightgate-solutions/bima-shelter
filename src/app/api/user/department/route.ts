@@ -9,12 +9,9 @@ export async function GET() {
   try {
     const h = await headers();
     const session = await auth.api.getSession({ headers: h });
-    
+
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const [user] = await db
@@ -29,10 +26,7 @@ export async function GET() {
       .limit(1);
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -48,4 +42,3 @@ export async function GET() {
     );
   }
 }
-

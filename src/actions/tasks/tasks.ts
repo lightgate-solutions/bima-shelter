@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { CreateTask } from "@/types";
+import { createNotification } from "../notification/notification";
 
 type CreateTaskWithAssignees = CreateTask & { assignees?: number[] };
 
@@ -44,6 +45,17 @@ export async function createTask(taskData: CreateTaskWithAssignees) {
         employeeId: empId,
       }));
       await db.insert(taskAssignees).values(rows);
+
+      // Notify all assignees about the new task
+      for (const employeeId of assignees) {
+        await createNotification({
+          user_id: employeeId,
+          title: "New Task Assigned",
+          message: `You've been assigned to task: ${taskData.title}`,
+          notification_type: "message",
+          reference_id: created.id,
+        });
+      }
     }
 
     revalidatePath("/tasks/history");

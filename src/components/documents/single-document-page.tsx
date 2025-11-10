@@ -451,8 +451,12 @@ function DocumentPage({
               <FileIcon size={40} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold">{doc.title.charAt(0).toUpperCase() + doc.title.slice(1)}</h2>
-              <div className="text-muted-foreground">{doc.description ?? "No description available"}</div>
+              <h2 className="text-2xl font-bold">
+                {doc.title.charAt(0).toUpperCase() + doc.title.slice(1)}
+              </h2>
+              <div className="text-muted-foreground">
+                {doc.description ?? "No description available"}
+              </div>
               <div className="text-muted-foreground text-sm">
                 {doc.fileSize} MB • Modified{" "}
                 {doc.updatedAt.toLocaleDateString()}

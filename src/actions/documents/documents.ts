@@ -18,6 +18,7 @@ import {
 import { DrizzleQueryError, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { upstashIndex } from "@/lib/upstash-client";
+import { createNotification } from "../notification/notification";
 
 export async function getActiveFolderDocuments(
   folderId: number,
@@ -1173,6 +1174,7 @@ export async function addDocumentShare(
         notFound: false as const,
         userId: target.id,
         email: target.email,
+        documentName: doc.title,
       };
     });
 
@@ -1182,6 +1184,15 @@ export async function addDocumentShare(
         error: { reason: `No employee found with email ${result.email}` },
       };
     }
+
+    // Notify the user that a document was shared with them
+    await createNotification({
+      user_id: result.userId,
+      title: "Document Shared With You",
+      message: `${user.name} shared "${result.documentName}" with ${accessLevel} access`,
+      notification_type: "message",
+      reference_id: documentId,
+    });
 
     return {
       success: {
@@ -1219,7 +1230,7 @@ export async function removeDocumentShare(
   if (!user) throw new Error("User not logged in");
 
   try {
-    await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const doc = await tx.query.document.findFirst({
         where: eq(document.id, documentId),
       });
@@ -1265,6 +1276,17 @@ export async function removeDocumentShare(
         details: `revoked access from user ${targetUserId}`,
         documentVersionId: doc.currentVersionId,
       });
+
+      return { documentName: doc.title };
+    });
+
+    // Notify the user that their access was revoked
+    await createNotification({
+      user_id: targetUserId,
+      title: "Document Access Revoked",
+      message: `Your access to "${result.documentName}" has been revoked`,
+      notification_type: "message",
+      reference_id: documentId,
     });
 
     return { success: { reason: "Share removed" }, error: null };

@@ -34,7 +34,10 @@ interface DashboardStatsProps {
   isManager?: boolean;
 }
 
-export function DashboardStats({ userRole: _userRole = "staff", isManager = false }: DashboardStatsProps) {
+export function DashboardStats({
+  userRole: _userRole = "staff",
+  isManager = false,
+}: DashboardStatsProps) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,23 +50,25 @@ export function DashboardStats({ userRole: _userRole = "staff", isManager = fals
           credentials: "include",
           cache: "no-store",
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.error || "Failed to fetch stats");
         }
-        
+
         const data = await response.json();
-        
+
         // Ensure data structure is correct
-        if (data && typeof data === 'object') {
+        if (data && typeof data === "object") {
           setStats(data);
           setError(null);
         } else {
           throw new Error("Invalid data format received");
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load dashboard stats");
+        setError(
+          err instanceof Error ? err.message : "Failed to load dashboard stats",
+        );
         // Set default values on error
         setStats({
           tasks: { active: 0, pending: 0, inProgress: 0, total: 0 },
@@ -180,7 +185,9 @@ export function DashboardStats({ userRole: _userRole = "staff", isManager = fals
         icon={Mail}
         href={emailHref}
         description={
-          stats.emails.inbox > 0 ? `${stats.emails.inbox} total in inbox` : undefined
+          stats.emails.inbox > 0
+            ? `${stats.emails.inbox} total in inbox`
+            : undefined
         }
         iconColor="text-red-600 dark:text-red-400"
         iconBgColor="bg-red-50 dark:bg-red-950/30"

@@ -5,6 +5,7 @@ import { employees, taskReviews, taskSubmissions, tasks } from "@/db/schema";
 import { getEmployee } from "../hr/employees";
 import { DrizzleQueryError, and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { createNotification } from "../notification/notification";
 
 type NewSubmission = typeof taskSubmissions.$inferInsert;
 
@@ -22,6 +23,24 @@ export async function submitTask(submissionData: NewSubmission) {
     await db.insert(taskSubmissions).values({
       ...submissionData,
     });
+
+    // Notify the manager that the task has been submitted
+    const task = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.id, submissionData.taskId))
+      .limit(1)
+      .then((r) => r[0]);
+
+    if (task?.assignedBy) {
+      await createNotification({
+        user_id: task.assignedBy,
+        title: "Task Submitted for Review",
+        message: `${employee.name} submitted task: ${task.title}`,
+        notification_type: "message",
+        reference_id: submissionData.taskId,
+      });
+    }
 
     revalidatePath("/tasks");
     return {
@@ -118,6 +137,32 @@ export async function createSubmissionReview(args: {
       status: args.status,
       reviewNote: args.reviewNote,
     });
+
+    // Notify the employee about the review decision
+    const submission = await db
+      .select()
+      .from(taskSubmissions)
+      .where(eq(taskSubmissions.id, args.submissionId))
+      .limit(1)
+      .then((r) => r[0]);
+
+    const taskDetails = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.id, args.taskId))
+      .limit(1)
+      .then((r) => r[0]);
+
+    if (submission?.submittedBy) {
+      const reviewMessage = args.reviewNote ? `: ${args.reviewNote}` : "";
+      await createNotification({
+        user_id: submission.submittedBy,
+        title: `Submission ${args.status}`,
+        message: `Your submission for "${taskDetails?.title}" was ${args.status.toLowerCase()}${reviewMessage}`,
+        notification_type: "approval",
+        reference_id: args.taskId,
+      });
+    }
 
     // Mirror status side-effects here too to keep behavior consistent
     if (args.status === "Accepted") {

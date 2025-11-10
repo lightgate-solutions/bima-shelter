@@ -3,9 +3,9 @@ import { getUserNotifications } from "@/actions/notification/notification";
 
 export async function GET() {
   try {
-    const data = await getUserNotifications();
+    const result = await getUserNotifications();
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
       { success: false, error: (error as Error).message },
