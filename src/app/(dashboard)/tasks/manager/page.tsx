@@ -30,6 +30,7 @@ type ManagerSubmission = {
   submittedFiles?: { fileUrl: string; fileName: string }[] | null;
   submittedAt: string | Date;
   employeeName?: string | null;
+  employeeEmail?: string | null;
   taskTitle?: string | null;
 };
 
