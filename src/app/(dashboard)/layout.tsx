@@ -29,10 +29,10 @@ export default async function RootLayout({
           <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
             <div className="flex w-full items-center justify-between gap-2 px-4">
               <SidebarTrigger className="-ml-1" />
-              <ThemeToggle />
-              {/* <div className="relative"> */}
-              <NotificationBell />
-              {/* </div> */}
+              <div className=" flex gap-4 justify-center items-center">
+                <ThemeToggle />
+                <NotificationBell />
+              </div>
             </div>
           </header>
           <Separator className="mr-2 data-[orientation=vertical]:h-4" />

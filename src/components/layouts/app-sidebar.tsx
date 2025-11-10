@@ -198,6 +198,7 @@ export function AppSidebar({
             { title: "History", url: "/tasks/history" },
             { title: "Task Item", url: "/tasks" },
             { title: "Task Submission", url: "/tasks/manager" },
+            { title: "To-Do", url: "/tasks/employee" },
           ]
         : [{ title: "To-Do", url: "/tasks/employee" }],
     };
