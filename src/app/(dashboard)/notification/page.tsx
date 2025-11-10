@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BackButton } from "@/components/ui/back-button";
 import { Loader2, Bell, Check } from "lucide-react";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -85,7 +86,11 @@ export default function NotificationsPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
-      <h1 className="text-2xl font-bold mb-4">Notifications</h1>
+      <div className="flex items-center justify-between mb-4">
+        <BackButton />
+        <h1 className="text-2xl font-bold">Notifications</h1>
+        <div />
+      </div>
 
       {loading ? (
         <div className="flex justify-center items-center h-[70vh]">

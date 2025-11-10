@@ -6,6 +6,7 @@
 import { SearchResults } from "@/components/documents/search/search-results";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BackButton } from "@/components/ui/back-button";
 import { Search } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
@@ -58,9 +59,12 @@ export default function Home() {
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-4xl font-bold text-balance">
-              Search Documents
-            </h1>
+            <div className="flex items-center gap-4">
+              <BackButton />
+              <h1 className="text-4xl font-bold text-balance">
+                Search Documents
+              </h1>
+            </div>
           </div>
           <form
             onSubmit={(e) => onSubmit(e)}

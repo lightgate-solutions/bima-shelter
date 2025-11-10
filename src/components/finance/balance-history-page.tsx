@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -26,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import { BackButton } from "@/components/ui/back-button";
 
 type Transaction = {
   id: number;
@@ -42,7 +40,6 @@ type Transaction = {
 };
 
 export function BalanceHistoryPage() {
-  const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -115,17 +112,16 @@ export function BalanceHistoryPage() {
 
   return (
     <div className="space-y-4 p-4">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.back()}
-          className="gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        <h1 className="text-2xl font-bold">Balance Transaction History</h1>
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-4">
+          <BackButton />
+          <div>
+            <h1 className="text-2xl font-bold">Balance Transaction History</h1>
+            <p className="text-sm text-muted-foreground">
+              View all balance transactions and history
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-4">
