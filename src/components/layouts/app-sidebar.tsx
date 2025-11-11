@@ -129,10 +129,6 @@ const data = {
           title: "View Employees",
           url: "/hr/employees",
         },
-        {
-          title: "All Tasks",
-          url: "/hr/admin/tasks",
-        },
       ],
     },
     {
