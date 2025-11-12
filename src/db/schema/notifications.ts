@@ -9,8 +9,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { employees } from "./hr";
 
-import { email } from "./mail";
-
 export const notificationTypeEnum = pgEnum("notification_type", [
   "approval",
   "deadline",
@@ -28,9 +26,7 @@ export const notifications = pgTable("notifications", {
   created_by: serial("created_by").references(() => employees.id, {
     onDelete: "set null",
   }),
-  reference_id: serial("reference_id")
-    .references(() => email.id, { onDelete: "cascade" })
-    .notNull(),
+  reference_id: serial("reference_id"), // Generic reference - can be task, project, document, etc.
   is_read: boolean("is_read").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });

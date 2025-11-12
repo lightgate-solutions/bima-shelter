@@ -2,6 +2,7 @@
 import { db } from "@/db";
 import { documentFolders } from "@/db/schema";
 import { employees } from "@/db/schema/hr";
+import { notification_preferences } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { APIError } from "better-auth/api";
 import { eq } from "drizzle-orm";
@@ -227,6 +228,14 @@ export async function createUser(data: {
         root: true,
         public: false,
         departmental: false,
+      });
+
+      // Initialize notification preferences with defaults
+      await tx.insert(notification_preferences).values({
+        user_id: emp.id,
+        email_notifications: true,
+        in_app_notifications: true,
+        notify_on_message: true,
       });
     });
     return {

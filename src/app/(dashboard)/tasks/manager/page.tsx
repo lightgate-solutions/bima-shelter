@@ -48,8 +48,8 @@ const ManagerSubmissionsPage = async () => {
           <div>
             <h2 className="text-2xl font-bold">Team Submissions</h2>
             <p className="text-sm text-muted-foreground">
-              Review all submissions from your direct reports. Click file links to
-              open attachments in a new tab.
+              Review all submissions from your direct reports. Click file links
+              to open attachments in a new tab.
             </p>
           </div>
         </div>
