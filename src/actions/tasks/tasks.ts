@@ -48,10 +48,30 @@ export async function createTask(taskData: CreateTaskWithAssignees) {
 
       // Notify all assignees about the new task
       for (const employeeId of assignees) {
+        const dueDate = taskData.dueDate
+          ? new Date(taskData.dueDate).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })
+          : null;
+
+        // Extract first sentence for context
+        let context = "";
+        if (taskData.description) {
+          const firstSentence = taskData.description.split(/[.!?]\s/)[0];
+          const preview =
+            firstSentence.length > 80
+              ? `${firstSentence.substring(0, 80)}...`
+              : firstSentence;
+          context = ` — ${preview}`;
+        }
+
+        const message = `${manager.name} assigned you "${taskData.title}"${dueDate ? ` • Due ${dueDate}` : ""}${context}`;
+
         await createNotification({
           user_id: employeeId,
-          title: "New Task Assigned",
-          message: `You've been assigned to task: ${taskData.title}`,
+          title: "New Task Assignment",
+          message,
           notification_type: "message",
           reference_id: created.id,
         });
@@ -163,6 +183,14 @@ export async function updateTask(
   }
 
   try {
+    // Get current task before update for notifications
+    const currentTask = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.id, taskId))
+      .limit(1)
+      .then((r) => r[0]);
+
     // Additional safety: if employee is a manager, optionally ensure they own the task; otherwise just by id
     if (employee.isManager) {
       await db
@@ -174,6 +202,60 @@ export async function updateTask(
         .update(tasks)
         .set(normalized as unknown as TaskUpdate)
         .where(eq(tasks.id, taskId));
+    }
+
+    // Notify assignees if manager made significant changes
+    if (employee.isManager && currentTask) {
+      const hasSignificantChanges =
+        updates.title ||
+        updates.description ||
+        updates.dueDate ||
+        updates.priority;
+
+      if (hasSignificantChanges) {
+        // Get all assignees
+        const assigneesList = await db
+          .select({ employeeId: taskAssignees.employeeId })
+          .from(taskAssignees)
+          .where(eq(taskAssignees.taskId, taskId));
+
+        const assigneeIds = assigneesList
+          .map((a) => a.employeeId)
+          .filter(Boolean);
+        if (currentTask.assignedTo) assigneeIds.push(currentTask.assignedTo);
+
+        // Notify each assignee
+        for (const assigneeId of assigneeIds) {
+          let changeDesc = "";
+          if (updates.title) changeDesc = "Task title updated";
+          else if (updates.description) changeDesc = "Task description updated";
+          else if (updates.dueDate) changeDesc = "Due date changed";
+          else if (updates.priority) changeDesc = "Priority changed";
+
+          await createNotification({
+            user_id: assigneeId,
+            title: "Task Updated",
+            message: `${employee.name} updated "${currentTask.title}" • ${changeDesc}`,
+            notification_type: "message",
+            reference_id: taskId,
+          });
+        }
+      }
+    }
+
+    // Notify manager when employee starts task
+    if (
+      !employee.isManager &&
+      updates.status === "In Progress" &&
+      currentTask
+    ) {
+      await createNotification({
+        user_id: currentTask.assignedBy,
+        title: "Task Started",
+        message: `${employee.name} started working on "${currentTask.title}"`,
+        notification_type: "message",
+        reference_id: taskId,
+      });
     }
 
     revalidatePath("/tasks/history");
@@ -204,7 +286,43 @@ export async function deleteTask(employeeId: number, taskId: number) {
         error: { reason: "Only managers can delete tasks" },
       };
     }
-    await db.delete(tasks).where(eq(tasks.id, taskId));
+
+    // Get task details before deletion for notifications
+    const task = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.id, taskId))
+      .limit(1)
+      .then((r) => r[0]);
+
+    if (task) {
+      // Get all assignees to notify them
+      const assigneesList = await db
+        .select({ employeeId: taskAssignees.employeeId })
+        .from(taskAssignees)
+        .where(eq(taskAssignees.taskId, taskId));
+
+      const assigneeIds = assigneesList
+        .map((a) => a.employeeId)
+        .filter(Boolean);
+      if (task.assignedTo) assigneeIds.push(task.assignedTo);
+
+      // Delete the task
+      await db.delete(tasks).where(eq(tasks.id, taskId));
+
+      // Notify assignees that task was cancelled
+      for (const assigneeId of assigneeIds) {
+        await createNotification({
+          user_id: assigneeId,
+          title: "Task Cancelled",
+          message: `${manager.name} cancelled the task "${task.title}"`,
+          notification_type: "message",
+          reference_id: taskId,
+        });
+      }
+    } else {
+      await db.delete(tasks).where(eq(tasks.id, taskId));
+    }
 
     revalidatePath("/tasks");
     return {

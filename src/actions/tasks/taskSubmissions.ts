@@ -33,10 +33,18 @@ export async function submitTask(submissionData: NewSubmission) {
       .then((r) => r[0]);
 
     if (task?.assignedBy) {
+      let note = "";
+      if (submissionData.submissionNote) {
+        const preview = submissionData.submissionNote.substring(0, 60);
+        note = ` — ${preview}${submissionData.submissionNote.length > 60 ? "..." : ""}`;
+      }
+
+      const message = `${employee.name} submitted "${task.title}" for your review${note}`;
+
       await createNotification({
         user_id: task.assignedBy,
-        title: "Task Submitted for Review",
-        message: `${employee.name} submitted task: ${task.title}`,
+        title: "Task Submission Ready",
+        message,
         notification_type: "message",
         reference_id: submissionData.taskId,
       });
@@ -154,11 +162,17 @@ export async function createSubmissionReview(args: {
       .then((r) => r[0]);
 
     if (submission?.submittedBy) {
-      const reviewMessage = args.reviewNote ? `: ${args.reviewNote}` : "";
+      const statusText = args.status === "Accepted" ? "approved" : "rejected";
+      const feedback = args.reviewNote
+        ? ` • ${args.reviewNote.substring(0, 80)}${args.reviewNote.length > 80 ? "..." : ""}`
+        : "";
+
+      const message = `Your submission for "${taskDetails?.title}" was ${statusText}${feedback}`;
+
       await createNotification({
         user_id: submission.submittedBy,
         title: `Submission ${args.status}`,
-        message: `Your submission for "${taskDetails?.title}" was ${args.status.toLowerCase()}${reviewMessage}`,
+        message,
         notification_type: "approval",
         reference_id: args.taskId,
       });
