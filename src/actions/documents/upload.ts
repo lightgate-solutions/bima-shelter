@@ -17,6 +17,7 @@ import { getUser } from "../auth/dal";
 import { employees } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { upstashIndex } from "@/lib/upstash-client";
+import { createNotification } from "../notification/notification";
 
 interface UploadActionProps {
   title: string;
@@ -111,7 +112,7 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
   const effectiveDepartmental = isPersonal ? false : data.departmental;
 
   try {
-    await db.transaction(async (tx) => {
+    const { shareNotifications } = await db.transaction(async (tx) => {
       const [currentCount] = await tx
         .select({ count: employees.documentCount })
         .from(employees)
@@ -233,6 +234,13 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
         await tx.insert(documentAccess).values(accessToInsert);
       }
 
+      const shareNotifications: {
+        userId: number;
+        docId: number;
+        docTitle: string;
+        accessLevel: string;
+      }[] = [];
+
       if (data.shares && data.shares.length > 0) {
         const uniqueEmails = Array.from(
           new Set(
@@ -265,6 +273,21 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
 
           if (shareAccessRows.length > 0) {
             await tx.insert(documentAccess).values(shareAccessRows);
+
+            insertedDocuments.forEach((doc) => {
+              shareUsers.forEach((u) => {
+                const share = data.shares!.find(
+                  (s) => s.email.toLowerCase() === u.email.toLowerCase(),
+                );
+                const level = share?.accessLevel ?? "view";
+                shareNotifications.push({
+                  userId: u.id,
+                  docId: doc.id,
+                  docTitle: doc.title,
+                  accessLevel: level,
+                });
+              });
+            });
           }
         }
       }
@@ -277,7 +300,19 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
         documentVersionId: insertedVersions[i].id,
       }));
       await tx.insert(documentLogs).values(logsToInsert);
+
+      return { shareNotifications };
     });
+
+    for (const share of shareNotifications) {
+      await createNotification({
+        user_id: share.userId,
+        title: "Document Shared With You",
+        message: `${user.name} shared "${share.docTitle}" with ${share.accessLevel} access`,
+        notification_type: "message",
+        reference_id: share.docId,
+      });
+    }
 
     return {
       success: { reason: "Uploaded document/s successfully!" },
