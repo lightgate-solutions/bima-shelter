@@ -89,10 +89,17 @@ export const createTaskMessage = async (msg: NewMessage) => {
 
     // Send notifications to all participants
     for (const userId of participants) {
+      const commentPreview =
+        msg.content.length > 100
+          ? `${msg.content.substring(0, 100)}...`
+          : msg.content;
+
+      const message = `${senderName || "Someone"} commented on "${t.title}" • ${commentPreview}`;
+
       await createNotification({
         user_id: userId,
-        title: "New Task Message",
-        message: `${senderName || "Someone"} commented on task: ${t.title}`,
+        title: "New Comment",
+        message,
         notification_type: "message",
         reference_id: msg.taskId,
       });
