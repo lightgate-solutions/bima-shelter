@@ -41,7 +41,9 @@ export async function GET() {
       );
     }
 
-    const isAdmin = role === "admin";
+    // Normalize role check like other endpoints
+    const normalizedRole = role?.toLowerCase().trim() || "";
+    const isAdmin = normalizedRole === "admin";
     const isManager = employee.isManager;
 
     // Task stats - fetch all at once
