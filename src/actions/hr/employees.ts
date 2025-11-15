@@ -136,7 +136,6 @@ export async function getAllEmployees() {
       phone: employees.phone,
       dateOfBirth: employees.dateOfBirth,
       staffNumber: employees.staffNumber,
-      createdAt: employees.createdAt,
     })
     .from(employees)
     .limit(200);
