@@ -151,7 +151,12 @@ const data = {
       title: "Payroll",
       url: "/payroll",
       icon: DollarSign,
-      items: [],
+      items: [
+        {
+          title: "Salary Structures",
+          url: "/payroll/structure",
+        },
+      ],
     },
   ],
 };

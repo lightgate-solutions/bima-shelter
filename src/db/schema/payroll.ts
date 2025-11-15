@@ -68,6 +68,7 @@ export const salaryStructure = pgTable(
     baseSalary: numeric("base_salary", { precision: 15, scale: 2 }).notNull(),
     description: text("description").notNull(),
     active: boolean("active").default(true).notNull(),
+    employeeCount: integer("employee_count").notNull().default(0),
     createdBy: integer("created_by")
       .references(() => employees.id, { onDelete: "no action" })
       .notNull(),
