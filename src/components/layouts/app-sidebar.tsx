@@ -12,6 +12,7 @@ import {
   Users,
   Warehouse,
   Bell,
+  DollarSign,
 } from "lucide-react";
 import {
   Sidebar,
@@ -117,7 +118,7 @@ const data = {
       ],
     },
     {
-      title: "Hr/Payroll",
+      title: "Hr",
       url: "/hr",
       icon: Users,
       items: [
@@ -145,6 +146,12 @@ const data = {
           url: "/notification-preferences",
         },
       ],
+    },
+    {
+      title: "Payroll",
+      url: "/payroll",
+      icon: DollarSign,
+      items: [],
     },
   ],
 };

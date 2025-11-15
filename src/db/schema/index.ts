@@ -8,3 +8,4 @@ export * from "./notification-preferences";
 export * from "./payments";
 export * from "./tasks";
 export * from "./finance";
+export * from "./payroll";
