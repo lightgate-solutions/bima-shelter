@@ -1,7 +1,7 @@
 "use client";
 
-import { DashboardStats } from "./dashboard-stats";
-import { Users, Shield } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -9,76 +9,321 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import Link from "next/link";
+import StatsCard from "@/components/dashboard-components/stats-card";
+import ActivityChart from "@/components/dashboard-components/activity-chart";
+import RecentDocuments from "@/components/dashboard-components/recent-documents";
+import RecentNotifications from "@/components/dashboard-components/recent-notifications";
+import BudgetBreakdownChart from "@/components/dashboard-components/budget-breakdown-chart";
+import {
+  Users,
+  FileText,
+  DollarSign,
+  CheckSquare,
+  Settings,
+} from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface DashboardStats {
+  tasks: {
+    active: number;
+    pending: number;
+    inProgress: number;
+    total: number;
+  };
+  documents: number;
+  projects: number;
+  emails: {
+    unread: number;
+    inbox: number;
+  };
+  notifications: number;
+  totalUsers?: number;
+}
 
 export default function AdminDashboard() {
-  return (
-    <div className="flex flex-1 flex-col gap-8 p-6 md:p-8 lg:p-10">
-      {/* Header */}
-      <div className="flex flex-col gap-3">
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const quickActions = [
+    {
+      icon: Users,
+      label: "Add Users",
+      bgColor: "bg-[#E0F2FE] dark:bg-blue-950/50",
+      iconColor: "text-[#0284C7] dark:text-blue-400",
+      href: "/hr/admin/users",
+    },
+    {
+      icon: FileText,
+      label: "Upload Documents",
+      bgColor: "bg-[#F3E8FF] dark:bg-purple-950/50",
+      iconColor: "text-[#9333EA] dark:text-purple-400",
+      href: "/documents",
+    },
+    {
+      icon: CheckSquare,
+      label: "Manage Projects",
+      bgColor: "bg-[#ECFDF5] dark:bg-emerald-950/50",
+      iconColor: "text-[#10B981] dark:text-emerald-400",
+      href: "/projects",
+    },
+    {
+      icon: DollarSign,
+      label: "Approve Finance",
+      bgColor: "bg-[#FEF3C7] dark:bg-amber-950/50",
+      iconColor: "text-[#F59E0B] dark:text-amber-400",
+      href: "/finance/expenses",
+    },
+  ];
+
+  const fetchStats = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/dashboard/stats", {
+        credentials: "include",
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch stats");
+      }
+
+      const data = await response.json();
+
+      // Fetch total users for admin
+      let totalUsers = 0;
+      try {
+        const usersResponse = await fetch("/api/hr/admin/users?limit=1", {
+          credentials: "include",
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
+        });
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json();
+          totalUsers = usersData.total || 0;
+        } else if (usersResponse.status === 403) {
+          // Admin check failed - expected for non-admin users
+          console.warn("User is not an admin, cannot fetch total users");
+        }
+      } catch (err) {
+        // Ignore error, use 0
+        console.error("Error fetching total users:", err);
+      }
+
+      if (data && typeof data === "object") {
+        setStats({ ...data, totalUsers });
+        setError(null);
+      } else {
+        throw new Error("Invalid data format received");
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load dashboard stats",
+      );
+      // Set default values on error
+      setStats({
+        tasks: { active: 0, pending: 0, inProgress: 0, total: 0 },
+        documents: 0,
+        projects: 0,
+        emails: { unread: 0, inbox: 0 },
+        notifications: 0,
+        totalUsers: 0,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+
+    // Refresh every 15 seconds to catch new uploads (RecentDocuments component will refresh itself)
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        fetchStats();
+      }
+    }, 15000);
+
+    // Refresh when page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchStats();
+      }
+    };
+
+    // Refresh on window focus
+    const handleFocus = () => {
+      fetchStats();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [fetchStats]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 p-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">
-            System overview and administration panel.
-          </p>
+          <Skeleton className="h-10 w-64 mb-2" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: Static array for loading skeletons
+            <Skeleton key={i} className="h-28 rounded-lg" />
+          ))}
         </div>
       </div>
+    );
+  }
 
-      {/* Stats Grid */}
-      <DashboardStats userRole="admin" isManager={true} />
+  if (error && !stats) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+            Admin Dashboard
+          </h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Centralized analytics and management across all modules
+          </p>
+        </div>
+        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 p-4 text-sm text-red-700 dark:text-red-400">
+          {error}
+        </div>
+      </div>
+    );
+  }
 
-      {/* Admin-specific Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 border-border/40">
+  if (!stats) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+            Admin Dashboard
+          </h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Centralized analytics and management across all modules
+          </p>
+        </div>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 text-sm text-gray-600 dark:text-gray-400">
+          No data available
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+          Admin Dashboard
+        </h2>
+        <p className="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
+          Centralized analytics and management across all modules
+        </p>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard
+          title="Total Users"
+          value={stats.totalUsers || 0}
+          icon={Users}
+          href="/hr/admin/users"
+          accentColor="blue"
+        />
+        <StatsCard
+          title="Documents"
+          value={stats.documents}
+          icon={FileText}
+          href="/documents/all"
+          accentColor="lavender"
+        />
+        <StatsCard
+          title="Active Projects"
+          value={stats.projects}
+          icon={CheckSquare}
+          href="/projects"
+          accentColor="mint"
+        />
+        <StatsCard
+          title="Pending Tasks"
+          value={stats.tasks.pending}
+          icon={Settings}
+          href="/tasks"
+          accentColor="gray"
+        />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {quickActions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Link key={action.label} href={action.href}>
+              <Card className="border border-gray-200/60 dark:border-gray-800 bg-white/80 dark:bg-gray-900/50 hover:bg-white dark:hover:bg-gray-800/60 transition-all cursor-pointer shadow-sm hover:shadow-md rounded-xl backdrop-blur-sm">
+                <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+                  <div className={`rounded-xl p-3 mb-3 ${action.bgColor}`}>
+                    <Icon className={`h-5 w-5 ${action.iconColor}`} />
+                  </div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                    {action.label}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Activity Trends, Recent Documents & Notifications */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="border border-blue-100 dark:border-gray-800 bg-[#F3F6FC] dark:bg-gray-900/50 shadow-sm rounded-xl lg:col-span-1">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2.5 text-lg">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Users className="size-4 text-primary" />
-              </div>
-              User Management
+            <CardTitle className="text-gray-900 dark:text-gray-50 font-bold">
+              Activity Trends
             </CardTitle>
-            <CardDescription className="text-sm">
-              Manage users, roles, and permissions
+            <CardDescription className="text-gray-600 dark:text-gray-400 font-semibold">
+              System activity over the last 30 days
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link
-              href="/hr/admin"
-              className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1.5 group/link"
-            >
-              Manage users
-              <svg
-                className="size-3 transition-transform group-hover/link:translate-x-0.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </Link>
+            <ActivityChart />
           </CardContent>
         </Card>
+        <RecentDocuments />
+        <RecentNotifications />
+      </div>
 
-        <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 border-border/40 opacity-60">
+      {/* Budget & Finance */}
+      <div className="grid gap-6">
+        <Card className="border border-amber-100 dark:border-gray-800 bg-[#FEF3C7] dark:bg-gray-900/50 shadow-sm rounded-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2.5 text-lg">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Shield className="size-4 text-primary" />
-              </div>
-              System Settings
+            <CardTitle className="text-gray-900 dark:text-gray-50 font-bold">
+              Budget Breakdown
             </CardTitle>
-            <CardDescription className="text-sm">
-              Configure system-wide settings
+            <CardDescription className="text-gray-600 dark:text-gray-400 font-semibold">
+              Finance allocation across departments
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">Coming soon</p>
+            <BudgetBreakdownChart />
           </CardContent>
         </Card>
       </div>

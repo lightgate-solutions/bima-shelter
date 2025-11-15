@@ -1,9 +1,27 @@
 import { getUsers } from "@/actions/auth/users";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication and admin role
+    const h = await headers();
+    const session = await auth.api.getSession({ headers: h });
+    const authUserId = session?.user?.id;
+    const userRole = session?.user?.role;
+
+    if (!authUserId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Only admin can access this endpoint - normalize role like dashboard does
+    const normalizedRole = userRole?.toLowerCase().trim() || "";
+    if (normalizedRole !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
@@ -40,7 +58,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(
-      { error: "Failed to fetch users" },
+      { error: "Failed to fetch users", users: [], total: 0 },
       { status: 500 },
     );
   }

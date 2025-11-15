@@ -29,11 +29,13 @@ import {
   InputGroupTextarea,
 } from "@/components/ui/input-group";
 import {
+  Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
+import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -108,8 +110,10 @@ export default function UploadDocumentButton({
   usersFolders: { name: string; path?: string }[];
   department: string;
 }) {
+  const router = useRouter();
   const [files, setFiles] = useState<FileWithMetadata[]>();
   const [newTag, setNewTag] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const form = useForm<z.infer<typeof uploadSchema>>({
     resolver: zodResolver(uploadSchema),
@@ -319,6 +323,34 @@ export default function UploadDocumentButton({
       const res = await uploadDocumentsAction(payload);
       if (res.success) {
         toast.success("Files uploaded succesfully");
+        // Close dialog
+        setDialogOpen(false);
+        // Refresh the page to show new documents
+        router.refresh();
+
+        // Notify all dashboard components about the upload
+        if (typeof window !== "undefined") {
+          // Method 1: Storage event (works across tabs)
+          window.localStorage.setItem(
+            "document-uploaded",
+            Date.now().toString(),
+          );
+          window.dispatchEvent(
+            new StorageEvent("storage", {
+              key: "document-uploaded",
+              newValue: Date.now().toString(),
+            }),
+          );
+
+          // Method 2: Custom event (works in same tab)
+          window.dispatchEvent(
+            new CustomEvent("document-uploaded", {
+              detail: { timestamp: Date.now() },
+            }),
+          );
+
+          console.log("[Upload Button] Dispatched document upload events");
+        }
       } else {
         toast.error(res.error?.reason);
       }
@@ -338,7 +370,7 @@ export default function UploadDocumentButton({
   ];
 
   return (
-    <form id="form-upload-document" onSubmit={form.handleSubmit(onSubmit)}>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         <Button className="hover:cursor-pointer" size="lg">
           Upload Document
@@ -348,514 +380,523 @@ export default function UploadDocumentButton({
         <DialogHeader>
           <DialogTitle>Document/File Upload</DialogTitle>
         </DialogHeader>
-
-        <FieldGroup>
-          <div className="grid gap-4 grid-cols-2 py-4">
-            <Controller
-              name="title"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldContent>
-                    <FieldLabel htmlFor="title">Document Title *</FieldLabel>
-                    <Input
-                      {...field}
-                      name="title"
-                      aria-invalid={fieldState.invalid}
-                      placeholder="2025 regional report"
-                      autoComplete="off"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                    <FieldDescription>
-                      Multiple docs will be prefixed with $name-number
-                    </FieldDescription>
-                  </FieldContent>
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="folder"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field
-                  orientation="responsive"
-                  data-invalid={fieldState.invalid}
-                >
-                  <FieldContent>
-                    <FieldLabel htmlFor="folder">Folder *</FieldLabel>
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                    <Select
-                      name={field.name}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger
-                        name="folder"
+        <form id="form-upload-document" onSubmit={form.handleSubmit(onSubmit)}>
+          <FieldGroup>
+            <div className="grid gap-4 grid-cols-2 py-4">
+              <Controller
+                name="title"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldContent>
+                      <FieldLabel htmlFor="title">Document Title *</FieldLabel>
+                      <Input
+                        {...field}
+                        name="title"
                         aria-invalid={fieldState.invalid}
-                        className="w-full"
-                      >
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent position="item-aligned">
-                        {[
-                          ...new Map(
-                            safeFolders.map((f) => [f.name.toLowerCase(), f]),
-                          ).values(),
-                        ].map((folder, idx) => (
-                          <SelectItem key={idx} value={folder.name}>
-                            {(folder.path ?? folder.name)
-                              .charAt(0)
-                              .toUpperCase() +
-                              (folder.path ?? folder.name).slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FieldDescription>
-                      Select folder to drop documents.
-                    </FieldDescription>
-                  </FieldContent>
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="status"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field
-                  orientation="responsive"
-                  data-invalid={fieldState.invalid}
-                >
-                  <FieldContent>
-                    <FieldLabel htmlFor="status">Status *</FieldLabel>
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                    <Select
-                      name={field.name}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger
-                        name="status"
-                        aria-invalid={fieldState.invalid}
-                        className="w-full"
-                      >
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent position="item-aligned">
-                        {statuses.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            {status.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FieldDescription>
-                      Select Status for uploaded documents
-                    </FieldDescription>
-                  </FieldContent>
-                </Field>
-              )}
-            />
-
-            <div>
-              <FieldContent>
-                <FieldLabel>Tags</FieldLabel>
-                {tagFields.map((field, index) => (
-                  <Controller
-                    key={field.id}
-                    name={`tags.${index}.name`}
-                    control={form.control}
-                    render={({ field: controllerField, fieldState }) => (
-                      <Field
-                        orientation="horizontal"
-                        data-invalid={fieldState.invalid}
-                      >
-                        <div className="w-full">
-                          <InputGroup className="w-full mb-1">
-                            <InputGroupAddon>
-                              <TagIcon className="h-4 w-4 text-muted-foreground" />
-                            </InputGroupAddon>
-                            <InputGroupInput
-                              {...controllerField}
-                              id={`tag-${index}`}
-                              placeholder="Enter tag name"
-                              aria-invalid={fieldState.invalid}
-                              autoComplete="off"
-                            />
-                            {tagFields.length > 1 && (
-                              <InputGroupAddon align="inline-end">
-                                <InputGroupButton
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  onClick={() => tagRemove(index)}
-                                  aria-label={`Remove tag ${index + 1}`}
-                                >
-                                  <XIcon />
-                                </InputGroupButton>
-                              </InputGroupAddon>
-                            )}
-                          </InputGroup>
-                          {fieldState.invalid && (
-                            <FieldError errors={[fieldState.error]} />
-                          )}
-                        </div>
-                      </Field>
-                    )}
-                  />
-                ))}
-
-                {form.formState.errors.tags?.root && (
-                  <FieldError errors={[form.formState.errors.tags.root]} />
+                        placeholder="2025 regional report"
+                        autoComplete="off"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                      <FieldDescription>
+                        Multiple docs will be prefixed with $name-number
+                      </FieldDescription>
+                    </FieldContent>
+                  </Field>
                 )}
-              </FieldContent>
+              />
 
-              <div className="flex gap-2 mt-2">
-                <InputGroup className="flex-1">
-                  <InputGroupInput
-                    placeholder="New tag name..."
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddTag();
-                      }
-                    }}
-                  />
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupButton
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={handleAddTag}
-                      disabled={!newTag.trim() || tagFields.length >= 10}
-                    >
-                      <PlusIcon />
-                    </InputGroupButton>
-                  </InputGroupAddon>
-                </InputGroup>
-              </div>
-            </div>
-
-            <div>
-              <FieldContent>
-                <FieldLabel>Options</FieldLabel>
-
-                <Controller
-                  name="public"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <FieldSet data-invalid={fieldState.invalid}>
-                      <FieldGroup data-slot="checkbox-group">
-                        <Field orientation="horizontal">
-                          <Checkbox
-                            name={field.name}
-                            disabled={folderWatch === "personal"}
-                            onCheckedChange={field.onChange}
-                          />
-                          <FieldLabel htmlFor="public" className="font-normal">
-                            Public (Documents accessible to all employees)
-                          </FieldLabel>
-                        </Field>
-                      </FieldGroup>
-
+              <Controller
+                name="folder"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field
+                    orientation="responsive"
+                    data-invalid={fieldState.invalid}
+                  >
+                    <FieldContent>
+                      <FieldLabel htmlFor="folder">Folder *</FieldLabel>
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />
                       )}
-                    </FieldSet>
-                  )}
-                />
-
-                <Controller
-                  name="departmental"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <FieldSet data-invalid={fieldState.invalid}>
-                      <FieldGroup data-slot="checkbox-group">
-                        <Field orientation="horizontal">
-                          <Checkbox
-                            name={field.name}
-                            disabled={folderWatch === "personal"}
-                            onCheckedChange={field.onChange}
-                          />
-                          <FieldLabel htmlFor="public" className="font-normal">
-                            Department (Documents accessible to {department}{" "}
-                            employees)
-                          </FieldLabel>
-                        </Field>
-                      </FieldGroup>
-
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </FieldSet>
-                  )}
-                />
-
-                <FieldDescription>
-                  Select options that apply to upload
-                </FieldDescription>
-              </FieldContent>
-            </div>
-            <div className="gap-3">
-              <FieldLabel>
-                Configure permissions / Uploader has all permissions
-              </FieldLabel>
-              {permissionsField.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="flex items-center justify-between gap-4 border rounded-md p-3"
-                >
-                  <div className="flex flex-col gap-2 flex-1">
-                    <Controller
-                      name={`permissions.${index}.manage`}
-                      control={form.control}
-                      render={({ field: controllerField }) => (
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor={`all-${index}`}>
-                            Manage (can update permissions)
-                          </Label>
-                          <Switch
-                            id={`all-${index}`}
-                            disabled={folderWatch === "personal"}
-                            checked={controllerField.value}
-                            onCheckedChange={controllerField.onChange}
-                          />
-                        </div>
-                      )}
-                    />
-
-                    <Controller
-                      name={`permissions.${index}.edit`}
-                      control={form.control}
-                      render={({ field: controllerField }) => (
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor={`dept-all-${index}`}>
-                            Edit (can edit uploaded documents)
-                          </Label>
-                          <Switch
-                            id={`dept-all-${index}`}
-                            disabled={folderWatch === "personal"}
-                            checked={controllerField.value}
-                            onCheckedChange={controllerField.onChange}
-                          />
-                        </div>
-                      )}
-                    />
-
-                    <Controller
-                      name={`permissions.${index}.view`}
-                      control={form.control}
-                      render={({ field: controllerField }) => (
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor={`dept-${index}`}>
-                            View (can view and download documents)
-                          </Label>
-                          <Switch
-                            id={`dept-${index}`}
-                            disabled={folderWatch === "personal"}
-                            checked={controllerField.value}
-                            onCheckedChange={controllerField.onChange}
-                          />
-                        </div>
-                      )}
-                    />
-                  </div>
-
-                  {permissionsField.length > 1 && (
-                    <InputGroupAddon align="inline-end">
-                      <InputGroupButton
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => permissionsRemove(index)}
-                        aria-label={`Remove permission ${index + 1}`}
+                      <Select
+                        name={field.name}
+                        value={field.value}
+                        onValueChange={field.onChange}
                       >
-                        <XIcon />
-                      </InputGroupButton>
-                    </InputGroupAddon>
-                  )}
-                </div>
-              ))}
+                        <SelectTrigger
+                          name="folder"
+                          aria-invalid={fieldState.invalid}
+                          className="w-full"
+                        >
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent position="item-aligned">
+                          {[
+                            ...new Map(
+                              safeFolders.map((f) => [f.name.toLowerCase(), f]),
+                            ).values(),
+                          ].map((folder, idx) => (
+                            <SelectItem key={idx} value={folder.name}>
+                              {(folder.path ?? folder.name)
+                                .charAt(0)
+                                .toUpperCase() +
+                                (folder.path ?? folder.name).slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FieldDescription>
+                        Select folder to drop documents.
+                      </FieldDescription>
+                    </FieldContent>
+                  </Field>
+                )}
+              />
 
-              {form.formState.errors.permissions?.root && (
-                <FieldError errors={[form.formState.errors.permissions.root]} />
-              )}
-            </div>
+              <Controller
+                name="status"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field
+                    orientation="responsive"
+                    data-invalid={fieldState.invalid}
+                  >
+                    <FieldContent>
+                      <FieldLabel htmlFor="status">Status *</FieldLabel>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                      <Select
+                        name={field.name}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger
+                          name="status"
+                          aria-invalid={fieldState.invalid}
+                          className="w-full"
+                        >
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent position="item-aligned">
+                          {statuses.map((status) => (
+                            <SelectItem key={status.value} value={status.value}>
+                              {status.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FieldDescription>
+                        Select Status for uploaded documents
+                      </FieldDescription>
+                    </FieldContent>
+                  </Field>
+                )}
+              />
 
-            <div className="gap-3">
-              <FieldLabel>Share with specific users</FieldLabel>
-              {shareFields.length === 0 && (
-                <FieldDescription>
-                  Add people by email and set access level.
-                </FieldDescription>
-              )}
-              {shareFields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="flex items-center justify-between gap-4 border rounded-md p-3"
-                >
-                  <div className="flex items-center gap-3 flex-1">
+              <div>
+                <FieldContent>
+                  <FieldLabel>Tags</FieldLabel>
+                  {tagFields.map((field, index) => (
                     <Controller
-                      name={`shares.${index}.email`}
+                      key={field.id}
+                      name={`tags.${index}.name`}
                       control={form.control}
                       render={({ field: controllerField, fieldState }) => (
                         <Field
                           orientation="horizontal"
                           data-invalid={fieldState.invalid}
-                          className="flex-1"
                         >
-                          <Input
-                            {...controllerField}
-                            id={`share-email-${index}`}
-                            type="email"
-                            placeholder="user@example.com"
-                            aria-invalid={fieldState.invalid}
-                            autoComplete="off"
-                          />
-                          {fieldState.invalid && (
-                            <FieldError errors={[fieldState.error]} />
-                          )}
+                          <div className="w-full">
+                            <InputGroup className="w-full mb-1">
+                              <InputGroupAddon>
+                                <TagIcon className="h-4 w-4 text-muted-foreground" />
+                              </InputGroupAddon>
+                              <InputGroupInput
+                                {...controllerField}
+                                id={`tag-${index}`}
+                                placeholder="Enter tag name"
+                                aria-invalid={fieldState.invalid}
+                                autoComplete="off"
+                              />
+                              {tagFields.length > 1 && (
+                                <InputGroupAddon align="inline-end">
+                                  <InputGroupButton
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={() => tagRemove(index)}
+                                    aria-label={`Remove tag ${index + 1}`}
+                                  >
+                                    <XIcon />
+                                  </InputGroupButton>
+                                </InputGroupAddon>
+                              )}
+                            </InputGroup>
+                            {fieldState.invalid && (
+                              <FieldError errors={[fieldState.error]} />
+                            )}
+                          </div>
                         </Field>
                       )}
                     />
-                    <Controller
-                      name={`shares.${index}.accessLevel`}
-                      control={form.control}
-                      render={({ field: controllerField }) => (
-                        <Select
-                          value={controllerField.value}
-                          onValueChange={controllerField.onChange}
-                        >
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Access" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="view">View</SelectItem>
-                            <SelectItem value="edit">Edit</SelectItem>
-                            <SelectItem value="manage">Manage</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
+                  ))}
+
+                  {form.formState.errors.tags?.root && (
+                    <FieldError errors={[form.formState.errors.tags.root]} />
+                  )}
+                </FieldContent>
+
+                <div className="flex gap-2 mt-2">
+                  <InputGroup className="flex-1">
+                    <InputGroupInput
+                      placeholder="New tag name..."
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddTag();
+                        }
+                      }}
                     />
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        onClick={handleAddTag}
+                        disabled={!newTag.trim() || tagFields.length >= 10}
+                      >
+                        <PlusIcon />
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
+                </div>
+              </div>
+
+              <div>
+                <FieldContent>
+                  <FieldLabel>Options</FieldLabel>
+
+                  <Controller
+                    name="public"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <FieldSet data-invalid={fieldState.invalid}>
+                        <FieldGroup data-slot="checkbox-group">
+                          <Field orientation="horizontal">
+                            <Checkbox
+                              name={field.name}
+                              disabled={folderWatch === "personal"}
+                              onCheckedChange={field.onChange}
+                            />
+                            <FieldLabel
+                              htmlFor="public"
+                              className="font-normal"
+                            >
+                              Public (Documents accessible to all employees)
+                            </FieldLabel>
+                          </Field>
+                        </FieldGroup>
+
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </FieldSet>
+                    )}
+                  />
+
+                  <Controller
+                    name="departmental"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <FieldSet data-invalid={fieldState.invalid}>
+                        <FieldGroup data-slot="checkbox-group">
+                          <Field orientation="horizontal">
+                            <Checkbox
+                              name={field.name}
+                              disabled={folderWatch === "personal"}
+                              onCheckedChange={field.onChange}
+                            />
+                            <FieldLabel
+                              htmlFor="public"
+                              className="font-normal"
+                            >
+                              Department (Documents accessible to {department}{" "}
+                              employees)
+                            </FieldLabel>
+                          </Field>
+                        </FieldGroup>
+
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </FieldSet>
+                    )}
+                  />
+
+                  <FieldDescription>
+                    Select options that apply to upload
+                  </FieldDescription>
+                </FieldContent>
+              </div>
+              <div className="gap-3">
+                <FieldLabel>
+                  Configure permissions / Uploader has all permissions
+                </FieldLabel>
+                {permissionsField.map((field, index) => (
+                  <div
+                    key={field.id}
+                    className="flex items-center justify-between gap-4 border rounded-md p-3"
+                  >
+                    <div className="flex flex-col gap-2 flex-1">
+                      <Controller
+                        name={`permissions.${index}.manage`}
+                        control={form.control}
+                        render={({ field: controllerField }) => (
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor={`all-${index}`}>
+                              Manage (can update permissions)
+                            </Label>
+                            <Switch
+                              id={`all-${index}`}
+                              disabled={folderWatch === "personal"}
+                              checked={controllerField.value}
+                              onCheckedChange={controllerField.onChange}
+                            />
+                          </div>
+                        )}
+                      />
+
+                      <Controller
+                        name={`permissions.${index}.edit`}
+                        control={form.control}
+                        render={({ field: controllerField }) => (
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor={`dept-all-${index}`}>
+                              Edit (can edit uploaded documents)
+                            </Label>
+                            <Switch
+                              id={`dept-all-${index}`}
+                              disabled={folderWatch === "personal"}
+                              checked={controllerField.value}
+                              onCheckedChange={controllerField.onChange}
+                            />
+                          </div>
+                        )}
+                      />
+
+                      <Controller
+                        name={`permissions.${index}.view`}
+                        control={form.control}
+                        render={({ field: controllerField }) => (
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor={`dept-${index}`}>
+                              View (can view and download documents)
+                            </Label>
+                            <Switch
+                              id={`dept-${index}`}
+                              disabled={folderWatch === "personal"}
+                              checked={controllerField.value}
+                              onCheckedChange={controllerField.onChange}
+                            />
+                          </div>
+                        )}
+                      />
+                    </div>
+
+                    {permissionsField.length > 1 && (
+                      <InputGroupAddon align="inline-end">
+                        <InputGroupButton
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => permissionsRemove(index)}
+                          aria-label={`Remove permission ${index + 1}`}
+                        >
+                          <XIcon />
+                        </InputGroupButton>
+                      </InputGroupAddon>
+                    )}
                   </div>
+                ))}
+
+                {form.formState.errors.permissions?.root && (
+                  <FieldError
+                    errors={[form.formState.errors.permissions.root]}
+                  />
+                )}
+              </div>
+
+              <div className="gap-3">
+                <FieldLabel>Share with specific users</FieldLabel>
+                {shareFields.length === 0 && (
+                  <FieldDescription>
+                    Add people by email and set access level.
+                  </FieldDescription>
+                )}
+                {shareFields.map((field, index) => (
+                  <div
+                    key={field.id}
+                    className="flex items-center justify-between gap-4 border rounded-md p-3"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <Controller
+                        name={`shares.${index}.email`}
+                        control={form.control}
+                        render={({ field: controllerField, fieldState }) => (
+                          <Field
+                            orientation="horizontal"
+                            data-invalid={fieldState.invalid}
+                            className="flex-1"
+                          >
+                            <Input
+                              {...controllerField}
+                              id={`share-email-${index}`}
+                              type="email"
+                              placeholder="user@example.com"
+                              aria-invalid={fieldState.invalid}
+                              autoComplete="off"
+                            />
+                            {fieldState.invalid && (
+                              <FieldError errors={[fieldState.error]} />
+                            )}
+                          </Field>
+                        )}
+                      />
+                      <Controller
+                        name={`shares.${index}.accessLevel`}
+                        control={form.control}
+                        render={({ field: controllerField }) => (
+                          <Select
+                            value={controllerField.value}
+                            onValueChange={controllerField.onChange}
+                          >
+                            <SelectTrigger className="w-[140px]">
+                              <SelectValue placeholder="Access" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="view">View</SelectItem>
+                              <SelectItem value="edit">Edit</SelectItem>
+                              <SelectItem value="manage">Manage</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => shareRemove(index)}
+                      aria-label={`Remove share ${index + 1}`}
+                    >
+                      <XIcon />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex justify-end">
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => shareRemove(index)}
-                    aria-label={`Remove share ${index + 1}`}
+                    variant="outline"
+                    onClick={() =>
+                      shareAppend({ email: "", accessLevel: "view" })
+                    }
                   >
-                    <XIcon />
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                    Add user
                   </Button>
                 </div>
-              ))}
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    shareAppend({ email: "", accessLevel: "view" })
-                  }
-                >
-                  <PlusIcon className="mr-2 h-4 w-4" />
-                  Add user
-                </Button>
               </div>
-            </div>
 
-            <div className="col-span-2">
-              <Controller
-                name="description"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="description">Description</FieldLabel>
-                    <InputGroup>
-                      <InputGroupTextarea
-                        {...field}
-                        name="description"
-                        placeholder="All documents in relation to the northen states"
-                        rows={6}
-                        className="min-h-24 resize-none"
-                        aria-invalid={fieldState.invalid}
-                      />
-                      <InputGroupAddon align="block-end">
-                        <InputGroupText className="tabular-nums">
-                          {field.value?.length}/100 characters
-                        </InputGroupText>
-                      </InputGroupAddon>
-                    </InputGroup>
-                    <FieldDescription>
-                      Include steps to reproduce, expected behavior, and what
-                      actually happened.
-                    </FieldDescription>
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-            </div>
-          </div>
-        </FieldGroup>
-
-        <Dropzone
-          provider="cloudflare-r2"
-          variant="compact"
-          maxFiles={10}
-          maxSize={1024 * 1024 * 50} // 50MB
-          onFilesChange={(files) => setFiles(files)}
-        />
-        <div>
-          <Field orientation="horizontal">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                form.reset();
-              }}
-            >
-              Reset
-            </Button>
-            <Button
-              type="submit"
-              disabled={isUploading}
-              form="form-upload-document"
-            >
-              {isUploading && <Spinner />}
-              {!isUploading ? "Submit" : "Uploading..."}
-            </Button>
-            {isUploading && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {progress < 100
-                      ? "Uploading document.pdf..."
-                      : "Upload complete!"}
-                  </span>
-                  <span className="font-medium">{progress}%</span>
-                </div>
-                <Progress value={progress} className="w-full" />
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  {progress > 100 && (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+              <div className="col-span-2">
+                <Controller
+                  name="description"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="description">Description</FieldLabel>
+                      <InputGroup>
+                        <InputGroupTextarea
+                          {...field}
+                          name="description"
+                          placeholder="All documents in relation to the northen states"
+                          rows={6}
+                          className="min-h-24 resize-none"
+                          aria-invalid={fieldState.invalid}
+                        />
+                        <InputGroupAddon align="block-end">
+                          <InputGroupText className="tabular-nums">
+                            {field.value?.length}/100 characters
+                          </InputGroupText>
+                        </InputGroupAddon>
+                      </InputGroup>
+                      <FieldDescription>
+                        Include steps to reproduce, expected behavior, and what
+                        actually happened.
+                      </FieldDescription>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
                   )}
-                </div>
+                />
               </div>
-            )}
-          </Field>
-        </div>
+            </div>
+          </FieldGroup>
+
+          <Dropzone
+            provider="cloudflare-r2"
+            variant="compact"
+            maxFiles={10}
+            maxSize={1024 * 1024 * 50} // 50MB
+            onFilesChange={(files) => setFiles(files)}
+          />
+          <div>
+            <Field orientation="horizontal">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  form.reset();
+                }}
+              >
+                Reset
+              </Button>
+              <Button
+                type="submit"
+                disabled={isUploading}
+                form="form-upload-document"
+              >
+                {isUploading && <Spinner />}
+                {!isUploading ? "Submit" : "Uploading..."}
+              </Button>
+              {isUploading && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {progress < 100
+                        ? "Uploading document.pdf..."
+                        : "Upload complete!"}
+                    </span>
+                    <span className="font-medium">{progress}%</span>
+                  </div>
+                  <Progress value={progress} className="w-full" />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    {progress > 100 && (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    )}
+                  </div>
+                </div>
+              )}
+            </Field>
+          </div>
+        </form>
       </DialogContent>
-    </form>
+    </Dialog>
   );
 }
