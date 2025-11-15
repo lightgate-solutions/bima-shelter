@@ -36,6 +36,34 @@
       "when": 1762725233754,
       "tag": "0008_confused_apocalypse",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1763213203578,
+      "tag": "0009_faithful_justin_hammer",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1763215639145,
+      "tag": "0010_late_silver_centurion",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1763216588845,
+      "tag": "0011_wild_sue_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1763219028695,
+      "tag": "0012_clever_electro",
+      "breakpoints": true
     }
   ]
 }

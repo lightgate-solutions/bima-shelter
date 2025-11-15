@@ -2,7 +2,6 @@ import { db } from "@/db";
 import { notifications } from "@/db/schema/notifications";
 import { employees } from "@/db/schema/hr";
 import { eq, and, sql } from "drizzle-orm";
-import { getUser } from "@/actions/auth/dal";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 
