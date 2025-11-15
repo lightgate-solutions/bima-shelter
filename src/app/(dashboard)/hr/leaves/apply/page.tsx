@@ -1,4 +1,5 @@
 import LeaveApplicationForm from "@/components/hr/leave-application-form";
+import LeaveHistoryBalance from "@/components/hr/leave-history-balance";
 import { BackButton } from "@/components/ui/back-button";
 import {
   Card,
@@ -16,10 +17,15 @@ export default async function Page() {
         <div>
           <h1 className="text-2xl font-bold">Apply for Leave</h1>
           <p className="text-sm text-muted-foreground">
-            Submit a new leave application
+            Submit a new leave application and view your leave history
           </p>
         </div>
       </div>
+
+      {/* Leave History and Balance */}
+      <LeaveHistoryBalance />
+
+      {/* Leave Application Form */}
       <Card>
         <CardHeader>
           <CardTitle>Leave Application Form</CardTitle>
