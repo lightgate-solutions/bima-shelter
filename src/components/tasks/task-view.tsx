@@ -97,10 +97,19 @@ export function TaskView({ taskId, user }: Props) {
               </div>
             </div>
             {task.description ? (
-              <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
-                {task.description}
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg border">
+                <h5 className="text-xs font-semibold text-muted-foreground mb-2 uppercase">
+                  Task Description
+                </h5>
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                  {task.description}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground italic">
+                No description provided
               </p>
-            ) : null}
+            )}
           </div>
 
           <Separator />

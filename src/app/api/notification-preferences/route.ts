@@ -54,9 +54,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, message: "Preferences updated" });
   } catch (error) {
     console.log(error, "error saving preferences");
-    return {
-      success: null,
-      error: true,
-    };
+    return NextResponse.json(
+      { success: false, error: "Failed to save preferences" },
+      { status: 500 },
+    );
   }
 }

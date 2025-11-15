@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BackButton } from "@/components/ui/back-button";
-import { Loader2, Bell, Check } from "lucide-react";
+import { Loader2, Bell, Check, ExternalLink } from "lucide-react";
 import axios from "axios";
 import dayjs from "dayjs";
+import { useRouter } from "next/navigation";
 
 interface Notification {
   id: string;
@@ -22,6 +23,7 @@ interface Notification {
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -84,6 +86,19 @@ export default function NotificationsPage() {
     }
   };
 
+  const handleNotificationClick = async (notification: Notification) => {
+    // Mark as read if not already
+    if (!notification.is_read) {
+      await handleMarkAsRead(notification.id);
+    }
+
+    // Navigate based on reference ID
+    // For now, navigate to tasks page (can be enhanced to detect type)
+    if (notification.reference_id) {
+      router.push(`/tasks/employee?highlight=${notification.reference_id}`);
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between mb-4">
@@ -118,10 +133,16 @@ export default function NotificationsPage() {
           {notifications.map((n) => (
             <Card
               key={n.id}
-              className={`transition-all relative ${n.is_read ? "opacity-70" : "border-primary"}`}
+              className={`transition-all relative ${n.is_read ? "opacity-70" : "border-primary"} hover:shadow-md cursor-pointer`}
+              onClick={() => handleNotificationClick(n)}
             >
               <CardHeader className="flex flex-row justify-between items-center">
-                <CardTitle className="text-base">{n.title}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-base">{n.title}</CardTitle>
+                  {n.reference_id && (
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={n.is_read ? "secondary" : "default"}>
                     {n.notification_type}
@@ -130,7 +151,10 @@ export default function NotificationsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleMarkAsRead(n.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarkAsRead(n.id);
+                      }}
                     >
                       <Check className="h-4 w-4 mr-1" />
                       Mark as read
@@ -140,7 +164,9 @@ export default function NotificationsPage() {
               </CardHeader>
 
               <CardContent className="pb-10">
-                <p className="text-sm text-muted-foreground">{n.message}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {n.message}
+                </p>
                 <p className="text-xs text-muted-foreground mt-2">
                   {dayjs(n.created_at).format("MMM D, YYYY h:mm A")}
                 </p>
@@ -150,7 +176,10 @@ export default function NotificationsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => clearNotification(n.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearNotification(n.id);
+                  }}
                   className="h-7 px-3 text-xs text-red-500 border-red-300 hover:bg-red-50"
                 >
                   Clear
