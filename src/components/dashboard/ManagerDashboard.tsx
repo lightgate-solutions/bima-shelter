@@ -28,7 +28,9 @@ import {
   Upload,
   Briefcase,
   Clock,
+  RefreshCw,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import StatsCard from "@/components/dashboard-components/stats-card";
@@ -90,6 +92,7 @@ export default function ManagerDashboard() {
     completedTasks: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
   // Detect theme changes
@@ -218,34 +221,15 @@ export default function ManagerDashboard() {
 
   useEffect(() => {
     fetchManagerData();
+  }, [fetchManagerData]);
 
-    // Refresh every 15 seconds to catch new uploads
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        fetchManagerData();
-      }
-    }, 15000);
-
-    // Refresh when page becomes visible
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchManagerData();
-      }
-    };
-
-    // Refresh on window focus
-    const handleFocus = () => {
-      fetchManagerData();
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleFocus);
-    };
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchManagerData();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchManagerData]);
 
   // Calculate trends (simplified - could be enhanced with historical data)
@@ -302,13 +286,27 @@ export default function ManagerDashboard() {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-          Manager Dashboard
-        </h2>
-        <p className="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
-          Team performance and project overview
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+            Manager Dashboard
+          </h2>
+          <p className="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
+            Team performance and project overview
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={refreshing || loading}
+          className="gap-2"
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+          />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats Row - Match Admin Dashboard styling */}

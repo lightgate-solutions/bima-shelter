@@ -20,7 +20,9 @@ import {
   DollarSign,
   CheckSquare,
   Settings,
+  RefreshCw,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardStats {
@@ -43,6 +45,7 @@ interface DashboardStats {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const quickActions = [
@@ -144,34 +147,15 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchStats();
+  }, [fetchStats]);
 
-    // Refresh every 15 seconds to catch new uploads (RecentDocuments component will refresh itself)
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        fetchStats();
-      }
-    }, 15000);
-
-    // Refresh when page becomes visible
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchStats();
-      }
-    };
-
-    // Refresh on window focus
-    const handleFocus = () => {
-      fetchStats();
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleFocus);
-    };
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchStats();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchStats]);
 
   if (loading) {
@@ -230,13 +214,27 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-          Admin Dashboard
-        </h2>
-        <p className="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
-          Centralized analytics and management across all modules
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+            Admin Dashboard
+          </h2>
+          <p className="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
+            Centralized analytics and management across all modules
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={refreshing || loading}
+          className="gap-2"
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+          />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats Row */}

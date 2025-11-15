@@ -61,32 +61,31 @@ export async function GET() {
 
       const teamMemberIds = subordinates.map((s) => s.id);
 
-      if (teamMemberIds.length > 0) {
-        whereClause = and(
-          eq(document.status, "active"),
-          or(
-            eq(document.uploadedBy, employee.id),
-            inArray(document.uploadedBy, teamMemberIds),
-            and(
-              eq(document.departmental, true),
-              eq(document.department, employee.department || ""),
-            ),
-            eq(document.public, true),
-          ),
-        );
-      } else {
-        whereClause = and(
-          eq(document.status, "active"),
-          or(
-            eq(document.uploadedBy, employee.id),
-            and(
-              eq(document.departmental, true),
-              eq(document.department, employee.department || ""),
-            ),
-            eq(document.public, true),
-          ),
-        );
-      }
+      whereClause =
+        teamMemberIds.length > 0
+          ? (and(
+              eq(document.status, "active"),
+              or(
+                eq(document.uploadedBy, employee.id),
+                inArray(document.uploadedBy, teamMemberIds),
+                and(
+                  eq(document.departmental, true),
+                  eq(document.department, employee.department || ""),
+                ),
+                eq(document.public, true),
+              ) ?? eq(document.uploadedBy, employee.id),
+            ) ?? eq(document.status, "active"))
+          : (and(
+              eq(document.status, "active"),
+              or(
+                eq(document.uploadedBy, employee.id),
+                and(
+                  eq(document.departmental, true),
+                  eq(document.department, employee.department || ""),
+                ),
+                eq(document.public, true),
+              ) ?? eq(document.uploadedBy, employee.id),
+            ) ?? eq(document.status, "active"));
     } else {
       // Staff/User can see own documents, public documents, departmental documents, or documents with explicit access
       const visibilityCondition = sql`(
@@ -103,7 +102,9 @@ export async function GET() {
         )
       )`;
 
-      whereClause = and(eq(document.status, "active"), visibilityCondition);
+      whereClause =
+        and(eq(document.status, "active"), visibilityCondition) ??
+        eq(document.status, "active");
     }
 
     // Get recent documents - join with versions to get file size

@@ -304,7 +304,7 @@ export default function LeaveApplicationForm({
                         const start = startDate
                           ? new Date(`${startDate}T00:00:00`)
                           : null;
-                        return date < today || (start && date < start);
+                        return date < today || (start ? date < start : false);
                       }}
                       initialFocus
                     />

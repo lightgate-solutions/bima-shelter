@@ -71,9 +71,9 @@ const ManagerSubmissionsPage = async () => {
             <TableRow key={s.id}>
               <TableCell>{formatDate(s.submittedAt)}</TableCell>
               <TableCell>
-                {s.employeeName || s.employeeEmail ? (
+                {s.employeeName ? (
                   <>
-                    {s.employeeName ?? s.employeeEmail} {`(#${s.submittedBy})`}
+                    {s.employeeName} {`(#${s.submittedBy})`}
                   </>
                 ) : (
                   `#${s.submittedBy}`

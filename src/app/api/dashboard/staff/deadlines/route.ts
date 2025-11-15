@@ -50,15 +50,11 @@ export async function GET() {
     const taskIds = assignedTaskIds.map((t) => t.taskId);
 
     // Build where clause for tasks
-    let taskWhereClause: SQL<unknown>;
-    if (taskIds.length > 0) {
-      taskWhereClause = or(
-        eq(tasks.assignedTo, employee.id),
-        inArray(tasks.id, taskIds),
-      );
-    } else {
-      taskWhereClause = eq(tasks.assignedTo, employee.id);
-    }
+    const taskWhereClause: SQL<unknown> =
+      taskIds.length > 0
+        ? (or(eq(tasks.assignedTo, employee.id), inArray(tasks.id, taskIds)) ??
+          eq(tasks.assignedTo, employee.id))
+        : eq(tasks.assignedTo, employee.id);
 
     // Get upcoming tasks with due dates (next 30 days or overdue, not completed)
     const now = new Date();

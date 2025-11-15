@@ -11,10 +11,11 @@ import {
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const taskId = Number(params.id);
+    const { id } = await params;
+    const taskId = Number(id);
     if (!taskId)
       return NextResponse.json({ error: "Invalid task id" }, { status: 400 });
     const submissions = await getTaskSubmissions(taskId);
@@ -30,10 +31,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const taskId = Number(params.id);
+    const { id } = await params;
+    const taskId = Number(id);
     if (!taskId)
       return NextResponse.json({ error: "Invalid task id" }, { status: 400 });
 
