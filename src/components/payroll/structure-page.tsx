@@ -1,8 +1,9 @@
 "use client";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SalaryStructure } from "@/components/payroll/salary-structure";
-import { Deductions } from "@/components/payroll/deductions";
-import { Allowances } from "@/components/payroll/allowances";
+import { AllowancesTable } from "./allowances-table";
+import { DeductionsTable } from "./deductions-table";
 
 export default function StructurePage() {
   return (
@@ -42,11 +43,11 @@ export default function StructurePage() {
         </TabsContent>
 
         <TabsContent value="allowances">
-          <Allowances />
+          <AllowancesTable />
         </TabsContent>
 
         <TabsContent value="deductions">
-          <Deductions />
+          <DeductionsTable />
         </TabsContent>
       </Tabs>
     </div>

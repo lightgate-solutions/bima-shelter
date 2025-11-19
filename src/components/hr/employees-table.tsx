@@ -116,7 +116,7 @@ export default function EmployeesTable() {
                   <TableCell>
                     <Badge>{employee.employmentType || "N/A"}</Badge>
                   </TableCell>
-                  <TableCell className=" flex text-right space-x-2">
+                  <TableCell className="flex text-right space-x-2">
                     <Button
                       size="sm"
                       variant="outline"
@@ -124,8 +124,9 @@ export default function EmployeesTable() {
                         setSelectedEmployee(employee);
                         setMode("view");
                       }}
+                      title="View Employee Details"
                     >
-                      <Eye />
+                      <Eye className="h-4 w-4" />
                     </Button>
                     <Button
                       size="sm"
@@ -134,8 +135,9 @@ export default function EmployeesTable() {
                         setSelectedEmployee(employee);
                         setMode("edit");
                       }}
+                      title="Edit Employee"
                     >
-                      <Edit />
+                      <Edit className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>

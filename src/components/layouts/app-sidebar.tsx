@@ -156,6 +156,10 @@ const data = {
           title: "Salary Structures",
           url: "/payroll/structure",
         },
+        {
+          title: "Employees",
+          url: "/payroll/employees",
+        },
       ],
     },
   ],

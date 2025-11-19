@@ -15,9 +15,11 @@ import { sql } from "drizzle-orm";
 
 export const allowanceTypeEnum = pgEnum("allowance_type", [
   "one-time",
-  "recurring",
   "monthly",
   "annual",
+  "bi-annual",
+  "quarterly",
+  "custom",
 ]);
 
 export const deductionTypeEnum = pgEnum("deduction_type", [
@@ -121,13 +123,7 @@ export const salaryAllowances = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  (table) => [
-    index("salary_allowance_id_idx").on(table.salaryStructureId),
-    unique("unique_salary_allowance").on(
-      table.salaryStructureId,
-      table.allowanceId,
-    ),
-  ],
+  (table) => [index("salary_allowance_id_idx").on(table.salaryStructureId)],
 );
 
 export const employeeAllowances = pgTable(
@@ -158,17 +154,40 @@ export const employeeAllowances = pgTable(
 export const deductions = pgTable("deductions", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  salaryStructureId: integer("salary_structure_id")
-    .notNull()
-    .references(() => salaryStructure.id, { onDelete: "cascade" }),
-  percentage: numeric("percentage", { precision: 5, scale: 2 }),
-  amount: numeric("amount", { precision: 15, scale: 2 }),
+  percentage: numeric("percentage", { precision: 5, scale: 2 }), // if percentage based
+  amount: numeric("amount", { precision: 15, scale: 2 }), // if fixed amount
   type: deductionTypeEnum("type").notNull().default("recurring"),
-  effectiveFrom: timestamp("effective_from").defaultNow(),
-  effectiveTo: timestamp("effective_to"),
+  createdBy: integer("created_by")
+    .references(() => employees.id, { onDelete: "no action" })
+    .notNull(),
+  updatedBy: integer("updated_by")
+    .references(() => employees.id, { onDelete: "no action" })
+    .notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+export const salaryDeductions = pgTable(
+  "salary_deductions",
+  {
+    id: serial("id").primaryKey(),
+    salaryStructureId: integer("salary_structure_id")
+      .references(() => salaryStructure.id, { onDelete: "cascade" })
+      .notNull(),
+    deductionId: integer("deduction_id")
+      .references(() => deductions.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    effectiveFrom: timestamp("effective_from").defaultNow(),
+    effectiveTo: timestamp("effective_to"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("salary_deduction_table_id_idx").on(table.salaryStructureId),
+  ],
+);
 
 export const employeeDeductions = pgTable(
   "employee_deductions",
