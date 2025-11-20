@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const h = await headers();
@@ -16,7 +16,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const balanceId = parseInt(params.id);
+    const { id } = await params;
+    const balanceId = parseInt(id);
     if (Number.isNaN(balanceId)) {
       return NextResponse.json(
         { error: "Invalid balance ID" },

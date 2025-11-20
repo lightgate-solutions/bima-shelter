@@ -203,7 +203,7 @@ export function TasksTable() {
           <RefreshButton />
           {user?.isManager ? (
             <Dialog>
-              <DialogTrigger>
+              <DialogTrigger asChild>
                 <Button>New Task</Button>
               </DialogTrigger>
               <DialogContent>

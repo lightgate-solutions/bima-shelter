@@ -11,10 +11,11 @@ import { eq } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const id = Number((await params).id);
+    const { id: idParam } = await params;
+    const id = Number(idParam);
     if (!id)
       return NextResponse.json({ error: "Invalid task id" }, { status: 400 });
 
@@ -38,10 +39,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const id = Number((await params).id);
+    const { id: idParam } = await params;
+    const id = Number(idParam);
     if (!id)
       return NextResponse.json({ error: "Invalid task id" }, { status: 400 });
 

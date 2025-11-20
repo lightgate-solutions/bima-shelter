@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const [res] = await db
       .select()
       .from(employees)
-      .where(eq(employees.id, id))
+      .where(eq(employees.id, Number(id)))
       .limit(1);
     const employeeId = res.id;
     console.log(employeeId);

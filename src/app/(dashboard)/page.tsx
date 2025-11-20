@@ -92,9 +92,6 @@ export default async function DashboardPage() {
     case "accountant":
       return <FinanceDashboard />;
 
-    case "manager":
-      return <ManagerDashboard />;
-
     default:
       // Default fallback: Show staff dashboard for any unrecognized role
       // This ensures ALL users get a dashboard, even if their role is not explicitly handled

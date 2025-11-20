@@ -49,15 +49,11 @@ export async function GET() {
     const taskIds = assignedTaskIds.map((t) => t.taskId);
 
     // Build where clause - tasks assigned directly or via assignees table
-    let whereClause: SQL<unknown>;
-    if (taskIds.length > 0) {
-      whereClause = or(
-        eq(tasks.assignedTo, employee.id),
-        inArray(tasks.id, taskIds),
-      );
-    } else {
-      whereClause = eq(tasks.assignedTo, employee.id);
-    }
+    const whereClause: SQL<unknown> =
+      taskIds.length > 0
+        ? (or(eq(tasks.assignedTo, employee.id), inArray(tasks.id, taskIds)) ??
+          eq(tasks.assignedTo, employee.id))
+        : eq(tasks.assignedTo, employee.id);
 
     // Get active tasks (not completed) ordered by due date (soonest first, nulls last)
     const assignedTasks = await db

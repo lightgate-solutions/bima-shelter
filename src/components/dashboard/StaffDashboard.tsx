@@ -28,7 +28,9 @@ import {
   Upload,
   PlusCircle,
   Share2,
+  RefreshCw,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardStats {
@@ -86,6 +88,7 @@ export default function StaffDashboard() {
   >([]);
   const [recentDocuments, setRecentDocuments] = useState<RecentDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
   // Detect theme changes
@@ -196,34 +199,15 @@ export default function StaffDashboard() {
 
   useEffect(() => {
     fetchStaffData();
+  }, [fetchStaffData]);
 
-    // Refresh every 15 seconds to catch new uploads
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        fetchStaffData();
-      }
-    }, 15000);
-
-    // Refresh when page becomes visible
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchStaffData();
-      }
-    };
-
-    // Refresh on window focus
-    const handleFocus = () => {
-      fetchStaffData();
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleFocus);
-    };
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchStaffData();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchStaffData]);
 
   if (loading) {
@@ -264,13 +248,27 @@ export default function StaffDashboard() {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-          My Dashboard
-        </h2>
-        <p className="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
-          Personal productivity and task overview
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+            My Dashboard
+          </h2>
+          <p className="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
+            Personal productivity and task overview
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={refreshing || loading}
+          className="gap-2"
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+          />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats Row - Match Admin/Manager Dashboard styling */}

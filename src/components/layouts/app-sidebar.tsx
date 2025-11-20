@@ -12,6 +12,7 @@ import {
   Users,
   Warehouse,
   Bell,
+  DollarSign,
 } from "lucide-react";
 import {
   Sidebar,
@@ -117,7 +118,7 @@ const data = {
       ],
     },
     {
-      title: "Hr/Payroll",
+      title: "Hr",
       url: "/hr",
       icon: Users,
       items: [
@@ -159,6 +160,21 @@ const data = {
         {
           title: "Notifications Preferences",
           url: "/notification-preferences",
+        },
+      ],
+    },
+    {
+      title: "Payroll",
+      url: "/payroll",
+      icon: DollarSign,
+      items: [
+        {
+          title: "Salary Structures",
+          url: "/payroll/structure",
+        },
+        {
+          title: "Employees",
+          url: "/payroll/employees",
         },
       ],
     },
@@ -210,6 +226,7 @@ export function AppSidebar({
             { title: "History", url: "/tasks/history" },
             { title: "Task Item", url: "/tasks" },
             { title: "Task Submission", url: "/tasks/manager" },
+            { title: "To-Do", url: "/tasks/employee" },
           ]
         : [{ title: "To-Do", url: "/tasks/employee" }],
     };

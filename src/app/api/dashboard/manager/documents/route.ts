@@ -51,27 +51,25 @@ export async function GET() {
 
     // Get recent documents uploaded by manager, team members, or in manager's department
     // Include manager's own documents, team member documents, and departmental documents
-    let whereClause: SQL<unknown>;
-    if (teamMemberIds.length > 0) {
-      whereClause = or(
-        eq(document.uploadedBy, employee.id), // Include manager's own documents
-        inArray(document.uploadedBy, teamMemberIds), // Team member documents
-        and(
-          eq(document.departmental, true),
-          eq(document.department, employee.department || ""),
-        ), // Departmental documents
-        eq(document.public, true), // Public documents
-      );
-    } else {
-      whereClause = or(
-        eq(document.uploadedBy, employee.id), // Include manager's own documents
-        and(
-          eq(document.departmental, true),
-          eq(document.department, employee.department || ""),
-        ), // Departmental documents
-        eq(document.public, true), // Public documents
-      );
-    }
+    const whereClause: SQL<unknown> =
+      teamMemberIds.length > 0
+        ? (or(
+            eq(document.uploadedBy, employee.id), // Include manager's own documents
+            inArray(document.uploadedBy, teamMemberIds), // Team member documents
+            and(
+              eq(document.departmental, true),
+              eq(document.department, employee.department || ""),
+            ), // Departmental documents
+            eq(document.public, true), // Public documents
+          ) ?? eq(document.uploadedBy, employee.id))
+        : (or(
+            eq(document.uploadedBy, employee.id), // Include manager's own documents
+            and(
+              eq(document.departmental, true),
+              eq(document.department, employee.department || ""),
+            ), // Departmental documents
+            eq(document.public, true), // Public documents
+          ) ?? eq(document.uploadedBy, employee.id));
 
     // First try with currentVersionId > 0, but if no results, try without it
     let recentDocs = await db

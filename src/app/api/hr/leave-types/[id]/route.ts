@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const h = await headers();
@@ -15,7 +15,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const leaveTypeId = parseInt(params.id);
+    const { id } = await params;
+    const leaveTypeId = parseInt(id);
     if (Number.isNaN(leaveTypeId)) {
       return NextResponse.json(
         { error: "Invalid leave type ID" },
@@ -47,7 +48,7 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const h = await headers();
@@ -56,7 +57,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const leaveTypeId = parseInt(params.id);
+    const { id } = await params;
+    const leaveTypeId = parseInt(id);
     if (Number.isNaN(leaveTypeId)) {
       return NextResponse.json(
         { error: "Invalid leave type ID" },

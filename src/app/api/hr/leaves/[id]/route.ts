@@ -13,7 +13,7 @@ import { eq } from "drizzle-orm";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const h = await headers();
@@ -22,7 +22,8 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const leaveId = parseInt(params.id);
+    const { id } = await params;
+    const leaveId = parseInt(id);
     if (Number.isNaN(leaveId)) {
       return NextResponse.json({ error: "Invalid leave ID" }, { status: 400 });
     }
@@ -44,7 +45,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const h = await headers();
@@ -53,7 +54,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const leaveId = parseInt(params.id);
+    const { id } = await params;
+    const leaveId = parseInt(id);
     if (Number.isNaN(leaveId)) {
       return NextResponse.json({ error: "Invalid leave ID" }, { status: 400 });
     }
@@ -94,7 +96,7 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const h = await headers();
@@ -103,7 +105,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const leaveId = parseInt(params.id);
+    const { id } = await params;
+    const leaveId = parseInt(id);
     if (Number.isNaN(leaveId)) {
       return NextResponse.json({ error: "Invalid leave ID" }, { status: 400 });
     }
