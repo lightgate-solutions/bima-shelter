@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { taskMessages, tasks, taskAssignees, employees } from "@/db/schema";
 import { DrizzleQueryError, and, eq, gt, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { createNotification } from "../notification/notification";
 
 type NewMessage = typeof taskMessages.$inferInsert;
 
@@ -64,6 +65,45 @@ export const createTaskMessage = async (msg: NewMessage) => {
       senderName = emp?.name ?? null;
       senderEmail = emp?.email ?? null;
     } catch {}
+
+    // Notify all task participants except the sender
+    const participants = new Set<number>();
+    if (t.assignedBy && t.assignedBy !== msg.senderId) {
+      participants.add(t.assignedBy);
+    }
+    if (t.assignedTo && t.assignedTo !== msg.senderId) {
+      participants.add(t.assignedTo);
+    }
+
+    // Also get additional assignees
+    const extraAssignees = await db
+      .select({ employeeId: taskAssignees.employeeId })
+      .from(taskAssignees)
+      .where(eq(taskAssignees.taskId, msg.taskId));
+
+    for (const { employeeId } of extraAssignees) {
+      if (employeeId && employeeId !== msg.senderId) {
+        participants.add(employeeId);
+      }
+    }
+
+    // Send notifications to all participants
+    for (const userId of participants) {
+      const commentPreview =
+        msg.content.length > 100
+          ? `${msg.content.substring(0, 100)}...`
+          : msg.content;
+
+      const message = `${senderName || "Someone"} commented on "${t.title}" • ${commentPreview}`;
+
+      await createNotification({
+        user_id: userId,
+        title: "New Comment",
+        message,
+        notification_type: "message",
+        reference_id: msg.taskId,
+      });
+    }
 
     const message = inserted?.[0]
       ? { ...inserted[0], senderName, senderEmail }

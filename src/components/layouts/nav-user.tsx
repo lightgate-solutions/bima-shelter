@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  LogOut,
-  Moon,
-  Sun,
-} from "lucide-react";
+import { Bell, ChevronsUpDown, LogOut, Moon, Sun } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -27,10 +20,12 @@ import {
 import type { User } from "better-auth";
 import { SignOut } from "@/actions/auth/login";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 
 export function NavUser({ user }: { user: User }) {
   const { theme, setTheme, systemTheme } = useTheme();
   const { isMobile } = useSidebar();
+  const router = useRouter();
 
   return (
     <SidebarMenu>
@@ -100,13 +95,11 @@ export function NavUser({ user }: { user: User }) {
                   </>
                 )}
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => router.push("/notification-preferences")}
+              >
                 <Bell />
-                Notifications
+                Notification Preferences
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

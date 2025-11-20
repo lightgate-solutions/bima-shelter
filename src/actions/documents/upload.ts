@@ -180,9 +180,18 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
           .set({
             currentVersionId: version.id,
             currentVersion: version.versionNumber,
+            updatedAt: new Date(), // Explicitly update updatedAt to ensure it's refreshed
           })
           .where(eq(document.id, version.documentId));
+
+        console.log(
+          `[Upload Action] Updated document ${version.documentId} with currentVersionId=${version.id}`,
+        );
       }
+
+      console.log(
+        `[Upload Action] Successfully uploaded ${insertedDocuments.length} document(s) with versions`,
+      );
 
       const tagsToInsert = insertedDocuments.flatMap((doc) =>
         data.tags.map((tag) => ({
@@ -278,6 +287,17 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
       }));
       await tx.insert(documentLogs).values(logsToInsert);
     });
+
+    // CRITICAL: Revalidate all dashboard and document-related pages
+    revalidatePath("/dashboard", "page");
+    revalidatePath("/dashboard/admin", "page");
+    revalidatePath("/dashboard/manager", "page");
+    revalidatePath("/dashboard/staff", "page");
+    revalidatePath("/documents", "layout");
+    revalidatePath("/documents/all", "page");
+
+    // Trigger a custom event for client-side refresh
+    console.log("[Upload Action] Document upload completed, paths revalidated");
 
     return {
       success: { reason: "Uploaded document/s successfully!" },

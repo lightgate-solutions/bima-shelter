@@ -12,10 +12,21 @@ export default function NotificationBell() {
   useEffect(() => {
     const getNotificationsCount = async () => {
       try {
-        const res = await axios.get("/api/notification/unread-count");
+        const res = await axios.get("/api/notification/unread-count", {
+          timeout: 5000, // 5 second timeout
+        });
         setUnreadCount(res.data.count || 0);
       } catch (err) {
-        console.error("Failed to fetch unread count", err);
+        // Only log if it's not a network error (which might be temporary)
+        if (axios.isAxiosError(err)) {
+          // Network errors are common during server restarts, don't spam console
+          if (err.code !== "ERR_NETWORK" && err.code !== "ECONNABORTED") {
+            console.error("Failed to fetch unread count", err);
+          }
+        } else {
+          console.error("Failed to fetch unread count", err);
+        }
+        // Keep current count on error, don't reset to 0
       }
     };
 

@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SubmissionReviewDialog } from "@/components/tasks/submission-review-dialog";
+import { BackButton } from "@/components/ui/back-button";
 
 function formatDate(val?: unknown) {
   if (!val) return "N/A";
@@ -41,13 +42,18 @@ const ManagerSubmissionsPage = async () => {
     : [];
 
   return (
-    <div className="p-2">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold">Team Submissions</h2>
-        <p className="text-sm text-muted-foreground">
-          Review all submissions from your direct reports. Click file links to
-          open attachments in a new tab.
-        </p>
+    <div className="p-2 space-y-4">
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-4">
+          <BackButton />
+          <div>
+            <h2 className="text-2xl font-bold">Team Submissions</h2>
+            <p className="text-sm text-muted-foreground">
+              Review all submissions from your direct reports. Click file links
+              to open attachments in a new tab.
+            </p>
+          </div>
+        </div>
       </div>
 
       <Table>
@@ -66,9 +72,9 @@ const ManagerSubmissionsPage = async () => {
             <TableRow key={s.id}>
               <TableCell>{formatDate(s.submittedAt)}</TableCell>
               <TableCell>
-                {s.employeeName || s.employeeEmail ? (
+                {s.employeeName ? (
                   <>
-                    {s.employeeName ?? s.employeeEmail} {`(#${s.submittedBy})`}
+                    {s.employeeName} {`(#${s.submittedBy})`}
                   </>
                 ) : (
                   `#${s.submittedBy}`

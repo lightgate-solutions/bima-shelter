@@ -130,6 +130,22 @@ const data = {
           title: "View Employees",
           url: "/hr/employees",
         },
+        {
+          title: "Leave Management",
+          url: "/hr/leaves",
+        },
+        {
+          title: "Apply for Leave",
+          url: "/hr/leaves/apply",
+        },
+        {
+          title: "Annual Leave Balances",
+          url: "/hr/leaves/annual-balances",
+        },
+        {
+          title: "All Tasks",
+          url: "/hr/admin/tasks",
+        },
       ],
     },
     {

@@ -12,10 +12,11 @@ import { eq, inArray } from "drizzle-orm";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const id = Number((await params).id);
+    const { id: idParam } = await params;
+    const id = Number(idParam);
     const { searchParams } = _request.nextUrl;
     const employeeId = Number(searchParams.get("employeeId"));
     const role = searchParams.get("role");
@@ -94,10 +95,11 @@ export async function GET(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const id = Number((await params).id);
+    const { id: idParam } = await params;
+    const id = Number(idParam);
     const { searchParams } = _request.nextUrl;
     const employeeId = Number(searchParams.get("employeeId"));
     if (!employeeId) {
@@ -127,11 +129,11 @@ export async function DELETE(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const pid = (await params).id;
-    const id = Number(pid);
+    const { id: idParam } = await params;
+    const id = Number(idParam);
     const body = await request.json();
     const content: Partial<CreateTask> = {};
     const keys = Object.keys(body) as Array<keyof CreateTask>;

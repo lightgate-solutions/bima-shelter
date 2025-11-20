@@ -8,11 +8,12 @@ import { createSubmissionReview } from "@/actions/tasks/taskSubmissions";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string; submissionId: string } },
+  { params }: { params: Promise<{ id: string; submissionId: string }> },
 ) {
   try {
-    const taskId = Number(params.id);
-    const submissionId = Number(params.submissionId);
+    const { id, submissionId: submissionIdParam } = await params;
+    const taskId = Number(id);
+    const submissionId = Number(submissionIdParam);
     if (!taskId || !submissionId)
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
@@ -39,11 +40,12 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; submissionId: string } },
+  { params }: { params: Promise<{ id: string; submissionId: string }> },
 ) {
   try {
-    const taskId = Number(params.id);
-    const submissionId = Number(params.submissionId);
+    const { id, submissionId: submissionIdParam } = await params;
+    const taskId = Number(id);
+    const submissionId = Number(submissionIdParam);
     if (!taskId || !submissionId)
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 

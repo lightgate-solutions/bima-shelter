@@ -4,6 +4,9 @@ import { getSubFolders } from "@/actions/documents/folders";
 import DocumentsViewWrapper from "@/components/documents/documents-view-wrapper";
 import FoldersViewWrapper from "@/components/documents/folders/folders-view-wrapper";
 import { ViewToggle } from "@/components/documents/view-toggle/view-toggle";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default async function Page({
   params,
@@ -37,7 +40,13 @@ export default async function Page({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <Link href="/">
+          <Button variant="ghost" size="sm" className="gap-2">
+            <ArrowLeft className="size-4" />
+            Back to Dashboard
+          </Button>
+        </Link>
         <ViewToggle />
       </div>
       <FoldersViewWrapper folders={subFolders} department={user.department} />

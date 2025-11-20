@@ -62,6 +62,7 @@ export function TasksTable() {
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<boolean>(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState<number | null>(null);
 
   const [user, setUser] = useState<User | null>(null);
 
@@ -243,7 +244,11 @@ export function TasksTable() {
         <TableBody>
           {items
             ? items.map((task) => (
-                <TableRow key={task.id}>
+                <TableRow
+                  key={task.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => setViewDialogOpen(task.id)}
+                >
                   <TableCell>{task.title}</TableCell>
                   {user?.isManager ? (
                     <TableCell>
@@ -269,7 +274,7 @@ export function TasksTable() {
                   <TableCell>{task.status}</TableCell>
                   <TableCell>{task.priority ?? "N/A"}</TableCell>
                   <TableCell>{task.dueDate ?? "N/A"}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex space-x-2">
                       <TaskChatDialog
                         taskId={task.id}
@@ -286,22 +291,40 @@ export function TasksTable() {
                           </Button>
                         }
                       />
-                      <Dialog>
-                        <DialogTrigger>
-                          <Button variant={"ghost"} size={"icon"}>
-                            <Eye className="cursor-pointer" />
+                      <Dialog
+                        open={viewDialogOpen === task.id}
+                        onOpenChange={(open) =>
+                          !open && setViewDialogOpen(null)
+                        }
+                      >
+                        <DialogTrigger asChild>
+                          <Button
+                            variant={"ghost"}
+                            size={"icon"}
+                            title="View Details"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewDialogOpen(task.id);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
                           <TaskView taskId={task.id} user={user} />
                         </DialogContent>
                       </Dialog>
                       {user?.isManager ? (
                         <>
                           <Dialog>
-                            <DialogTrigger>
-                              <Button variant={"ghost"}>
-                                <Pencil className="cursor-pointer" />
+                            <DialogTrigger asChild>
+                              <Button
+                                variant={"ghost"}
+                                size={"icon"}
+                                title="Edit Task"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Pencil className="h-4 w-4" />
                               </Button>
                             </DialogTrigger>
                             <DialogContent>
@@ -338,7 +361,10 @@ export function TasksTable() {
                           <Button
                             variant={"ghost"}
                             size={"icon"}
-                            onClick={() => openDelete(task.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDelete(task.id);
+                            }}
                             aria-label="Delete task"
                             title="Delete"
                           >
@@ -353,7 +379,8 @@ export function TasksTable() {
                             task.status === "Completed" ||
                             task.status === "Overdue"
                           }
-                          onClick={async () => {
+                          onClick={async (e) => {
+                            e.stopPropagation();
                             if (!user?.id) return;
                             try {
                               const res = await fetch(
