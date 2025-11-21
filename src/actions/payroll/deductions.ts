@@ -141,6 +141,58 @@ export async function getAllDeductions() {
   }
 }
 
+export async function getAllRecurringDeductions() {
+  const user = await getUser();
+  if (!user) throw new Error("User not logged in");
+  if (user.role !== "admin") throw new Error("Access Restricted");
+
+  try {
+    const allDeductions = await db
+      .select({
+        id: deductions.id,
+        name: deductions.name,
+        type: deductions.type,
+        percentage: deductions.percentage,
+        amount: deductions.amount,
+        createdById: deductions.createdBy,
+        updatedAt: deductions.updatedAt,
+      })
+      .from(deductions)
+      .where(eq(deductions.type, "recurring"))
+      .orderBy(desc(deductions.updatedAt));
+
+    const creatorIds = [...new Set(allDeductions.map((d) => d.createdById))];
+
+    const creators = await db
+      .select({
+        id: employees.id,
+        name: employees.name,
+      })
+      .from(employees)
+      .where(
+        creatorIds.length > 0
+          ? sql`${employees.id} IN (${creatorIds.join(", ")})`
+          : sql`FALSE`,
+      );
+
+    const creatorsMap = creators.reduce(
+      (map, creator) => {
+        map[creator.id] = creator.name;
+        return map;
+      },
+      {} as Record<number, string>,
+    );
+
+    return allDeductions.map((deduction) => ({
+      ...deduction,
+      createdBy: creatorsMap[deduction.createdById] || "Unknown",
+    }));
+  } catch (error) {
+    console.error("Error fetching deductions:", error);
+    return [];
+  }
+}
+
 export async function getDeduction(id: number) {
   const user = await getUser();
   if (!user) throw new Error("User not logged in");

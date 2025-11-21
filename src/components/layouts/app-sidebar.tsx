@@ -73,10 +73,6 @@ const data = {
       icon: Landmark,
       items: [
         {
-          title: "Payroll",
-          url: "/finance/payroll",
-        },
-        {
           title: "Company Expenses",
           url: "/finance/expenses",
         },
