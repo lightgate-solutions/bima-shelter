@@ -23,15 +23,6 @@ export async function createNotification({
   is_read = false,
 }: CreateNotificationInput) {
   try {
-    console.log(
-      "trying to create notification",
-      user_id,
-      title,
-      message,
-      notification_type,
-      reference_id,
-      is_read,
-    );
     const currentUser = await getUser();
 
     if (!currentUser) {
@@ -45,7 +36,6 @@ export async function createNotification({
     const prefs = await db.query.notification_preferences.findFirst({
       where: eq(notification_preferences.user_id, user_id),
     });
-    console.log(prefs, reference_id);
 
     if (prefs?.in_app_notifications) {
       await db.insert(notifications).values({
@@ -79,7 +69,7 @@ export async function createNotification({
       error: null,
     };
   } catch (error) {
-    console.log("error", error);
+    console.error("Error creating notification:", error);
     return {
       success: false,
       data: null,
@@ -112,8 +102,7 @@ export async function getUserNotifications() {
   return { success: true, data: userNotifications, error: null };
 }
 
-export async function markNotificationsAsRead(ids: number[]) {
-  console.log("trying to mark a notification as read");
+export async function markNotificationsAsRead(ids: string[]) {
   const currentUser = await getUser();
 
   if (!currentUser) {
@@ -129,9 +118,6 @@ export async function markNotificationsAsRead(ids: number[]) {
     .update(notifications)
     .set({ is_read: true })
     .where(
-      and(
-        eq(notifications.user_id, user_id),
-        inArray(notifications.id, ids.map(String)),
-      ),
+      and(eq(notifications.user_id, user_id), inArray(notifications.id, ids)),
     );
 }
