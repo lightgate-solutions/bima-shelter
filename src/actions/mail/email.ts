@@ -139,23 +139,25 @@ export async function sendEmail(
       };
     });
 
-    console.log(emailRecord);
-
-    if (create_notif && "id" in emailRecord) {
-      await createNotification({
-        user_id: currentUser.id,
-        title: "New message received",
-        message: `${currentUser.name} sent you a message: "${validated.subject}"`,
-        notification_type: "message",
-        reference_id: emailRecord.data?.id,
-      });
+    // Return error if transaction failed
+    if (!emailRecord.success) {
+      return emailRecord;
     }
 
-    return {
-      success: true,
-      data: emailRecord,
-      error: null,
-    };
+    if (create_notif && emailRecord.data) {
+      // Notify all recipients (not the sender)
+      for (const recipientId of validated.recipientIds) {
+        await createNotification({
+          user_id: recipientId,
+          title: "New message received",
+          message: `${currentUser.name} sent you a message: "${validated.subject}"`,
+          notification_type: "message",
+          reference_id: emailRecord.data.id,
+        });
+      }
+    }
+
+    return emailRecord;
   } catch (error) {
     console.error(error);
     return {
