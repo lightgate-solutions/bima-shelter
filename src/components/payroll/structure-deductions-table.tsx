@@ -59,7 +59,7 @@ import {
   getStructureDeductions,
   removeDeductionFromStructure,
 } from "@/actions/payroll/salary-deductions";
-import { getAllDeductions } from "@/actions/payroll/deductions";
+import { getAllRecurringDeductions } from "@/actions/payroll/deductions";
 import { DateTimePicker } from "@/components/ui/date-time";
 import { Label } from "../ui/label";
 
@@ -107,7 +107,7 @@ export function StructureDeductionsTable({
   const { data: allDeductions = [], isLoading: isLoadingDeductions } = useQuery(
     {
       queryKey: ["deductions"],
-      queryFn: () => getAllDeductions(),
+      queryFn: () => getAllRecurringDeductions(),
     },
   );
 
