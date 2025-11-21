@@ -10,3 +10,4 @@ export * from "./tasks";
 export * from "./finance";
 export * from "./payroll";
 export * from "./user-preferences";
+export * from "./ask-hr";

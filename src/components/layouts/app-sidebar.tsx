@@ -127,6 +127,10 @@ const data = {
           url: "/hr/employees",
         },
         {
+          title: "Ask HR",
+          url: "/hr/ask-hr",
+        },
+        {
           title: "Leave Management",
           url: "/hr/leaves",
         },
