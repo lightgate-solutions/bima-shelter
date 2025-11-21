@@ -31,7 +31,7 @@ import { getUser as getEmployee } from "@/actions/auth/dal";
 const data = {
   org: [
     {
-      name: "Bima Shelters",
+      name: "Bima Shelter",
       logo: GalleryVerticalEnd,
       plan: "Management System",
     },
@@ -75,6 +75,10 @@ const data = {
         {
           title: "Company Expenses",
           url: "/finance/expenses",
+        },
+        {
+          title: "Loan Disbursement",
+          url: "/finance/loans",
         },
       ],
     },
@@ -129,6 +133,10 @@ const data = {
         {
           title: "Ask HR",
           url: "/hr/ask-hr",
+        },
+        {
+          title: "Loan Management",
+          url: "/hr/loans",
         },
         {
           title: "Leave Management",

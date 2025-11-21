@@ -200,6 +200,7 @@ export const employeeDeductions = pgTable(
     salaryStructureId: integer("salary_structure_id")
       .notNull()
       .references(() => salaryStructure.id, { onDelete: "cascade" }),
+    type: deductionTypeEnum("type"),
     amount: numeric("amount", { precision: 15, scale: 2 }),
     percentage: numeric("percentage", { precision: 5, scale: 2 }),
     originalAmount: numeric("original_amount", { precision: 15, scale: 2 }),

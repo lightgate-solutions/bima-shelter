@@ -121,7 +121,7 @@ export function AskHrForm({ trigger }: AskHrFormProps) {
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[550px] max-h-11/12 overflow-auto">
         <DialogHeader>
           <DialogTitle>Ask HR a Question</DialogTitle>
           <DialogDescription>

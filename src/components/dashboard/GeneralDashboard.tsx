@@ -10,7 +10,7 @@ export default function GeneralDashboard() {
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome to Bima Shelters Management System
+          Welcome to Bima Shelter's Management System
         </p>
       </div>
 

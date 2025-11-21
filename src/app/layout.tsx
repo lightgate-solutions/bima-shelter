@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bima Shelters",
-  description: "Bima Shelters Management System",
+  title: "Bima Shelter",
+  description: "Bima Shelter Management System",
 };
 
 export default function RootLayout({

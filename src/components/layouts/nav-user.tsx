@@ -1,6 +1,13 @@
 "use client";
 
-import { Bell, ChevronsUpDown, LogOut, Moon, Sun } from "lucide-react";
+import {
+  Bell,
+  ChevronsUpDown,
+  LogOut,
+  Moon,
+  Settings,
+  Sun,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -84,15 +91,15 @@ export function NavUser({ user }: { user: User }) {
               >
                 {theme === "dark" ||
                 (theme === "system" && systemTheme === "dark") ? (
-                  <>
+                  <div className="flex gap-2">
                     <Sun />
                     Light mode
-                  </>
+                  </div>
                 ) : (
-                  <>
+                  <div className="flex gap-2">
                     <Moon />
                     Dark mode
-                  </>
+                  </div>
                 )}
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -100,6 +107,10 @@ export function NavUser({ user }: { user: User }) {
               >
                 <Bell />
                 Notification Preferences
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/settings")}>
+                <Settings />
+                Settings
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

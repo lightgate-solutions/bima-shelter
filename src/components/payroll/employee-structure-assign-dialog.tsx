@@ -376,7 +376,7 @@ export function EmployeeStructureAssignDialog({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Change Salary Structure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <div className="text-sm text-muted-foreground">
               <div>
                 {employeeName} is currently assigned to the{" "}
                 <strong>{currentStructureName}</strong> structure.
@@ -409,7 +409,7 @@ export function EmployeeStructureAssignDialog({
                 </li>
               </ul>
               <div className="mt-2">Do you want to continue?</div>
-            </AlertDialogDescription>
+            </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
