@@ -71,7 +71,6 @@ import {
 import { Badge } from "../ui/badge";
 import Link from "next/link";
 import { toast } from "sonner";
-import { BackButton } from "../ui/back-button";
 import {
   Dialog,
   DialogContent,
@@ -443,9 +442,6 @@ function DocumentPage({
     <div>
       <div className="min-w-3xl 2xl:min-w-4xl">
         <div className="space-y-6 pb-6">
-          <div className="flex items-start gap-4 mb-4">
-            <BackButton />
-          </div>
           <div className="flex flex-row gap-3">
             <div className="bg-muted p-4 rounded-xl">
               <FileIcon size={40} />
