@@ -103,7 +103,6 @@ export async function updateTask(
   taskId: number,
   updates: Partial<CreateTask>,
 ) {
-  console.log("Updates:", updates);
   const employee = await getEmployee(employeeId);
   if (!employee) {
     return {

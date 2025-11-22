@@ -6,10 +6,21 @@ import { getEmployee } from "../hr/employees";
 import { DrizzleQueryError, and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "../notification/notification";
+import { requireAuth, requireManager } from "@/actions/auth/dal";
 
 type NewSubmission = typeof taskSubmissions.$inferInsert;
 
 export async function submitTask(submissionData: NewSubmission) {
+  const authData = await requireAuth();
+
+  // Verify user can only submit their own tasks
+  if (authData.employee.id !== submissionData.submittedBy) {
+    return {
+      success: null,
+      error: { reason: "You can only submit your own tasks" },
+    };
+  }
+
   try {
     const employee = await getEmployee(submissionData.submittedBy);
 
@@ -70,6 +81,7 @@ export async function submitTask(submissionData: NewSubmission) {
 }
 
 export async function getTaskSubmissions(taskId: number) {
+  await requireAuth();
   return await db
     .select()
     .from(taskSubmissions)
@@ -77,6 +89,7 @@ export async function getTaskSubmissions(taskId: number) {
 }
 
 export async function getEmployeeSubmissions(employeeId: number) {
+  await requireAuth();
   return await db
     .select()
     .from(taskSubmissions)
@@ -84,6 +97,7 @@ export async function getEmployeeSubmissions(employeeId: number) {
 }
 
 export async function getSubmissionById(submissionId: number) {
+  await requireAuth();
   return await db
     .select()
     .from(taskSubmissions)
@@ -93,6 +107,13 @@ export async function getSubmissionById(submissionId: number) {
 }
 
 export async function getManagerTeamSubmissions(managerId: number) {
+  const authData = await requireManager();
+
+  // Verify the user is requesting their own team's submissions
+  if (authData.employee.id !== managerId) {
+    throw new Error("You can only view your own team's submissions");
+  }
+
   // All submissions for tasks assigned by this manager
   const rows = await db
     .select({
@@ -121,6 +142,16 @@ export async function createSubmissionReview(args: {
   status: "Accepted" | "Rejected";
   reviewNote?: string;
 }) {
+  const authData = await requireManager();
+
+  // Verify the user is the one doing the review
+  if (authData.employee.id !== args.reviewedBy) {
+    return {
+      success: null,
+      error: { reason: "You can only review as yourself" },
+    };
+  }
+
   try {
     // Validate the reviewer is the manager who assigned the task
     const t = await db

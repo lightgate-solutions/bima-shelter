@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/db";
 import { notifications } from "@/db/schema/notifications";
 import { eq, and, inArray, desc } from "drizzle-orm";
@@ -23,15 +25,6 @@ export async function createNotification({
   is_read = false,
 }: CreateNotificationInput) {
   try {
-    console.log(
-      "trying to create notification",
-      user_id,
-      title,
-      message,
-      notification_type,
-      reference_id,
-      is_read,
-    );
     const currentUser = await getUser();
 
     if (!currentUser) {
@@ -45,7 +38,6 @@ export async function createNotification({
     const prefs = await db.query.notification_preferences.findFirst({
       where: eq(notification_preferences.user_id, user_id),
     });
-    console.log(prefs, reference_id);
 
     if (prefs?.in_app_notifications) {
       await db.insert(notifications).values({
@@ -79,7 +71,6 @@ export async function createNotification({
       error: null,
     };
   } catch (error) {
-    console.log("error", error);
     return {
       success: false,
       data: null,
@@ -113,7 +104,6 @@ export async function getUserNotifications() {
 }
 
 export async function markNotificationsAsRead(ids: number[]) {
-  console.log("trying to mark a notification as read");
   const currentUser = await getUser();
 
   if (!currentUser) {
@@ -134,4 +124,6 @@ export async function markNotificationsAsRead(ids: number[]) {
         inArray(notifications.id, ids.map(String)),
       ),
     );
+
+  return { success: true, data: null, error: null };
 }

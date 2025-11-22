@@ -183,15 +183,7 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
             updatedAt: new Date(), // Explicitly update updatedAt to ensure it's refreshed
           })
           .where(eq(document.id, version.documentId));
-
-        console.log(
-          `[Upload Action] Updated document ${version.documentId} with currentVersionId=${version.id}`,
-        );
       }
-
-      console.log(
-        `[Upload Action] Successfully uploaded ${insertedDocuments.length} document(s) with versions`,
-      );
 
       const tagsToInsert = insertedDocuments.flatMap((doc) =>
         data.tags.map((tag) => ({
@@ -296,9 +288,6 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
     revalidatePath("/documents", "layout");
     revalidatePath("/documents/all", "page");
 
-    // Trigger a custom event for client-side refresh
-    console.log("[Upload Action] Document upload completed, paths revalidated");
-
     return {
       success: { reason: "Uploaded document/s successfully!" },
       error: null,
@@ -310,7 +299,6 @@ export async function uploadDocumentsAction(data: UploadActionProps) {
         error: { reason: err.cause?.message },
       };
     }
-    console.log(err);
 
     return {
       error: {
@@ -331,7 +319,6 @@ interface UploadNewVersionProps {
 }
 
 export async function uploadNewDocumentVersion(data: UploadNewVersionProps) {
-  console.log(data);
   const user = await getUser();
   if (!user) throw new Error("User not logged in");
   try {

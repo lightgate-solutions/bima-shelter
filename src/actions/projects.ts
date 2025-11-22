@@ -4,15 +4,19 @@ import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { DrizzleQueryError, asc, desc, eq, ilike, or } from "drizzle-orm";
 import { createNotification } from "./notification/notification";
+import { requireAuth, requireAdmin, requireManager } from "@/actions/auth/dal";
+import { z } from "zod";
 
-export type ProjectInput = {
-  name: string;
-  description?: string | null;
-  location?: string | null;
-  supervisorId?: number | null;
-  budgetPlanned?: number;
-  budgetActual?: number;
-};
+const projectSchema = z.object({
+  name: z.string().min(1, "Project name is required").max(255),
+  description: z.string().max(1000).nullable().optional(),
+  location: z.string().max(255).nullable().optional(),
+  supervisorId: z.number().int().positive().nullable().optional(),
+  budgetPlanned: z.number().nonnegative().optional(),
+  budgetActual: z.number().nonnegative().optional(),
+});
+
+export type ProjectInput = z.infer<typeof projectSchema>;
 
 export async function listProjects(params: {
   page?: number;
@@ -32,6 +36,7 @@ export async function listProjects(params: {
     | "updatedAt";
   sortDirection?: "asc" | "desc";
 }) {
+  await requireAuth();
   const page = params.page ?? 1;
   const limit = params.limit ?? 10;
   const offset = (page - 1) * limit;
@@ -74,6 +79,18 @@ export async function listProjects(params: {
 }
 
 export async function createProject(input: ProjectInput) {
+  await requireManager();
+
+  const parsed = projectSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      project: null,
+      error: { reason: "Invalid input" },
+    };
+  }
+
+  const validatedInput = parsed.data;
+
   try {
     // Generate code like 1BM, 2BM, ... based on max existing id
     const { sql } = await import("drizzle-orm");
@@ -86,13 +103,13 @@ export async function createProject(input: ProjectInput) {
     const [row] = await db
       .insert(projects)
       .values({
-        name: input.name,
+        name: validatedInput.name,
         code: generatedCode,
-        description: input.description ?? null,
-        location: input.location ?? null,
-        supervisorId: input.supervisorId ?? null,
-        budgetPlanned: input.budgetPlanned ?? 0,
-        budgetActual: input.budgetActual ?? 0,
+        description: validatedInput.description ?? null,
+        location: validatedInput.location ?? null,
+        supervisorId: validatedInput.supervisorId ?? null,
+        budgetPlanned: validatedInput.budgetPlanned ?? 0,
+        budgetActual: validatedInput.budgetActual ?? 0,
       })
       .returning();
 
@@ -118,6 +135,7 @@ export async function createProject(input: ProjectInput) {
 }
 
 export async function updateProject(id: number, input: Partial<ProjectInput>) {
+  await requireAdmin();
   try {
     // Get the current project before updating
     const currentProject = await db
@@ -217,6 +235,7 @@ export async function updateProject(id: number, input: Partial<ProjectInput>) {
 }
 
 export async function deleteProject(id: number) {
+  await requireAdmin();
   try {
     const project = await db
       .select()

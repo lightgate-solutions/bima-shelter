@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { payments } from "@/db/schema/payments";
 import { eq } from "drizzle-orm";
+import { requireAuth, requireHROrAdmin } from "@/actions/auth/dal";
 
 type PaymentStatus = "pending" | "successful" | "failed";
 
@@ -13,6 +14,7 @@ export async function createPayment(data: {
   amount: string;
   description?: string;
 }) {
+  await requireAuth();
   try {
     const parsedAmount = Number(data.amount);
     const [payment] = await db
@@ -30,6 +32,7 @@ export async function createPayment(data: {
 }
 
 export async function getAllPayments() {
+  await requireAuth();
   try {
     return await db.select().from(payments);
   } catch (error) {
@@ -39,6 +42,7 @@ export async function getAllPayments() {
 }
 
 export async function getApprovedPayments() {
+  await requireAuth();
   try {
     return await db
       .select()
@@ -51,6 +55,7 @@ export async function getApprovedPayments() {
 }
 
 export async function updatePaymentStatus(id: string, status: PaymentStatus) {
+  await requireHROrAdmin();
   try {
     await db
       .update(payments)

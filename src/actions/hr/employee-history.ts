@@ -5,6 +5,7 @@ import { employmentHistory } from "@/db/schema/hr";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { requireAuth, requireHROrAdmin } from "@/actions/auth/dal";
 
 const employmentHistorySchema = z.object({
   employeeId: z.number(),
@@ -21,6 +22,7 @@ export type EmploymentHistoryFormValues = z.infer<
 >;
 
 export async function getEmployeeHistory(employeeId: number) {
+  await requireAuth();
   try {
     const history = await db.query.employmentHistory.findMany({
       where: eq(employmentHistory.employeeId, employeeId),
@@ -35,6 +37,7 @@ export async function getEmployeeHistory(employeeId: number) {
 }
 
 export async function addEmploymentHistory(data: EmploymentHistoryFormValues) {
+  await requireHROrAdmin();
   try {
     await db.insert(employmentHistory).values({
       employeeId: data.employeeId,
@@ -58,6 +61,7 @@ export async function updateEmploymentHistory(
   id: number,
   data: EmploymentHistoryFormValues,
 ) {
+  await requireHROrAdmin();
   try {
     await db
       .update(employmentHistory)
@@ -82,6 +86,7 @@ export async function updateEmploymentHistory(
 
 // Delete an employment history record
 export async function deleteEmploymentHistory(id: number) {
+  await requireHROrAdmin();
   try {
     await db.delete(employmentHistory).where(eq(employmentHistory.id, id));
 

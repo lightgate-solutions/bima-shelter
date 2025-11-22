@@ -139,8 +139,6 @@ export async function sendEmail(
       };
     });
 
-    console.log(emailRecord);
-
     if (create_notif && "id" in emailRecord) {
       await createNotification({
         user_id: currentUser.id,

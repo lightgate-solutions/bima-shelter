@@ -5,10 +5,21 @@ import { taskReviews, tasks } from "@/db/schema";
 import { getEmployee } from "../hr/employees";
 import { DrizzleQueryError, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireAuth, requireManager } from "@/actions/auth/dal";
 
 type NewReview = typeof taskReviews.$inferInsert;
 
 export const reviewTask = async (reviewData: NewReview) => {
+  const authData = await requireManager();
+
+  // Verify the user is the one doing the review
+  if (authData.employee.id !== reviewData.reviewedBy) {
+    return {
+      success: null,
+      error: { reason: "You can only review as yourself" },
+    };
+  }
+
   try {
     const manager = await getEmployee(reviewData.reviewedBy);
 
@@ -67,6 +78,7 @@ export const reviewTask = async (reviewData: NewReview) => {
 };
 
 export const getSubmissionReviews = async (submissionId: number) => {
+  await requireAuth();
   return await db
     .select()
     .from(taskReviews)

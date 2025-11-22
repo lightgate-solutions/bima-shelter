@@ -7,8 +7,10 @@ import { db } from "@/db";
 import { employees, employmentHistory, user } from "@/db/schema";
 import { DrizzleQueryError, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireAuth, requireHROrAdmin } from "@/actions/auth/dal";
 
 export async function getAllEmployees() {
+  await requireAuth();
   return await db
     .select({
       id: employees.id,
@@ -32,6 +34,7 @@ export async function getAllEmployees() {
 }
 
 export async function getEmployee(employeeId: number) {
+  await requireAuth();
   return await db
     .select()
     .from(employees)
@@ -55,6 +58,7 @@ export async function updateEmployee(
     employmentType: string;
   }>,
 ) {
+  await requireHROrAdmin();
   const processedUpdates: any = { ...updates, updatedAt: new Date() };
 
   for (const key in processedUpdates) {

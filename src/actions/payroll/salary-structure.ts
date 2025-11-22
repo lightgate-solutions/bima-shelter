@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, DrizzleQueryError, and, desc, sql } from "drizzle-orm";
+import { eq, DrizzleQueryError, and, desc, inArray, sql } from "drizzle-orm";
 import { getUser } from "../auth/dal";
 import { revalidatePath } from "next/cache";
 import { employees } from "@/db/schema/hr";
@@ -98,17 +98,16 @@ export async function getAllSalaryStructures() {
 
     const creatorIds = [...new Set(structures.map((s) => s.createdById))];
 
-    const creators = await db
-      .select({
-        id: employees.id,
-        name: employees.name,
-      })
-      .from(employees)
-      .where(
-        creatorIds.length > 0
-          ? sql`${employees.id} IN (${creatorIds.join(", ")})`
-          : sql`FALSE`,
-      );
+    const creators =
+      creatorIds.length > 0
+        ? await db
+            .select({
+              id: employees.id,
+              name: employees.name,
+            })
+            .from(employees)
+            .where(inArray(employees.id, creatorIds))
+        : [];
 
     const creatorsMap = creators.reduce(
       (map, creator) => {

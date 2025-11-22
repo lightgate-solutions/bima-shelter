@@ -5,6 +5,7 @@ import { employeesBank } from "@/db/schema/hr";
 import { eq } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
+import { requireAuth, requireHROrAdmin } from "@/actions/auth/dal";
 
 const bankDetailsSchema = z.object({
   employeeId: z.number(),
@@ -16,6 +17,7 @@ const bankDetailsSchema = z.object({
 export type BankDetailsFormValues = z.infer<typeof bankDetailsSchema>;
 
 export async function getEmployeeBankDetails(employeeId: number) {
+  await requireAuth();
   try {
     const bankDetails = await db.query.employeesBank.findFirst({
       where: eq(employeesBank.employeeId, employeeId),
@@ -29,6 +31,7 @@ export async function getEmployeeBankDetails(employeeId: number) {
 }
 
 export async function saveBankDetails(data: BankDetailsFormValues) {
+  await requireHROrAdmin();
   try {
     const { employeeId, bankName, accountName, accountNumber } =
       bankDetailsSchema.parse(data);
@@ -75,6 +78,7 @@ export async function saveBankDetails(data: BankDetailsFormValues) {
 }
 
 export async function deleteBankDetails(employeeId: number) {
+  await requireHROrAdmin();
   try {
     await db
       .delete(employeesBank)

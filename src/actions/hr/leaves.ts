@@ -25,6 +25,7 @@ import {
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { revalidatePath } from "next/cache";
+import { requireAuth, requireHROrAdmin } from "@/actions/auth/dal";
 
 // Calculate total days between two dates (excluding weekends)
 function calculateWorkingDays(startDate: Date, endDate: Date): number {
@@ -54,6 +55,7 @@ export async function getAllLeaveApplications(filters?: {
   page?: number;
   limit?: number;
 }) {
+  await requireAuth();
   const approver = alias(employees, "approver");
 
   const conditions: any[] = [];
@@ -138,6 +140,7 @@ export async function getAllLeaveApplications(filters?: {
 
 // Get leave application by ID
 export async function getLeaveApplication(leaveId: number) {
+  await requireAuth();
   const approver = alias(employees, "approver");
 
   const result = await db
@@ -177,6 +180,20 @@ export async function applyForLeave(data: {
   endDate: string;
   reason: string;
 }) {
+  const authData = await requireAuth();
+
+  // Verify user can only apply for their own leave
+  if (
+    authData.employee.id !== data.employeeId &&
+    authData.role !== "admin" &&
+    authData.role !== "hr"
+  ) {
+    return {
+      success: null,
+      error: { reason: "You can only apply for your own leave" },
+    };
+  }
+
   try {
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
@@ -308,6 +325,7 @@ export async function updateLeaveApplication(
   }>,
   approverId?: number,
 ) {
+  await requireHROrAdmin();
   try {
     const processedUpdates: any = { ...updates, updatedAt: new Date() };
 
@@ -373,6 +391,7 @@ export async function updateLeaveApplication(
 
 // Delete leave application
 export async function deleteLeaveApplication(leaveId: number) {
+  await requireHROrAdmin();
   try {
     await db.delete(leaveApplications).where(eq(leaveApplications.id, leaveId));
 
@@ -400,6 +419,7 @@ export async function deleteLeaveApplication(leaveId: number) {
 
 // Get leave balance for an employee
 export async function getLeaveBalance(employeeId: number, year?: number) {
+  await requireAuth();
   const currentYear = year || new Date().getFullYear();
   return await db
     .select()
@@ -450,6 +470,7 @@ export async function updateLeaveBalance(
 
 // Get annual leave allocation for a year
 export async function getAnnualLeaveAllocation(year: number) {
+  await requireAuth();
   const setting = await db
     .select()
     .from(annualLeaveSettings)
@@ -465,6 +486,7 @@ export async function setAnnualLeaveAllocation(data: {
   year: number;
   description?: string;
 }) {
+  await requireHROrAdmin();
   try {
     const existing = await db
       .select()
@@ -516,6 +538,7 @@ export async function setAnnualLeaveAllocation(data: {
 
 // Get all annual leave settings
 export async function getAllAnnualLeaveSettings() {
+  await requireAuth();
   return await db
     .select()
     .from(annualLeaveSettings)
@@ -524,6 +547,7 @@ export async function getAllAnnualLeaveSettings() {
 
 // Delete annual leave setting
 export async function deleteAnnualLeaveSetting(settingId: number) {
+  await requireHROrAdmin();
   try {
     await db
       .delete(annualLeaveSettings)
@@ -667,6 +691,7 @@ export async function initializeEmployeeBalance(
 
 // Get leave types
 export async function getLeaveTypes() {
+  await requireAuth();
   return await db
     .select()
     .from(leaveTypes)
@@ -681,6 +706,7 @@ export async function createLeaveType(data: {
   maxDays?: number;
   requiresApproval?: boolean;
 }) {
+  await requireHROrAdmin();
   try {
     await db.insert(leaveTypes).values({
       name: data.name,
@@ -723,6 +749,7 @@ export async function updateLeaveType(
     isActive: boolean;
   }>,
 ) {
+  await requireHROrAdmin();
   try {
     const processedUpdates: any = { ...updates, updatedAt: new Date() };
 
@@ -755,6 +782,7 @@ export async function updateLeaveType(
 
 // Delete leave type
 export async function deleteLeaveType(leaveTypeId: number) {
+  await requireHROrAdmin();
   try {
     await db.delete(leaveTypes).where(eq(leaveTypes.id, leaveTypeId));
 
