@@ -83,7 +83,7 @@ export default function EmployeeEditForm({
     try {
       const res = await updateEmployee(employee.id, {
         ...values,
-        managerId: values.managerId ? parseInt(values.managerId) : null,
+        managerId: values.managerId ? Number(values.managerId) : null,
       });
 
       if (res?.error) {
@@ -162,9 +162,20 @@ export default function EmployeeEditForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Department</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Engineering" {...field} />
-                  </FormControl>
+                  <Select
+                    value={field.value || ""}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="hr">HR</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="general">General</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

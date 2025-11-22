@@ -291,15 +291,23 @@ export function UserAddDialog({
 
         <div className="grid gap-2">
           <Label htmlFor="department">Department</Label>
-          <Input
-            name="department"
+          <Select
             value={employeeData.department}
-            onChange={(e) => {
-              setEmployeeData((p) => ({ ...p, department: e.target.value }));
-              validateField("department", e.target.value);
+            onValueChange={(value: string) => {
+              setEmployeeData((prev) => ({ ...prev, department: value }));
+              validateField("department", value);
             }}
-            placeholder="Enter department"
-          />
+          >
+            <SelectTrigger id="department" className="w-full">
+              <SelectValue placeholder="Select department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="hr">HR</SelectItem>
+              <SelectItem value="finance">Finance</SelectItem>
+              <SelectItem value="general">General</SelectItem>
+            </SelectContent>
+          </Select>
           {errors.department && (
             <p className="text-sm text-red-500">{errors.department}</p>
           )}

@@ -82,6 +82,10 @@ const data = {
           title: "Loan Disbursement",
           url: "/finance/loans",
         },
+        {
+          title: "Payrun",
+          url: "/finance/payruns",
+        },
       ],
     },
     // Task/Performance is customized per role at runtime
@@ -177,6 +181,10 @@ const data = {
         {
           title: "Employees",
           url: "/payroll/employees",
+        },
+        {
+          title: "Payrun",
+          url: "/payroll/payrun",
         },
       ],
     },

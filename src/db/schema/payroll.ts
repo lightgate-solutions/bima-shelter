@@ -40,6 +40,8 @@ export const payrollRunStatusEnum = pgEnum("payroll_run_status", [
   "archived",
 ]);
 
+export const payrunTypeEnum = pgEnum("payrun_type", ["salary", "allowance"]);
+
 export const payrollItemTypeEnum = pgEnum("payroll_item_type", [
   "salary",
   "allowance",
@@ -241,15 +243,32 @@ export const payrun = pgTable(
   "payrun",
   {
     id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    type: payrunTypeEnum("type").notNull().default("salary"),
+    allowanceId: integer("allowance_id").references(() => allowances.id, {
+      onDelete: "set null",
+    }),
     day: integer("day").notNull(),
     month: integer("month").notNull(),
     year: integer("year").notNull(),
-    status: payrollRunStatusEnum("status").default("pending"),
+    totalEmployees: integer("total_employees").notNull().default(0),
+    totalGrossPay: numeric("total_gross_pay", { precision: 15, scale: 2 })
+      .notNull()
+      .default("0"),
+    totalDeductions: numeric("total_deductions", { precision: 15, scale: 2 })
+      .notNull()
+      .default("0"),
+    totalNetPay: numeric("total_net_pay", { precision: 15, scale: 2 })
+      .notNull()
+      .default("0"),
+    status: payrollRunStatusEnum("status").default("draft"),
     generatedBy: integer("generated_by")
       .references(() => employees.id, { onDelete: "no action" })
       .notNull(),
     approvedBy: integer("approved_by").references(() => employees.id),
     approvedAt: timestamp("approved_at"),
+    completedBy: integer("completed_by").references(() => employees.id),
+    completedAt: timestamp("completed_at"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
@@ -258,9 +277,12 @@ export const payrun = pgTable(
       table.year,
       table.month,
       table.day,
+      table.type,
+      table.allowanceId,
     ),
     index("payrun_status_idx").on(table.status),
     index("payrun_date_idx").on(table.year, table.month),
+    index("payrun_type_idx").on(table.type),
   ],
 );
 
@@ -335,6 +357,7 @@ export const payrunItemDetails = pgTable(
       () => employeeDeductions.id,
       { onDelete: "set null" },
     ),
+    loanApplicationId: integer("loan_application_id"),
     amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
     originalAmount: numeric("original_amount", { precision: 15, scale: 2 }),
     remainingAmount: numeric("remaining_amount", { precision: 15, scale: 2 }),

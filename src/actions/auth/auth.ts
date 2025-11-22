@@ -209,6 +209,7 @@ export async function createUser(data: {
           staffNumber: userData.data?.staffNumber ?? "",
           role: user.user.role ?? "user",
           isManager: data.isManager,
+          status: "active",
           department: userData.data?.department ?? "general",
           managerId: parsedManagerId,
           dateOfBirth: dobValue,
