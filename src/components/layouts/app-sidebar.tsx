@@ -14,6 +14,7 @@ import {
   Bell,
   DollarSign,
   Newspaper,
+  Bug,
 } from "lucide-react";
 import {
   Sidebar,
@@ -252,7 +253,16 @@ export function AppSidebar({
         : [{ title: "View News", url: "/news" }],
     };
 
-    return [...base, taskItem, newsItem];
+    return [
+      ...base,
+      taskItem,
+      newsItem,
+      {
+        title: "Report a Bug",
+        url: "/bug",
+        icon: Bug,
+      },
+    ];
   }, [isManager, isHrOrAdmin]);
 
   return (
