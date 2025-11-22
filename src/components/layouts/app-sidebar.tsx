@@ -13,6 +13,7 @@ import {
   Warehouse,
   Bell,
   DollarSign,
+  Newspaper,
 } from "lucide-react";
 import {
   Sidebar,
@@ -185,6 +186,8 @@ export function AppSidebar({
   user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & { user: User }) {
+  const [isManager, setIsManager] = useState<boolean | null>(null);
+  const [isHrOrAdmin, setIsHrOrAdmin] = useState<boolean>(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -196,14 +199,21 @@ export function AppSidebar({
 
     getNotificationsCount();
   }, []);
-  const [isManager, setIsManager] = useState<boolean | null>(null);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
         const emp = await getEmployee();
-        if (active) setIsManager(!!emp?.isManager);
+        if (active) {
+          setIsManager(!!emp?.isManager);
+
+          if (emp?.department === "hr" || emp?.role === "admin") {
+            setIsHrOrAdmin(true);
+          } else {
+            setIsHrOrAdmin(false);
+          }
+        }
       } catch {
         if (active) {
           setIsManager(null);
@@ -230,8 +240,20 @@ export function AppSidebar({
           ]
         : [{ title: "To-Do", url: "/tasks/employee" }],
     };
-    return [...base, taskItem];
-  }, [isManager]);
+    const newsItem = {
+      title: "News",
+      url: "/news",
+      icon: Newspaper,
+      items: isHrOrAdmin
+        ? [
+            { title: "View News", url: "/news" },
+            { title: "Manage News", url: "/news/manage" },
+          ]
+        : [{ title: "View News", url: "/news" }],
+    };
+
+    return [...base, taskItem, newsItem];
+  }, [isManager, isHrOrAdmin]);
 
   return (
     <Sidebar collapsible="icon" {...props}>
