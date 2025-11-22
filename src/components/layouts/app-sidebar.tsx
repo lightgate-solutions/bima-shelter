@@ -15,6 +15,7 @@ import {
   DollarSign,
   Newspaper,
   Bug,
+  Logs,
 } from "lucide-react";
 import {
   Sidebar,
@@ -197,6 +198,7 @@ export function AppSidebar({
 }: React.ComponentProps<typeof Sidebar> & { user: User }) {
   const [isManager, setIsManager] = useState<boolean | null>(null);
   const [isHrOrAdmin, setIsHrOrAdmin] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -216,6 +218,7 @@ export function AppSidebar({
         const emp = await getEmployee();
         if (active) {
           setIsManager(!!emp?.isManager);
+          setIsAdmin(emp?.role === "admin");
 
           if (emp?.department === "hr" || emp?.role === "admin") {
             setIsHrOrAdmin(true);
@@ -261,17 +264,27 @@ export function AppSidebar({
         : [{ title: "View News", url: "/news" }],
     };
 
-    return [
-      ...base,
-      taskItem,
-      newsItem,
-      {
-        title: "Report a Bug",
-        url: "/bug",
-        icon: Bug,
-      },
-    ];
-  }, [isManager, isHrOrAdmin]);
+    const items = [...base, taskItem, newsItem];
+
+    // Only show Data Export to admins
+    if (isAdmin) {
+      items.push({
+        title: "Data Export",
+        url: "/logs",
+        icon: Logs,
+        isActive: false,
+      });
+    }
+
+    items.push({
+      title: "Report a Bug",
+      url: "/bug",
+      icon: Bug,
+      isActive: false,
+    });
+
+    return items;
+  }, [isManager, isHrOrAdmin, isAdmin]);
 
   return (
     <Sidebar collapsible="icon" {...props}>
