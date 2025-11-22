@@ -49,12 +49,20 @@ type LeaveApplicationFormValues = z.infer<typeof leaveApplicationSchema>;
 
 interface LeaveApplicationFormProps {
   employeeId?: number;
+  leaveToEdit?: {
+    id: number;
+    leaveType: string;
+    startDate: string;
+    endDate: string;
+    reason: string;
+  };
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
 export default function LeaveApplicationForm({
   employeeId: initialEmployeeId,
+  leaveToEdit,
   onSuccess,
   onCancel,
 }: LeaveApplicationFormProps) {
@@ -75,10 +83,12 @@ export default function LeaveApplicationForm({
     resolver: zodResolver(leaveApplicationSchema),
     defaultValues: {
       employeeId: initialEmployeeId || currentEmployee?.id || undefined,
-      leaveType: "",
-      startDate: "",
-      endDate: "",
-      reason: "",
+      leaveType: leaveToEdit?.leaveType || "",
+      startDate: leaveToEdit?.startDate
+        ? leaveToEdit.startDate.split("T")[0]
+        : "",
+      endDate: leaveToEdit?.endDate ? leaveToEdit.endDate.split("T")[0] : "",
+      reason: leaveToEdit?.reason || "",
     },
   });
 
@@ -117,8 +127,13 @@ export default function LeaveApplicationForm({
   const onSubmit = async (values: LeaveApplicationFormValues) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/hr/leaves", {
-        method: "POST",
+      const url = leaveToEdit
+        ? `/api/hr/leaves/${leaveToEdit.id}`
+        : "/api/hr/leaves";
+      const method = leaveToEdit ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -128,13 +143,20 @@ export default function LeaveApplicationForm({
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || "Failed to submit leave application");
+        toast.error(
+          data.error ||
+            `Failed to ${leaveToEdit ? "update" : "submit"} leave application`,
+        );
         return;
       }
 
-      toast.success("Leave application submitted successfully");
+      toast.success(
+        `Leave application ${leaveToEdit ? "updated" : "submitted"} successfully`,
+      );
       queryClient.invalidateQueries({ queryKey: ["leaves"] });
-      form.reset();
+      if (!leaveToEdit) {
+        form.reset();
+      }
       onSuccess?.();
     } catch (_error) {
       toast.error("An error occurred. Please try again.");
@@ -244,7 +266,6 @@ export default function LeaveApplicationForm({
                         today.setHours(0, 0, 0, 0);
                         return date < today;
                       }}
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -306,7 +327,6 @@ export default function LeaveApplicationForm({
                           : null;
                         return date < today || (start ? date < start : false);
                       }}
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -351,7 +371,7 @@ export default function LeaveApplicationForm({
           )}
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Submit Application
+            {leaveToEdit ? "Update Application" : "Submit Application"}
           </Button>
         </div>
       </form>

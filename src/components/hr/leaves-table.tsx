@@ -2,7 +2,9 @@
 
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { deleteLeaveApplication } from "@/actions/hr/leaves";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -28,7 +30,14 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
-import { Eye, CheckCircle2, Calendar, Search } from "lucide-react";
+import {
+  Eye,
+  CheckCircle2,
+  Calendar,
+  Search,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import LeaveApplicationForm from "./leave-application-form";
 import LeaveApprovalDialog from "./leave-approval-dialog";
@@ -50,13 +59,17 @@ import {
 
 export default function LeavesTable({
   employeeId,
+  isHR = false,
   showFilters = true,
 }: {
   employeeId?: number;
+  isHR?: boolean;
   showFilters?: boolean;
 }) {
   const [selectedLeave, setSelectedLeave] = useState<any | null>(null);
-  const [viewMode, setViewMode] = useState<"view" | "approve" | null>(null);
+  const [viewMode, setViewMode] = useState<"view" | "approve" | "edit" | null>(
+    null,
+  );
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [filters, setFilters] = useState({
     status: "all",
@@ -68,6 +81,23 @@ export default function LeavesTable({
   const limit = 10;
 
   const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteLeaveApplication(id),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success("Leave application deleted successfully");
+        queryClient.invalidateQueries({ queryKey: ["leaves"] });
+      } else {
+        toast.error(
+          result.error.reason || "Failed to delete leave application",
+        );
+      }
+    },
+    onError: () => {
+      toast.error("An error occurred while deleting");
+    },
+  });
 
   // Debounce search
   useEffect(() => {
@@ -145,15 +175,15 @@ export default function LeavesTable({
             <div>
               <CardTitle className="text-xl">Leave Applications</CardTitle>
               <CardDescription>
-                View and manage employee leave applications
+                {isHR
+                  ? "Review and manage employee leave applications"
+                  : "View and apply for leaves"}
               </CardDescription>
             </div>
-            {!employeeId && (
-              <Button onClick={() => setShowApplyForm(true)}>
-                <Calendar className="mr-2 h-4 w-4" />
-                Apply for Leave
-              </Button>
-            )}
+            <Button onClick={() => setShowApplyForm(true)}>
+              <Calendar className="mr-2 h-4 w-4" />
+              Apply for Leave
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -225,7 +255,7 @@ export default function LeavesTable({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee</TableHead>
+                  {isHR && <TableHead>Employee</TableHead>}
                   <TableHead>Leave Type</TableHead>
                   <TableHead>Start Date</TableHead>
                   <TableHead>End Date</TableHead>
@@ -238,16 +268,18 @@ export default function LeavesTable({
               <TableBody>
                 {leaves.map((leave: any) => (
                   <TableRow key={leave.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">
-                          {leave.employeeName || "N/A"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {leave.employeeEmail || "N/A"}
-                        </p>
-                      </div>
-                    </TableCell>
+                    {isHR && (
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">
+                            {leave.employeeName || "N/A"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {leave.employeeEmail || "N/A"}
+                          </p>
+                        </div>
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Badge variant="outline">{leave.leaveType}</Badge>
                     </TableCell>
@@ -268,18 +300,48 @@ export default function LeavesTable({
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {(leave.status === "Pending" ||
-                          leave.status === "To be reviewed") && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedLeave(leave);
-                              setViewMode("approve");
-                            }}
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                          </Button>
+                        {isHR &&
+                          (leave.status === "Pending" ||
+                            leave.status === "To be reviewed") && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedLeave(leave);
+                                setViewMode("approve");
+                              }}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        {!isHR && leave.status === "Pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedLeave(leave);
+                                setViewMode("edit");
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (
+                                  confirm(
+                                    "Are you sure you want to delete this leave application?",
+                                  )
+                                ) {
+                                  deleteMutation.mutate(leave.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TableCell>
@@ -368,7 +430,7 @@ export default function LeavesTable({
         </DialogContent>
       </Dialog>
 
-      {/* View/Approve Leave Dialog */}
+      {/* View/Approve/Edit Leave Dialog */}
       <Dialog
         open={!!selectedLeave && !!viewMode}
         onOpenChange={(open) => {
@@ -381,12 +443,18 @@ export default function LeavesTable({
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {viewMode === "view" ? "Leave Details" : "Approve/Reject Leave"}
+              {viewMode === "view"
+                ? "Leave Details"
+                : viewMode === "edit"
+                  ? "Edit Leave Application"
+                  : "Approve/Reject Leave"}
             </DialogTitle>
             <DialogDescription>
               {viewMode === "view"
                 ? "View leave application details"
-                : "Review and approve or reject this leave application"}
+                : viewMode === "edit"
+                  ? "Update your leave application"
+                  : "Review and approve or reject this leave application"}
             </DialogDescription>
           </DialogHeader>
 
@@ -469,6 +537,22 @@ export default function LeavesTable({
           {viewMode === "approve" && selectedLeave && (
             <LeaveApprovalDialog
               leave={selectedLeave}
+              onSuccess={() => {
+                setSelectedLeave(null);
+                setViewMode(null);
+                queryClient.invalidateQueries({ queryKey: ["leaves"] });
+              }}
+              onCancel={() => {
+                setSelectedLeave(null);
+                setViewMode(null);
+              }}
+            />
+          )}
+
+          {viewMode === "edit" && selectedLeave && (
+            <LeaveApplicationForm
+              employeeId={employeeId}
+              leaveToEdit={selectedLeave}
               onSuccess={() => {
                 setSelectedLeave(null);
                 setViewMode(null);

@@ -23,7 +23,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    const leaveId = parseInt(id);
+    const leaveId = Number(id);
     if (Number.isNaN(leaveId)) {
       return NextResponse.json({ error: "Invalid leave ID" }, { status: 400 });
     }
@@ -43,6 +43,66 @@ export async function GET(
   }
 }
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const h = await headers();
+    const session = await auth.api.getSession({ headers: h });
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const leaveId = Number(id);
+    if (Number.isNaN(leaveId)) {
+      return NextResponse.json({ error: "Invalid leave ID" }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { leaveType, startDate, endDate, reason } = body;
+
+    // Calculate total days (excluding weekends)
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    let totalDays = 0;
+    const current = new Date(start);
+    while (current <= end) {
+      const dayOfWeek = current.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        totalDays++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    const updates = {
+      leaveType,
+      startDate: new Date(startDate).toDateString(),
+      endDate: new Date(endDate).toDateString(),
+      reason,
+      totalDays,
+    };
+
+    const result = await updateLeaveApplication(leaveId, updates);
+
+    if (result.error) {
+      return NextResponse.json({ error: result.error.reason }, { status: 400 });
+    }
+
+    return NextResponse.json({
+      message: result.success?.reason,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error updating leave:", error);
+    return NextResponse.json(
+      { error: "Failed to update leave application" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -55,7 +115,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const leaveId = parseInt(id);
+    const leaveId = Number(id);
     if (Number.isNaN(leaveId)) {
       return NextResponse.json({ error: "Invalid leave ID" }, { status: 400 });
     }
@@ -106,7 +166,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const leaveId = parseInt(id);
+    const leaveId = Number(id);
     if (Number.isNaN(leaveId)) {
       return NextResponse.json({ error: "Invalid leave ID" }, { status: 400 });
     }

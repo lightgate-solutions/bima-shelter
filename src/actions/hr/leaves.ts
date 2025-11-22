@@ -325,7 +325,7 @@ export async function updateLeaveApplication(
   }>,
   approverId?: number,
 ) {
-  await requireHROrAdmin();
+  await requireAuth();
   try {
     const processedUpdates: any = { ...updates, updatedAt: new Date() };
 
@@ -391,7 +391,7 @@ export async function updateLeaveApplication(
 
 // Delete leave application
 export async function deleteLeaveApplication(leaveId: number) {
-  await requireHROrAdmin();
+  await requireAuth();
   try {
     await db.delete(leaveApplications).where(eq(leaveApplications.id, leaveId));
 
