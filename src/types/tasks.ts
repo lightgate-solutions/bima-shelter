@@ -7,7 +7,13 @@ export interface GetTasksOptions {
   sortDirection?: "asc" | "desc";
   assignedTo?: number;
   assignedBy?: number;
-  status?: "Pending" | "In Progress" | "Completed" | "Overdue";
+  status?:
+    | "Backlog"
+    | "Todo"
+    | "In Progress"
+    | "Technical Review"
+    | "Paused"
+    | "Completed";
   priority?: "Low" | "Medium" | "High" | "Urgent";
   dueDateFrom?: Date;
 }

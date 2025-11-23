@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
       ? and(scopeWhere, ne(tasks.status, "Completed"))
       : ne(tasks.status, "Completed");
     const pendingWhere = scopeWhere
-      ? and(scopeWhere, eq(tasks.status, "Pending"))
-      : eq(tasks.status, "Pending");
+      ? and(scopeWhere, eq(tasks.status, "Todo"))
+      : eq(tasks.status, "Todo");
     const inProgressWhere = scopeWhere
       ? and(scopeWhere, eq(tasks.status, "In Progress"))
       : eq(tasks.status, "In Progress");

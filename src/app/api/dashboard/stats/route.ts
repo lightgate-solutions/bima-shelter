@@ -61,8 +61,8 @@ export async function GET() {
         : ne(tasks.status, "Completed");
 
       const pendingTaskWhere = taskScopeWhere
-        ? and(taskScopeWhere, eq(tasks.status, "Pending"))
-        : eq(tasks.status, "Pending");
+        ? and(taskScopeWhere, eq(tasks.status, "Todo"))
+        : eq(tasks.status, "Todo");
 
       const inProgressTaskWhere = taskScopeWhere
         ? and(taskScopeWhere, eq(tasks.status, "In Progress"))
@@ -87,7 +87,7 @@ export async function GET() {
             : db
                 .select({ count: sql<number>`count(*)::int` })
                 .from(tasks)
-                .where(eq(tasks.status, "Pending")),
+                .where(eq(tasks.status, "Todo")),
           inProgressTaskWhere
             ? db
                 .select({ count: sql<number>`count(*)::int` })

@@ -149,10 +149,6 @@ const data = {
           title: "Leave Management",
           url: "/hr/leaves",
         },
-        {
-          title: "All Tasks",
-          url: "/hr/admin/tasks",
-        },
       ],
     },
     {
@@ -245,12 +241,12 @@ export function AppSidebar({
       icon: AlarmClockCheck,
       items: isManager
         ? [
-            { title: "History", url: "/tasks/history" },
             { title: "Task Item", url: "/tasks" },
-            { title: "Task Submission", url: "/tasks/manager" },
             { title: "To-Do", url: "/tasks/employee" },
+            { title: "Task Submission", url: "/tasks/manager" },
+            { title: "History", url: "/tasks/history" },
           ]
-        : [{ title: "To-Do", url: "/tasks/employee" }],
+        : [],
     };
     const newsItem = {
       title: "News",

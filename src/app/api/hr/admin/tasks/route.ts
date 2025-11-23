@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Filters and pagination
-    type StatusType = "Pending" | "In Progress" | "Completed" | "Overdue";
+    type StatusType = "Todo" | "In Progress" | "Completed" | "Paused";
     type PriorityType = "Low" | "Medium" | "High" | "Urgent";
 
     const { searchParams } = request.nextUrl;
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status && status !== "all") {
-      if (status === "Overdue") {
+      if (status === "Paused") {
         const today = new Date();
         const todayStr = today.toISOString().slice(0, 10);
         const overdueCond = and(
@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
         t.dueDate && new Date(t.dueDate) < now2 && t.status !== "Completed";
       return {
         ...t,
-        status: isOverdue ? ("Overdue" as StatusType) : t.status,
+        status: isOverdue ? ("Paused" as StatusType) : t.status,
         assignedToEmail: map.get(t.assignedTo || -1)?.email ?? null,
         assignedByEmail: map.get(t.assignedBy || -1)?.email ?? null,
         assignedToName: map.get(t.assignedTo || -1)?.name ?? null,

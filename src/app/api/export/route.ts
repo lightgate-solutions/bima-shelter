@@ -729,13 +729,13 @@ async function fetchDataset(
       const conditions = [];
 
       if (dataset === "tasks-pending") {
-        conditions.push(eq(tasks.status, "Pending"));
+        conditions.push(eq(tasks.status, "Todo"));
       } else if (dataset === "tasks-in-progress") {
         conditions.push(eq(tasks.status, "In Progress"));
       } else if (dataset === "tasks-completed") {
         conditions.push(eq(tasks.status, "Completed"));
       } else if (dataset === "tasks-overdue") {
-        conditions.push(eq(tasks.status, "Overdue"));
+        conditions.push(eq(tasks.status, "Paused"));
       }
 
       if (dateFilters.start && dateFilters.end) {

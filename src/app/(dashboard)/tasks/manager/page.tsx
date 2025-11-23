@@ -1,5 +1,9 @@
+/** biome-ignore-all lint/style/noNonNullAssertion: <> */
+
 import { getUser } from "@/actions/auth/dal";
-import { getManagerTeamSubmissions } from "@/actions/tasks/taskSubmissions";
+import { db } from "@/db";
+import { tasks, taskAssignees, employees } from "@/db/schema";
+import { eq, inArray } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -9,48 +13,98 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { SubmissionReviewDialog } from "@/components/tasks/submission-review-dialog";
-import { BackButton } from "@/components/ui/back-button";
+import { TaskReviewActions } from "@/components/task/task-review-actions";
 
 function formatDate(val?: unknown) {
   if (!val) return "N/A";
   try {
     const d = typeof val === "string" ? new Date(val) : (val as Date);
     if (!(d instanceof Date) || Number.isNaN(d.getTime())) return String(val);
-    return d.toLocaleString();
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   } catch {
     return String(val);
   }
 }
 
-type ManagerSubmission = {
+type ReviewTask = {
   id: number;
-  taskId: number;
-  submittedBy: number;
-  submissionNote?: string | null;
-  submittedFiles?: { fileUrl: string; fileName: string }[] | null;
-  submittedAt: string | Date;
-  employeeName?: string | null;
-  employeeEmail?: string | null;
-  taskTitle?: string | null;
+  title: string;
+  description: string | null;
+  priority: string;
+  dueDate: string | null;
+  createdAt: Date;
+  assignees: { id: number; name: string | null; email: string | null }[];
 };
 
-const ManagerSubmissionsPage = async () => {
+const ManagerReviewPage = async () => {
   const employee = await getUser();
-  const submissions: ManagerSubmission[] = employee?.id
-    ? ((await getManagerTeamSubmissions(employee.id)) as ManagerSubmission[])
-    : [];
+
+  if (!employee?.id) {
+    return (
+      <div className="p-2">
+        <p>Please log in to view this page.</p>
+      </div>
+    );
+  }
+
+  // Fetch tasks in Technical Review status that this manager created
+  const reviewTasks = await db
+    .select()
+    .from(tasks)
+    .where(eq(tasks.assignedBy, employee.id))
+    .then((allTasks) =>
+      allTasks.filter((t) => t.status === "Technical Review"),
+    );
+
+  // Get assignees for these tasks
+  const taskIds = reviewTasks.map((t) => t.id);
+  const assigneesMap = new Map<
+    number,
+    { id: number; name: string | null; email: string | null }[]
+  >();
+
+  if (taskIds.length > 0) {
+    const assigneesRows = await db
+      .select({
+        taskId: taskAssignees.taskId,
+        id: employees.id,
+        name: employees.name,
+        email: employees.email,
+      })
+      .from(taskAssignees)
+      .leftJoin(employees, eq(employees.id, taskAssignees.employeeId))
+      .where(inArray(taskAssignees.taskId, taskIds));
+
+    for (const r of assigneesRows) {
+      const list = assigneesMap.get(r.taskId) ?? [];
+      list.push({ id: r.id!, name: r.name, email: r.email });
+      assigneesMap.set(r.taskId, list);
+    }
+  }
+
+  const tasksWithAssignees: ReviewTask[] = reviewTasks.map((t) => ({
+    id: t.id,
+    title: t.title,
+    description: t.description,
+    priority: t.priority,
+    dueDate: t.dueDate,
+    createdAt: t.createdAt,
+    assignees: assigneesMap.get(t.id) || [],
+  }));
 
   return (
     <div className="p-2 space-y-4">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <BackButton />
           <div>
-            <h2 className="text-2xl font-bold">Team Submissions</h2>
+            <h2 className="text-2xl font-bold">Technical Review</h2>
             <p className="text-sm text-muted-foreground">
-              Review all submissions from your direct reports. Click file links
-              to open attachments in a new tab.
+              Review tasks submitted by your team. Accept to mark as completed,
+              or reject with feedback to send back to Todo.
             </p>
           </div>
         </div>
@@ -59,66 +113,71 @@ const ManagerSubmissionsPage = async () => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Submitted At</TableHead>
-            <TableHead>Employee</TableHead>
             <TableHead>Task</TableHead>
-            <TableHead>Note</TableHead>
-            <TableHead>Files</TableHead>
-            <TableHead className="text-right">Review</TableHead>
+            <TableHead>Assignees</TableHead>
+            <TableHead>Priority</TableHead>
+            <TableHead>Due Date</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {submissions.map((s) => (
-            <TableRow key={s.id}>
-              <TableCell>{formatDate(s.submittedAt)}</TableCell>
+          {tasksWithAssignees.map((task) => (
+            <TableRow key={task.id}>
               <TableCell>
-                {s.employeeName ? (
-                  <>
-                    {s.employeeName} {`(#${s.submittedBy})`}
-                  </>
-                ) : (
-                  `#${s.submittedBy}`
-                )}
+                <div>
+                  <p className="font-medium">{task.title}</p>
+                  {task.description && (
+                    <p className="text-sm text-muted-foreground truncate max-w-[300px]">
+                      {task.description}
+                    </p>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
-                {s.taskTitle ? s.taskTitle : `Task #${s.taskId}`}
-              </TableCell>
-              <TableCell className="max-w-[32rem] truncate">
-                {s.submissionNote ?? "—"}
-              </TableCell>
-              <TableCell>
-                {s.submittedFiles && s.submittedFiles.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {s.submittedFiles.map((f) => (
-                      <a
-                        key={`${f.fileUrl}-${f.fileName}`}
-                        href={f.fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline"
-                      >
-                        {f.fileName || f.fileUrl}
-                      </a>
+                {task.assignees.length > 0 ? (
+                  <div className="space-y-1">
+                    {task.assignees.map((a) => (
+                      <div key={a.id} className="text-sm">
+                        {a.name || a.email}
+                      </div>
                     ))}
                   </div>
                 ) : (
                   <span className="text-muted-foreground">None</span>
                 )}
               </TableCell>
+              <TableCell>
+                <span
+                  className={
+                    task.priority === "Urgent"
+                      ? "text-pink-600"
+                      : task.priority === "High"
+                        ? "text-red-600"
+                        : task.priority === "Medium"
+                          ? "text-cyan-600"
+                          : "text-gray-600"
+                  }
+                >
+                  {task.priority}
+                </span>
+              </TableCell>
+              <TableCell>{formatDate(task.dueDate)}</TableCell>
+              <TableCell>{formatDate(task.createdAt)}</TableCell>
               <TableCell className="text-right">
-                <SubmissionReviewDialog taskId={s.taskId} submissionId={s.id} />
+                <TaskReviewActions taskId={task.id} employeeId={employee.id} />
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
         <TableCaption>
-          {submissions.length === 0
-            ? "No team submissions yet."
-            : `${submissions.length} submission${submissions.length === 1 ? "" : "s"}.`}
+          {tasksWithAssignees.length === 0
+            ? "No tasks pending review."
+            : `${tasksWithAssignees.length} task${tasksWithAssignees.length === 1 ? "" : "s"} pending review.`}
         </TableCaption>
       </Table>
     </div>
   );
 };
 
-export default ManagerSubmissionsPage;
+export default ManagerReviewPage;

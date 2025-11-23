@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getTasksForEmployee, createTask } from "@/actions/tasks/tasks";
 import type { CreateTask, Task } from "@/types";
-import { and, asc, desc, eq, ilike, or, inArray, lt, ne } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { tasks, taskAssignees, employees } from "@/db/schema";
 
@@ -33,7 +33,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    type StatusType = "Pending" | "In Progress" | "Completed" | "Overdue";
+    type StatusType =
+      | "Backlog"
+      | "Todo"
+      | "In Progress"
+      | "Technical Review"
+      | "Paused"
+      | "Completed";
     type PriorityType = "Low" | "Medium" | "High" | "Urgent";
     const { searchParams } = request.nextUrl;
 
@@ -45,8 +51,8 @@ export async function GET(request: NextRequest) {
         { status: 400 },
       );
     }
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const page = Number(searchParams.get("page") || "1");
+    const limit = Number(searchParams.get("limit") || "10");
     const offset = (page - 1) * limit;
 
     const sortableColumns = {
@@ -72,7 +78,7 @@ export async function GET(request: NextRequest) {
 
     let where: ReturnType<typeof or> | ReturnType<typeof eq> | undefined;
     if (role === "employee") {
-      const eid = parseInt(employeeId || "0");
+      const eid = Number(employeeId || "0");
       // Fetch tasks where employee is explicitly assigned via join table
       const rows = await db
         .select({ id: taskAssignees.taskId })
@@ -83,7 +89,7 @@ export async function GET(request: NextRequest) {
         ? or(eq(tasks.assignedTo, eid), inArray(tasks.id, ids))
         : eq(tasks.assignedTo, eid);
     } else if (role === "manager") {
-      where = eq(tasks.assignedBy, parseInt(employeeId || "0"));
+      where = eq(tasks.assignedBy, Number(employeeId || "0"));
     }
 
     if (q) {
@@ -98,19 +104,9 @@ export async function GET(request: NextRequest) {
         : or(ilike(tasks.title, `%${q}%`), ilike(tasks.description, `%${q}%`));
     }
     if (status && status !== "all") {
-      if (status === "Overdue") {
-        const today = new Date();
-        const todayStr = today.toISOString().slice(0, 10);
-        const overdueCond = and(
-          lt(tasks.dueDate, todayStr),
-          ne(tasks.status, "Completed" as StatusType),
-        );
-        where = where ? and(where, overdueCond) : overdueCond;
-      } else {
-        where = where
-          ? and(where, eq(tasks.status, status as StatusType))
-          : eq(tasks.status, status as StatusType);
-      }
+      where = where
+        ? and(where, eq(tasks.status, status as StatusType))
+        : eq(tasks.status, status as StatusType);
     }
     console.log("Status: ", status);
     if (priority) {
@@ -169,13 +165,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const now = new Date();
     const enriched = all_tasks.map((t) => {
-      const isOverdue =
-        t.dueDate && new Date(t.dueDate) < now && t.status !== "Completed";
       return {
         ...t,
-        status: isOverdue ? ("Overdue" as StatusType) : t.status,
         assignedToEmail: map.get(t.assignedTo || -1)?.email ?? null,
         assignedByEmail: map.get(t.assignedBy || -1)?.email ?? null,
         assignedToName: map.get(t.assignedTo || -1)?.name ?? null,

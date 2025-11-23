@@ -1,26 +1,18 @@
-import { TasksTable } from "@/components/tasks/task-table";
-import { TasksCard } from "@/components/tasks/task-cards";
-import { BackButton } from "@/components/ui/back-button";
+import { getUser } from "@/actions/auth/dal";
+import { TaskBoardContainer } from "@/components/task/task-board-container";
+import { redirect } from "next/navigation";
 
-export default function ManagerTasksPage() {
+export default async function ManagerTasksPage() {
+  const user = await getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
-    <div className="p-2 space-y-4">
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <BackButton />
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Task Item</h2>
-            <p className="text-sm text-muted-foreground">
-              View, create, and manage tasks across your team. Open a task to
-              chat, review progress, and make updates.
-            </p>
-          </div>
-        </div>
-      </div>
-      <div className="mb-4">
-        <TasksCard />
-      </div>
-      <TasksTable />
-    </div>
+    <TaskBoardContainer
+      employeeId={user.id}
+      role={user.isManager ? "manager" : "employee"}
+    />
   );
 }

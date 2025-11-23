@@ -227,3 +227,38 @@ export async function PUT(
     );
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id: idParam } = await params;
+    const id = Number(idParam);
+    const body = await request.json();
+    const { employeeId, ...updates } = body;
+
+    if (!employeeId) {
+      return NextResponse.json(
+        { error: "Employee ID is required" },
+        { status: 400 },
+      );
+    }
+
+    const updated = await updateTask(employeeId, id, updates);
+    if (!updated.success) {
+      return NextResponse.json(
+        { error: updated.error?.reason || "Task not found or not updated" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({ message: updated.success.reason });
+  } catch (error) {
+    console.error("Error updating task:", error);
+    return NextResponse.json(
+      { error: "Failed to update task" },
+      { status: 500 },
+    );
+  }
+}

@@ -115,26 +115,33 @@ export async function updateTask(
   type TaskUpdate = Partial<TaskInsert>;
   // Enforce permissions:
   // - Managers can update any fields on tasks they created
-  // - Employees can only update the status of tasks they are assigned to
+  // - Employees can only update status (except to Completed) and attachments
   let allowedUpdates: Partial<CreateTask> = { ...updates };
   if (!employee.isManager) {
-    // Filter down to only status for non-managers
+    // Filter down to only status and attachments for non-managers
     allowedUpdates = {} as Partial<CreateTask>;
     if (typeof updates.status !== "undefined") {
-      // Employees can only set status to "In Progress"
-      if (updates.status !== "In Progress") {
+      // Employees cannot set status to "Completed"
+      if (updates.status === "Completed") {
         return {
           success: null,
-          error: { reason: "Employees can only start tasks (In Progress)" },
+          error: { reason: "Only managers can mark tasks as completed" },
         };
       }
-      allowedUpdates.status = "In Progress" as CreateTask["status"];
+      allowedUpdates.status = updates.status as CreateTask["status"];
+    }
+    // Allow employees to add attachments
+    if (updates.attachments !== undefined) {
+      (allowedUpdates as Record<string, unknown>).attachments =
+        updates.attachments;
     }
     // If nothing to update after filtering, exit early
     if (Object.keys(allowedUpdates).length === 0) {
       return {
         success: null,
-        error: { reason: "Employees can only update task status" },
+        error: {
+          reason: "Employees can only update task status and attachments",
+        },
       };
     }
     // Ensure employee has access to this task (either directly assigned or via assignees table)
@@ -143,18 +150,6 @@ export async function updateTask(
       return {
         success: null,
         error: { reason: "You are not assigned to this task" },
-      };
-    }
-    // Only allow transition Pending -> In Progress
-    if (
-      typeof updates.status !== "undefined" &&
-      (currentTask.status === "In Progress" ||
-        currentTask.status === "Completed" ||
-        currentTask.status === "Overdue")
-    ) {
-      return {
-        success: null,
-        error: { reason: "Task cannot be started in its current status" },
       };
     }
   } else {
