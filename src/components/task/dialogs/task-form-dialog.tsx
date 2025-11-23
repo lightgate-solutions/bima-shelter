@@ -36,14 +36,7 @@ const TaskSchema = z.object({
   description: z.string().optional(),
   priority: z.enum(["Low", "Medium", "High", "Urgent"]).optional(),
   status: z
-    .enum([
-      "Backlog",
-      "Todo",
-      "In Progress",
-      "Technical Review",
-      "Paused",
-      "Completed",
-    ])
+    .enum(["Backlog", "Todo", "In Progress", "Review", "Completed"])
     .optional(),
   dueDate: z.preprocess((v) => (v instanceof Date ? v : undefined), z.date()),
   assignees: z.array(z.number()).min(1, "Select at least one employee"),
@@ -322,10 +315,7 @@ export function TaskFormDialog({
                   <SelectItem value="Backlog">Backlog</SelectItem>
                   <SelectItem value="Todo">Todo</SelectItem>
                   <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Technical Review">
-                    Technical Review
-                  </SelectItem>
-                  <SelectItem value="Paused">Paused</SelectItem>
+                  <SelectItem value="Review">Review</SelectItem>
                   <SelectItem value="Completed">Completed</SelectItem>
                 </SelectContent>
               </Select>

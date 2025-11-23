@@ -734,10 +734,7 @@ async function fetchDataset(
         conditions.push(eq(tasks.status, "In Progress"));
       } else if (dataset === "tasks-completed") {
         conditions.push(eq(tasks.status, "Completed"));
-      } else if (dataset === "tasks-overdue") {
-        conditions.push(eq(tasks.status, "Paused"));
       }
-
       if (dateFilters.start && dateFilters.end) {
         conditions.push(gte(tasks.createdAt, dateFilters.start));
         conditions.push(lte(tasks.createdAt, dateFilters.end));
