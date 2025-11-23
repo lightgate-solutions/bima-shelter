@@ -1,7 +1,9 @@
 import { db } from "@/db";
-import { expenses } from "@/db/schema";
+import { expenses, projects } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
+import { createNotification } from "@/actions/notification/notification";
+import { getUser } from "@/actions/auth/dal";
 
 export async function GET(
   _request: NextRequest,
@@ -35,6 +37,12 @@ export async function POST(
     const { title, amount, spentAt, notes } = body ?? {};
     if (!title)
       return NextResponse.json({ error: "title is required" }, { status: 400 });
+
+    const user = await getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const [created] = await db
       .insert(expenses)
       .values({
@@ -45,6 +53,28 @@ export async function POST(
         notes,
       })
       .returning();
+
+    // Notify project supervisor about new expense
+    const [project] = await db
+      .select({
+        supervisorId: projects.supervisorId,
+        name: projects.name,
+        code: projects.code,
+      })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    if (project?.supervisorId) {
+      await createNotification({
+        user_id: project.supervisorId,
+        title: "New Project Expense",
+        message: `${user.name} added expense "${title}" (₦${Number(amount).toLocaleString()}) to project ${project.name} (${project.code})`,
+        notification_type: "message",
+        reference_id: projectId,
+      });
+    }
+
     return NextResponse.json({ expense: created }, { status: 201 });
   } catch (error) {
     console.error("Error creating expense:", error);
@@ -66,6 +96,24 @@ export async function PUT(
     const { id: expenseId, title, amount, spentAt, notes } = body ?? {};
     if (!expenseId)
       return NextResponse.json({ error: "id is required" }, { status: 400 });
+
+    const user = await getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get expense details before update
+    const [existingExpense] = await db
+      .select()
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.projectId, projectId),
+          eq(expenses.id, Number(expenseId)),
+        ),
+      )
+      .limit(1);
+
     const [updated] = await db
       .update(expenses)
       .set({
@@ -81,6 +129,28 @@ export async function PUT(
         ),
       )
       .returning();
+
+    // Notify project supervisor about expense update
+    const [project] = await db
+      .select({
+        supervisorId: projects.supervisorId,
+        name: projects.name,
+        code: projects.code,
+      })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    if (project?.supervisorId && existingExpense) {
+      await createNotification({
+        user_id: project.supervisorId,
+        title: "Project Expense Updated",
+        message: `${user.name} updated expense "${existingExpense.title}" in project ${project.name} (${project.code})`,
+        notification_type: "message",
+        reference_id: projectId,
+      });
+    }
+
     return NextResponse.json({ expense: updated });
   } catch (error) {
     console.error("Error updating expense:", error);
@@ -102,6 +172,24 @@ export async function DELETE(
     const { id: expenseId } = body ?? {};
     if (!expenseId)
       return NextResponse.json({ error: "id is required" }, { status: 400 });
+
+    const user = await getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get expense details before deletion
+    const [expenseToDelete] = await db
+      .select()
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.projectId, projectId),
+          eq(expenses.id, Number(expenseId)),
+        ),
+      )
+      .limit(1);
+
     await db
       .delete(expenses)
       .where(
@@ -110,6 +198,28 @@ export async function DELETE(
           eq(expenses.id, Number(expenseId)),
         ),
       );
+
+    // Notify project supervisor about expense deletion
+    const [project] = await db
+      .select({
+        supervisorId: projects.supervisorId,
+        name: projects.name,
+        code: projects.code,
+      })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    if (project?.supervisorId && expenseToDelete) {
+      await createNotification({
+        user_id: project.supervisorId,
+        title: "Project Expense Removed",
+        message: `${user.name} removed expense "${expenseToDelete.title}" from project ${project.name} (${project.code})`,
+        notification_type: "message",
+        reference_id: projectId,
+      });
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting expense:", error);

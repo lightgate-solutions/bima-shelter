@@ -71,6 +71,7 @@ export async function createNotification({
       error: null,
     };
   } catch (error) {
+    console.error("Error creating notification:", error);
     return {
       success: false,
       data: null,
@@ -103,7 +104,7 @@ export async function getUserNotifications() {
   return { success: true, data: userNotifications, error: null };
 }
 
-export async function markNotificationsAsRead(ids: number[]) {
+export async function markNotificationsAsRead(ids: string[]) {
   const currentUser = await getUser();
 
   if (!currentUser) {
@@ -119,10 +120,7 @@ export async function markNotificationsAsRead(ids: number[]) {
     .update(notifications)
     .set({ is_read: true })
     .where(
-      and(
-        eq(notifications.user_id, user_id),
-        inArray(notifications.id, ids.map(String)),
-      ),
+      and(eq(notifications.user_id, user_id), inArray(notifications.id, ids)),
     );
 
   return { success: true, data: null, error: null };

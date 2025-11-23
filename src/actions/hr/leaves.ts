@@ -26,6 +26,8 @@ import {
 import { alias } from "drizzle-orm/pg-core";
 import { revalidatePath } from "next/cache";
 import { requireAuth, requireHROrAdmin } from "@/actions/auth/dal";
+import { createNotification } from "../notification/notification";
+import { getEmployee } from "./employees";
 
 // Calculate total days between two dates (excluding weekends)
 function calculateWorkingDays(startDate: Date, endDate: Date): number {
@@ -279,15 +281,42 @@ export async function applyForLeave(data: {
       }
     }
 
-    await db.insert(leaveApplications).values({
-      employeeId: data.employeeId,
-      leaveType: data.leaveType as any,
-      startDate: data.startDate,
-      endDate: data.endDate,
-      totalDays,
-      reason: data.reason,
-      status: "Pending",
-    });
+    const [createdLeave] = await db
+      .insert(leaveApplications)
+      .values({
+        employeeId: data.employeeId,
+        leaveType: data.leaveType as any,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        totalDays,
+        reason: data.reason,
+        status: "Pending",
+      })
+      .returning();
+
+    // Get employee details for notification
+    const employee = await getEmployee(data.employeeId);
+    if (employee) {
+      // Notify manager if employee has a manager
+      if (employee.managerId) {
+        const startDate = new Date(data.startDate).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        const endDate = new Date(data.endDate).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+
+        await createNotification({
+          user_id: employee.managerId,
+          title: "Leave Application Submitted",
+          message: `${employee.name} applied for ${data.leaveType} leave • ${startDate} - ${endDate} (${totalDays} days)`,
+          notification_type: "approval",
+          reference_id: createdLeave.id,
+        });
+      }
+    }
 
     revalidatePath("/hr/leaves");
     return {
@@ -356,10 +385,51 @@ export async function updateLeaveApplication(
       .set(processedUpdates)
       .where(eq(leaveApplications.id, leaveId));
 
-    // If approved, update leave balance only for Annual leave
-    if (updates.status === "Approved") {
-      const leave = await getLeaveApplication(leaveId);
-      if (leave && leave.leaveType === "Annual") {
+    // Get leave details for notifications
+    const leave = await getLeaveApplication(leaveId);
+    if (leave) {
+      // Notify employee when status changes to Approved or Rejected
+      if (updates.status === "Approved" || updates.status === "Rejected") {
+        const approver = approverId ? await getEmployee(approverId) : null;
+        const approverName = approver?.name || "Manager";
+
+        const startDate = new Date(leave.startDate).toLocaleDateString(
+          "en-US",
+          {
+            month: "short",
+            day: "numeric",
+          },
+        );
+        const endDate = new Date(leave.endDate).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+
+        if (updates.status === "Approved") {
+          await createNotification({
+            user_id: leave.employeeId,
+            title: "Leave Approved",
+            message: `${approverName} approved your ${leave.leaveType} leave • ${startDate} - ${endDate} (${leave.totalDays} days)`,
+            notification_type: "approval",
+            reference_id: leaveId,
+          });
+        } else if (updates.status === "Rejected") {
+          const reasonPreview = updates.rejectionReason
+            ? ` • ${updates.rejectionReason.substring(0, 80)}${updates.rejectionReason.length > 80 ? "..." : ""}`
+            : "";
+
+          await createNotification({
+            user_id: leave.employeeId,
+            title: "Leave Rejected",
+            message: `${approverName} rejected your ${leave.leaveType} leave request${reasonPreview}`,
+            notification_type: "approval",
+            reference_id: leaveId,
+          });
+        }
+      }
+
+      // If approved, update leave balance only for Annual leave
+      if (updates.status === "Approved" && leave.leaveType === "Annual") {
         const currentYear = new Date().getFullYear();
         // Recalculate balance using global allocation
         await initializeEmployeeBalance(leave.employeeId, currentYear);
@@ -393,7 +463,36 @@ export async function updateLeaveApplication(
 export async function deleteLeaveApplication(leaveId: number) {
   await requireAuth();
   try {
+    // Get leave details before deletion for notifications
+    const leave = await getLeaveApplication(leaveId);
+
     await db.delete(leaveApplications).where(eq(leaveApplications.id, leaveId));
+
+    // Notify approver if leave was pending and had an approver
+    if (leave && leave.status === "Pending" && leave.approvedBy) {
+      const employee = await getEmployee(leave.employeeId);
+      if (employee) {
+        const startDate = new Date(leave.startDate).toLocaleDateString(
+          "en-US",
+          {
+            month: "short",
+            day: "numeric",
+          },
+        );
+        const endDate = new Date(leave.endDate).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+
+        await createNotification({
+          user_id: leave.approvedBy,
+          title: "Leave Application Cancelled",
+          message: `${employee.name} cancelled their ${leave.leaveType} leave request • ${startDate} - ${endDate}`,
+          notification_type: "message",
+          reference_id: leaveId,
+        });
+      }
+    }
 
     revalidatePath("/hr/leaves");
     return {
