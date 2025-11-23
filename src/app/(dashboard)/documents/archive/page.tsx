@@ -8,7 +8,6 @@ import { and, eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { Folder } from "lucide-react";
 import { ViewToggle } from "@/components/documents/view-toggle/view-toggle";
-import { BackButton } from "@/components/ui/back-button";
 
 export default async function Page({
   searchParams,
@@ -93,7 +92,6 @@ export default async function Page({
     <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <BackButton />
           <div>
             <h1 className="text-2xl font-bold">Archive</h1>
             <p className="text-sm text-muted-foreground">

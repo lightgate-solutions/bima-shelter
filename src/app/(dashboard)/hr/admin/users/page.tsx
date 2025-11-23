@@ -1,5 +1,4 @@
 import { UsersTable } from "@/components/hr/admin/users-table";
-import { BackButton } from "@/components/ui/back-button";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -12,7 +11,6 @@ export default function UsersPage() {
     <div className="space-y-4">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <BackButton />
           <div>
             <h1 className="text-2xl font-bold">User Management</h1>
             <p className="text-sm text-muted-foreground">

@@ -9,7 +9,6 @@ import { EmailDetail } from "./email-detail";
 import { ComposeEmail } from "./compose-email";
 import { ReplyForwardEmail } from "./reply-forward-email";
 import { ScrollArea } from "../ui/scroll-area";
-import { BackButton } from "../ui/back-button";
 import { useMailPagination } from "@/hooks/use-mail-pagination";
 import {
   getInboxEmails,
@@ -156,9 +155,6 @@ export function InboxClient({
 
   return (
     <div className="h-full w-full flex flex-col">
-      <div className="px-4 pt-4 pb-2 flex-shrink-0">
-        <BackButton />
-      </div>
       <div className="grid grid-cols-3 flex-1 min-h-0">
         <ScrollArea className="w-80 border-r col-span-1 flex flex-col h-full overflow-hidden">
           <div className="p-4 border-b flex-shrink-0">
