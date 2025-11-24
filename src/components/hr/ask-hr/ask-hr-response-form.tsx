@@ -94,7 +94,7 @@ export function AskHrResponseForm({
           name="response"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Your Response</FormLabel>
+              <FormLabel>Your Response *</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Type your response here..."

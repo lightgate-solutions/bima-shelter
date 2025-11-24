@@ -192,7 +192,7 @@ export default function LeaveApplicationForm({
           name="leaveType"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Leave Type</FormLabel>
+              <FormLabel>Leave Type *</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
@@ -221,7 +221,7 @@ export default function LeaveApplicationForm({
             name="startDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Start Date</FormLabel>
+                <FormLabel>Start Date *</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -279,7 +279,7 @@ export default function LeaveApplicationForm({
             name="endDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>End Date</FormLabel>
+                <FormLabel>End Date *</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -349,7 +349,7 @@ export default function LeaveApplicationForm({
           name="reason"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Reason</FormLabel>
+              <FormLabel>Reason *</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Please provide a reason for your leave application..."

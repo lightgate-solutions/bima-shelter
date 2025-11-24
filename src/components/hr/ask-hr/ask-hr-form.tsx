@@ -137,7 +137,7 @@ export function AskHrForm({ trigger }: AskHrFormProps) {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Question Title</FormLabel>
+                  <FormLabel>Question Title *</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Brief title for your question"
@@ -154,7 +154,7 @@ export function AskHrForm({ trigger }: AskHrFormProps) {
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>Category *</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
@@ -185,7 +185,7 @@ export function AskHrForm({ trigger }: AskHrFormProps) {
               name="question"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Your Question</FormLabel>
+                  <FormLabel>Your Question *</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Describe your question or concern in detail..."

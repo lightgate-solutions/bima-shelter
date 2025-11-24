@@ -258,7 +258,7 @@ export function TaskFormDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Task Title</Label>
+            <Label htmlFor="title">Task Title *</Label>
             <Input
               id="title"
               placeholder="Enter task title..."
@@ -323,7 +323,7 @@ export function TaskFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Due Date</Label>
+            <Label>Due Date *</Label>
             <DateTimePicker
               date={date}
               setDate={(d) => {
@@ -408,7 +408,7 @@ export function TaskFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Assign Employees</Label>
+            <Label>Assign Employees *</Label>
             {errors.assignees && (
               <p className="text-sm text-red-500">{errors.assignees}</p>
             )}

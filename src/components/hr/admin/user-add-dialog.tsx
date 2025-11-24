@@ -194,7 +194,7 @@ export function UserAddDialog({
     >
       <div className="grid gap-4 grid-cols-2 py-4">
         <div className="grid gap-2">
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name">Name *</Label>
           <Input
             name="name"
             value={formData.name}
@@ -207,7 +207,7 @@ export function UserAddDialog({
           {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Email *</Label>
           <Input
             name="email"
             type="email"
@@ -224,7 +224,7 @@ export function UserAddDialog({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">Password *</Label>
           <Input
             name="password"
             type="password"
@@ -241,7 +241,7 @@ export function UserAddDialog({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="role">Role</Label>
+          <Label htmlFor="role">Role *</Label>
           <Select
             value={formData.role}
             onValueChange={(value: "admin" | "user") => {
@@ -274,7 +274,7 @@ export function UserAddDialog({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="staffNumber">Staff ID Number</Label>
+          <Label htmlFor="staffNumber">Staff ID Number *</Label>
           <Input
             name="staffNumber"
             value={employeeData.staffNumber}
@@ -290,7 +290,7 @@ export function UserAddDialog({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="department">Department</Label>
+          <Label htmlFor="department">Department *</Label>
           <Select
             value={employeeData.department}
             onValueChange={(value: string) => {
@@ -383,7 +383,7 @@ export function UserAddDialog({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="maritalStatus">Marital Status</Label>
+          <Label htmlFor="maritalStatus">Marital Status *</Label>
           <Select
             value={employeeData.maritalStatus}
             onValueChange={(
@@ -403,7 +403,7 @@ export function UserAddDialog({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="employmentType">Employment Type</Label>
+          <Label htmlFor="employmentType">Employment Type *</Label>
           <Select
             value={employeeData.employmentType}
             onValueChange={(

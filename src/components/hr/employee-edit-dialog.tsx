@@ -113,7 +113,7 @@ export default function EmployeeEditForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Name *</FormLabel>
                   <FormControl>
                     <Input placeholder="John Doe" {...field} />
                   </FormControl>
@@ -127,7 +127,7 @@ export default function EmployeeEditForm({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email *</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -147,7 +147,7 @@ export default function EmployeeEditForm({
               name="staffNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Staff ID</FormLabel>
+                  <FormLabel>Staff ID *</FormLabel>
                   <FormControl>
                     <Input type="text" placeholder="STF-122" {...field} />
                   </FormControl>

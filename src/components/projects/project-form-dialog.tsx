@@ -122,7 +122,7 @@ export function ProjectFormDialog({ trigger, initial, onCompleted }: Props) {
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">Name *</Label>
             <Input
               id="name"
               value={name}

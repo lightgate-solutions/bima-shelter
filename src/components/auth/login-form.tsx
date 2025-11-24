@@ -59,7 +59,7 @@ const LoginForm = () => {
       <FormSuccess message={formState.success || ""} />
       <FormError message={formState.error || ""} />
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">Email *</Label>
         <Input
           id="email"
           type="email"
@@ -72,7 +72,7 @@ const LoginForm = () => {
         )}
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor={id}>Password</Label>
+        <Label htmlFor={id}>Password *</Label>
         <div className="relative">
           <Input
             id={id}
