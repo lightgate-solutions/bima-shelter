@@ -9,7 +9,17 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { FileIcon, User, FileText } from "lucide-react";
+import {
+  FileIcon,
+  User,
+  FileText,
+  Download,
+  MoreVertical,
+  Edit2,
+  MessageSquare,
+  Eye,
+  Trash2,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
