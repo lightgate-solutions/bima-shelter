@@ -28,7 +28,7 @@ import { Bug } from "lucide-react";
 const bugReportSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.email("Invalid email address"),
-  title: z.string().min(1, "Bug title is required"),
+  title: z.string().min(1, "Title is required"),
   severity: z.enum(["low", "medium", "high", "critical"]),
   description: z.string().min(10, "Description must be at least 10 characters"),
   stepsToReproduce: z.string().optional(),
@@ -82,10 +82,11 @@ export default function BugReportPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bug className="h-6 w-6" />
-            Report a Bug
+            Report a Bug or Give Feedback
           </CardTitle>
           <CardDescription>
-            Found an issue? Help us improve by reporting it below.
+            Found an issue or have a suggestion for us? Help us improve the
+            application's experience by reporting it below.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -114,10 +115,10 @@ export default function BugReportPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="title">Bug Title</Label>
+              <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
-                placeholder="Brief description of the issue"
+                placeholder="Brief description of the issue or feedback"
                 {...register("title")}
               />
               {errors.title && (
@@ -154,7 +155,7 @@ export default function BugReportPage() {
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                placeholder="Describe the bug in detail..."
+                placeholder="Describe the issue or feedback in detail..."
                 rows={4}
                 {...register("description")}
               />
@@ -178,7 +179,7 @@ export default function BugReportPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit Bug Report"}
+              {isSubmitting ? "Submitting..." : "Submit Report"}
             </Button>
           </form>
         </CardContent>

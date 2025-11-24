@@ -10,7 +10,6 @@ import {
   CircleDotDashed,
   Hourglass,
   Loader2,
-  Pause,
   Timer,
 } from "lucide-react";
 
@@ -24,12 +23,11 @@ const statusConfig: Status[] = [
     icon: Timer,
   },
   {
-    id: "Technical Review",
-    name: "Technical Review",
+    id: "Review",
+    name: "Review",
     color: "#22c55e",
     icon: Hourglass,
   },
-  { id: "Paused", name: "Paused", color: "#0ea5e9", icon: Pause },
   {
     id: "Completed",
     name: "Completed",
@@ -59,8 +57,7 @@ export function TaskBoard({
     Backlog: [],
     Todo: [],
     "In Progress": [],
-    "Technical Review": [],
-    Paused: [],
+    Review: [],
     Completed: [],
   });
   const [loading, setLoading] = useState(true);

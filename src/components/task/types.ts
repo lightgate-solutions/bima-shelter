@@ -4,8 +4,7 @@ export type StatusType =
   | "Backlog"
   | "Todo"
   | "In Progress"
-  | "Technical Review"
-  | "Paused"
+  | "Review"
   | "Completed";
 
 export type PriorityType = "Low" | "Medium" | "High" | "Urgent";

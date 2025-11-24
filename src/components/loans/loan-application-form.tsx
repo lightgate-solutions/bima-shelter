@@ -225,7 +225,7 @@ export default function LoanApplicationForm({
           name="requestedAmount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Requested Amount (NGN)</FormLabel>
+              <FormLabel>Requested Amount (NGN) *</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -253,7 +253,7 @@ export default function LoanApplicationForm({
           name="reason"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Reason for Loan</FormLabel>
+              <FormLabel>Reason for Loan *</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Please explain why you need this loan..."

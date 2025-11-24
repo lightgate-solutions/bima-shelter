@@ -37,8 +37,7 @@ export async function GET(request: NextRequest) {
       | "Backlog"
       | "Todo"
       | "In Progress"
-      | "Technical Review"
-      | "Paused"
+      | "Review"
       | "Completed";
     type PriorityType = "Low" | "Medium" | "High" | "Urgent";
     const { searchParams } = request.nextUrl;

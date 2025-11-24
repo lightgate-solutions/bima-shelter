@@ -16,8 +16,7 @@ export async function GET(request: NextRequest) {
       | "Backlog"
       | "Todo"
       | "In Progress"
-      | "Technical Review"
-      | "Paused"
+      | "Review"
       | "Completed";
     type PriorityType = "Low" | "Medium" | "High" | "Urgent";
 
@@ -88,14 +87,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         tasksByStatus: {},
         labels: [],
-        statuses: [
-          "Backlog",
-          "Todo",
-          "In Progress",
-          "Technical Review",
-          "Paused",
-          "Completed",
-        ],
+        statuses: ["Backlog", "Todo", "In Progress", "Review", "Completed"],
       });
     }
 
@@ -234,8 +226,7 @@ export async function GET(request: NextRequest) {
       Backlog: [],
       Todo: [],
       "In Progress": [],
-      "Technical Review": [],
-      Paused: [],
+      Review: [],
       Completed: [],
     };
 
@@ -273,14 +264,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       tasksByStatus,
       labels: allLabels,
-      statuses: [
-        "Backlog",
-        "Todo",
-        "In Progress",
-        "Technical Review",
-        "Paused",
-        "Completed",
-      ],
+      statuses: ["Backlog", "Todo", "In Progress", "Review", "Completed"],
     });
   } catch (error) {
     console.error("Error fetching board tasks:", error);

@@ -284,7 +284,7 @@ export function ReplyForwardEmail({
               name="recipientIds"
               render={() => (
                 <FormItem>
-                  <FormLabel>To</FormLabel>
+                  <FormLabel>To *</FormLabel>
                   <FormControl>
                     <div className="space-y-2">
                       <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[42px]">
@@ -350,7 +350,7 @@ export function ReplyForwardEmail({
               name="subject"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Subject</FormLabel>
+                  <FormLabel>Subject *</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter subject" {...field} />
                   </FormControl>
@@ -446,7 +446,7 @@ export function ReplyForwardEmail({
               name="body"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Message</FormLabel>
+                  <FormLabel>Message *</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Write your message..."

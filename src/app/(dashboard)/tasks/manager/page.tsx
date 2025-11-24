@@ -51,14 +51,12 @@ const ManagerReviewPage = async () => {
     );
   }
 
-  // Fetch tasks in Technical Review status that this manager created
+  // Fetch tasks in Review status that this manager created
   const reviewTasks = await db
     .select()
     .from(tasks)
     .where(eq(tasks.assignedBy, employee.id))
-    .then((allTasks) =>
-      allTasks.filter((t) => t.status === "Technical Review"),
-    );
+    .then((allTasks) => allTasks.filter((t) => t.status === "Review"));
 
   // Get assignees for these tasks
   const taskIds = reviewTasks.map((t) => t.id);
@@ -101,7 +99,7 @@ const ManagerReviewPage = async () => {
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <div>
-            <h2 className="text-2xl font-bold">Technical Review</h2>
+            <h2 className="text-2xl font-bold">Review</h2>
             <p className="text-sm text-muted-foreground">
               Review tasks submitted by your team. Accept to mark as completed,
               or reject with feedback to send back to Todo.

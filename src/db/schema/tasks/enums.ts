@@ -4,8 +4,7 @@ export const taskStatusEnum = pgEnum("task_status", [
   "Backlog",
   "Todo",
   "In Progress",
-  "Technical Review",
-  "Paused",
+  "Review",
   "Completed",
   "Pending",
 ]);

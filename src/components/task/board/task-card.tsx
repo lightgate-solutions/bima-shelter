@@ -18,7 +18,6 @@ import {
   Circle,
   Timer,
   Hourglass,
-  Pause,
   CalendarCheck2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,8 +39,7 @@ const statusIcons: Record<StatusType, React.FC> = {
   Backlog: CircleDotDashed,
   Todo: Circle,
   "In Progress": Timer,
-  "Technical Review": Hourglass,
-  Paused: Pause,
+  Review: Hourglass,
   Completed: CalendarCheck2,
 };
 

@@ -12,6 +12,7 @@ export interface GetTasksOptions {
     | "Todo"
     | "In Progress"
     | "Technical Review"
+    | "Review"
     | "Paused"
     | "Completed"
     | "Pending";

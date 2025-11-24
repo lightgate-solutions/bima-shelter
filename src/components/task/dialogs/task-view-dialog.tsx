@@ -67,8 +67,7 @@ const statuses: StatusType[] = [
   "Backlog",
   "Todo",
   "In Progress",
-  "Technical Review",
-  "Paused",
+  "Review",
   "Completed",
 ];
 

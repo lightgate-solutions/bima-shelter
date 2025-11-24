@@ -16,6 +16,7 @@ import {
   Newspaper,
   Bug,
   Logs,
+  Timer,
 } from "lucide-react";
 import {
   Sidebar,
@@ -45,6 +46,11 @@ const data = {
       url: "/",
       icon: TvMinimal,
       isActive: false,
+    },
+    {
+      title: "Attendance",
+      url: "/hr/attendance",
+      icon: Timer,
     },
     {
       title: "Documents",
@@ -273,7 +279,7 @@ export function AppSidebar({
     }
 
     allItems.push({
-      title: "Report a Bug",
+      title: "Support/Feedback",
       url: "/bug",
       icon: Bug,
       isActive: false,
