@@ -10,6 +10,9 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import NotificationBell from "@/components/ui/notification-bell";
+import { AttendanceSignInPopup } from "@/components/hr/attendance-signin-popup";
+import { requireAuth } from "@/actions/auth/dal";
+import { getMyTodayAttendance } from "@/actions/hr/attendance";
 
 export default async function RootLayout({
   children,
@@ -20,6 +23,12 @@ export default async function RootLayout({
     headers: await headers(),
   });
   if (!session) redirect("/auth/login");
+
+  // Get employee data and today's attendance for the pop-up
+  const authData = await requireAuth();
+  const myAttendance = await getMyTodayAttendance();
+  const hasSignedInToday =
+    myAttendance !== null && myAttendance.signInTime !== null;
 
   return (
     <section className="p-1">
@@ -39,6 +48,13 @@ export default async function RootLayout({
           <div className="p-2">{children}</div>
         </SidebarInset>
       </SidebarProvider>
+
+      {/* Attendance Sign-In Pop-up - Global */}
+      <AttendanceSignInPopup
+        currentEmployeeId={authData.employee.id}
+        hasSignedInToday={hasSignedInToday}
+        isLoading={false}
+      />
     </section>
   );
 }
