@@ -514,125 +514,121 @@ export function PayrunDetail({ payrun }: PayrunDetailProps) {
                   onOpenChange={() => toggleRow(item.id)}
                   asChild
                 >
-                  <>
-                    <CollapsibleTrigger asChild>
-                      <TableRow className="cursor-pointer hover:bg-muted/50">
-                        <TableCell>
-                          {expandedRows.has(item.id) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {item.employeeName}
-                        </TableCell>
-                        <TableCell>{item.staffNumber || "-"}</TableCell>
-                        <TableCell>{item.department || "-"}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(Number(item.baseSalary))}
-                        </TableCell>
-                        <TableCell className="text-right text-green-600">
-                          {formatCurrency(Number(item.totalAllowances))}
-                        </TableCell>
-                        <TableCell className="text-right text-red-600">
-                          {formatCurrency(
-                            Number(item.totalDeductions) +
-                              Number(item.totalTaxes),
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {formatCurrency(Number(item.netPay))}
-                        </TableCell>
-                      </TableRow>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent asChild>
-                      <TableRow className="bg-muted/30">
-                        <TableCell colSpan={8} className="p-0">
-                          <div className="p-4">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Type</TableHead>
-                                  <TableHead>Description</TableHead>
-                                  <TableHead className="text-right">
-                                    Amount
-                                  </TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {item.details.map((detail) => {
-                                  const amount = Number(detail.amount);
-                                  const isPositive = amount >= 0;
-                                  const displayType =
-                                    detail.detailType === "base_salary"
-                                      ? "Base Salary"
-                                      : detail.detailType === "allowance"
-                                        ? "Allowance"
-                                        : detail.detailType === "deduction"
-                                          ? "Deduction"
-                                          : detail.detailType === "tax"
-                                            ? "Tax"
-                                            : detail.detailType === "loan"
-                                              ? "Loan"
-                                              : detail.detailType;
+                  <CollapsibleTrigger asChild>
+                    <TableRow className="cursor-pointer hover:bg-muted/50">
+                      <TableCell>
+                        {expandedRows.has(item.id) ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {item.employeeName}
+                      </TableCell>
+                      <TableCell>{item.staffNumber || "-"}</TableCell>
+                      <TableCell>{item.department || "-"}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(Number(item.baseSalary))}
+                      </TableCell>
+                      <TableCell className="text-right text-green-600">
+                        {formatCurrency(Number(item.totalAllowances))}
+                      </TableCell>
+                      <TableCell className="text-right text-red-600">
+                        {formatCurrency(
+                          Number(item.totalDeductions) +
+                            Number(item.totalTaxes),
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatCurrency(Number(item.netPay))}
+                      </TableCell>
+                    </TableRow>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent asChild>
+                    <TableRow className="bg-muted/30">
+                      <TableCell colSpan={8} className="p-0">
+                        <div className="p-4">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead className="text-right">
+                                  Amount
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {item.details.map((detail) => {
+                                const amount = Number(detail.amount);
+                                const isPositive = amount >= 0;
+                                const displayType =
+                                  detail.detailType === "base_salary"
+                                    ? "Base Salary"
+                                    : detail.detailType === "allowance"
+                                      ? "Allowance"
+                                      : detail.detailType === "deduction"
+                                        ? "Deduction"
+                                        : detail.detailType === "tax"
+                                          ? "Tax"
+                                          : detail.detailType === "loan"
+                                            ? "Loan"
+                                            : detail.detailType;
 
-                                  return (
-                                    <TableRow key={detail.id}>
-                                      <TableCell>
-                                        <Badge
-                                          variant={
-                                            isPositive
-                                              ? "outline"
-                                              : "destructive"
-                                          }
-                                          className={
-                                            isPositive
-                                              ? "border-green-600 text-green-600"
-                                              : ""
-                                          }
-                                        >
-                                          {displayType}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell>
-                                        {detail.description}
-                                        {detail.remainingAmount && (
-                                          <span className="text-xs text-muted-foreground ml-2">
-                                            (Remaining:{" "}
-                                            {formatCurrency(
-                                              Number(detail.remainingAmount),
-                                            )}
-                                            )
-                                          </span>
-                                        )}
-                                      </TableCell>
-                                      <TableCell
-                                        className={`text-right font-medium ${
+                                return (
+                                  <TableRow key={detail.id}>
+                                    <TableCell>
+                                      <Badge
+                                        variant={
+                                          isPositive ? "outline" : "destructive"
+                                        }
+                                        className={
                                           isPositive
-                                            ? "text-green-600"
-                                            : "text-red-600"
-                                        }`}
+                                            ? "border-green-600 text-green-600"
+                                            : ""
+                                        }
                                       >
-                                        {isPositive ? "+" : ""}
-                                        {formatCurrency(Math.abs(amount))}
-                                      </TableCell>
-                                    </TableRow>
-                                  );
-                                })}
-                                <TableRow className="font-semibold bg-muted">
-                                  <TableCell colSpan={2}>Net Pay</TableCell>
-                                  <TableCell className="text-right">
-                                    {formatCurrency(Number(item.netPay))}
-                                  </TableCell>
-                                </TableRow>
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    </CollapsibleContent>
-                  </>
+                                        {displayType}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                      {detail.description}
+                                      {detail.remainingAmount && (
+                                        <span className="text-xs text-muted-foreground ml-2">
+                                          (Remaining:{" "}
+                                          {formatCurrency(
+                                            Number(detail.remainingAmount),
+                                          )}
+                                          )
+                                        </span>
+                                      )}
+                                    </TableCell>
+                                    <TableCell
+                                      className={`text-right font-medium ${
+                                        isPositive
+                                          ? "text-green-600"
+                                          : "text-red-600"
+                                      }`}
+                                    >
+                                      {isPositive ? "+" : ""}
+                                      {formatCurrency(Math.abs(amount))}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                              <TableRow className="font-semibold bg-muted">
+                                <TableCell colSpan={2}>Net Pay</TableCell>
+                                <TableCell className="text-right">
+                                  {formatCurrency(Number(item.netPay))}
+                                </TableCell>
+                              </TableRow>
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </CollapsibleContent>
                 </Collapsible>
               ))}
             </TableBody>

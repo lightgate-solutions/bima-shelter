@@ -25,6 +25,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BackButton } from "@/components/ui/back-button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Filter } from "lucide-react";
 
 type Transaction = {
   id: number;
@@ -99,24 +102,38 @@ export function BalanceHistoryPage() {
     });
   };
 
-  const getTransactionTypeColor = (type: string) => {
+  const getTransactionTypeBadge = (type: string) => {
     switch (type) {
       case "top-up":
-        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300";
+        return (
+          <Badge className="bg-green-100 text-green-700 hover:bg-green-100/80 dark:bg-green-900/30 dark:text-green-300">
+            Top-up
+          </Badge>
+        );
       case "expense":
-        return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
+        return (
+          <Badge className="bg-red-100 text-red-700 hover:bg-red-100/80 dark:bg-red-900/30 dark:text-red-300">
+            Expense
+          </Badge>
+        );
       default:
-        return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300";
+        return (
+          <Badge variant="secondary" className="capitalize">
+            {type}
+          </Badge>
+        );
     }
   };
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <BackButton />
           <div>
-            <h1 className="text-2xl font-bold">Balance Transaction History</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Balance History
+            </h1>
             <p className="text-sm text-muted-foreground">
               View all balance transactions and history
             </p>
@@ -124,131 +141,142 @@ export function BalanceHistoryPage() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Select
-            value={transactionType}
-            onValueChange={(v) => {
-              setTransactionType(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="All types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              <SelectItem value="top-up">Top-ups</SelectItem>
-              <SelectItem value="expense">Expenses</SelectItem>
-              <SelectItem value="adjustment">Adjustments</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Balance Before</TableHead>
-                <TableHead>Balance After</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Transactions</CardTitle>
+            <div className="flex items-center gap-2">
+              <Select
+                value={transactionType}
+                onValueChange={(v) => {
+                  setTransactionType(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder="All types" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All types</SelectItem>
+                  <SelectItem value="top-up">Top-ups</SelectItem>
+                  <SelectItem value="expense">Expenses</SelectItem>
+                  <SelectItem value="adjustment">Adjustments</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">
-                    Loading...
-                  </TableCell>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Balance Before</TableHead>
+                  <TableHead>Balance After</TableHead>
                 </TableRow>
-              ) : transactions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center">
-                    No transactions found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                transactions.map((tx) => (
-                  <TableRow key={tx.id}>
-                    <TableCell className="text-sm">
-                      {formatDate(tx.createdAt)}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${getTransactionTypeColor(tx.transactionType)}`}
-                      >
-                        {tx.transactionType}
-                      </span>
-                    </TableCell>
-                    <TableCell
-                      className={`font-semibold ${
-                        tx.transactionType === "top-up"
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      {tx.transactionType === "top-up" ? "+" : "-"}
-                      {formatCurrency(tx.amount)}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{tx.userName || "—"}</div>
-                        {tx.userEmail && (
-                          <div className="text-xs text-muted-foreground">
-                            {tx.userEmail}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {tx.description || "—"}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {formatCurrency(tx.balanceBefore)}
-                    </TableCell>
-                    <TableCell className="text-sm font-medium">
-                      {formatCurrency(tx.balanceAfter)}
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center h-24">
+                      Loading...
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-        {total > limit ? (
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setPage((p) => Math.max(1, p - 1));
-                  }}
-                />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink isActive href="#">
-                  {page}
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const totalPages = Math.max(1, Math.ceil(total / limit));
-                    setPage((p) => Math.min(totalPages, p + 1));
-                  }}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        ) : null}
-      </div>
+                ) : transactions.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="text-center h-24 text-muted-foreground"
+                    >
+                      No transactions found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  transactions.map((tx) => (
+                    <TableRow key={tx.id} className="group">
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(tx.createdAt)}
+                      </TableCell>
+                      <TableCell>
+                        {getTransactionTypeBadge(tx.transactionType)}
+                      </TableCell>
+                      <TableCell
+                        className={`font-semibold ${
+                          tx.transactionType === "top-up"
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-red-600 dark:text-red-400"
+                        }`}
+                      >
+                        {tx.transactionType === "top-up" ? "+" : "-"}
+                        {formatCurrency(tx.amount)}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">
+                            {tx.userName || "—"}
+                          </div>
+                          {tx.userEmail && (
+                            <div className="text-xs text-muted-foreground">
+                              {tx.userEmail}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate text-muted-foreground">
+                        {tx.description || "—"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatCurrency(tx.balanceBefore)}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {formatCurrency(tx.balanceAfter)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          {total > limit ? (
+            <Pagination className="mt-4">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage((p) => Math.max(1, p - 1));
+                    }}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationLink isActive href="#">
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const totalPages = Math.max(1, Math.ceil(total / limit));
+                      setPage((p) => Math.min(totalPages, p + 1));
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }

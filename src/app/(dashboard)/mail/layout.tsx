@@ -3,12 +3,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Pencil, RefreshCw, Reply, Forward } from "lucide-react";
+import { RefreshCw, ChevronRight, ChevronLeft, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MailSearch } from "@/components/mail/mail-search";
 import { InboxWrapper } from "@/components/mail/inbox-wrapper";
 import { getEmailById, getEmailStats } from "@/actions/mail/email";
 import { getAllEmployees } from "@/actions/hr/employees";
+import { MailSidebar } from "@/components/mail/mail-sidebar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 type Folder = "inbox" | "sent" | "archive" | "trash";
 
@@ -38,7 +41,7 @@ export default function RootLayout({
   const searchParams = useSearchParams();
 
   const [users, setUsers] = useState<User[]>([]);
-  const [_stats, setStats] = useState<Stats>({
+  const [stats, setStats] = useState<Stats>({
     unreadCount: 0,
     inboxCount: 0,
     archivedCount: 0,
@@ -54,6 +57,7 @@ export default function RootLayout({
     senderEmail: string;
     createdAt: Date;
   } | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const _currentFolder: Folder = useMemo(() => {
     const path = pathname || "";
@@ -126,11 +130,11 @@ export default function RootLayout({
     document.querySelector<HTMLElement>("[data-compose-trigger]")?.click();
   };
 
-  const triggerReply = () => {
+  const _triggerReply = () => {
     document.querySelector<HTMLElement>("[data-reply-trigger]")?.click();
   };
 
-  const triggerForward = () => {
+  const _triggerForward = () => {
     document.querySelector<HTMLElement>("[data-forward-trigger]")?.click();
   };
 
@@ -147,65 +151,74 @@ export default function RootLayout({
   };
 
   return (
-    <div className="flex h-full w-full relative gap-4">
-      <div className="flex-1 min-w-0 sticky top-0 rounded-lg border bg-background">
-        <div className="rounded-t-lg border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex flex-col gap-2 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={handleRefresh}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Refresh
-                </Button>
-
-                {selectedEmail && (
-                  <div className="hidden sm:flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={triggerReply}
-                    >
-                      <Reply className="h-4 w-4" />
-                      Reply
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={triggerForward}
-                    >
-                      <Forward className="h-4 w-4" />
-                      Forward
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button className="gap-2" onClick={triggerCompose}>
-                  <Pencil className="h-4 w-4" />
-                  Compose
-                </Button>
-              </div>
-            </div>
-
-            {/* Global search */}
-            <div className="pt-1">
-              <MailSearch onResultClick={handleSearchResultClick} />
-            </div>
-          </div>
+    <InboxWrapper users={users} selectedEmail={selectedEmail}>
+      <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden rounded-xl border bg-background shadow-sm">
+        {/* Desktop Sidebar */}
+        <div
+          className={cn(
+            "hidden md:block border-r bg-muted/10 transition-all duration-300 ease-in-out relative",
+            isCollapsed ? "w-[52px]" : "w-64",
+          )}
+        >
+          <MailSidebar
+            stats={stats}
+            onCompose={triggerCompose}
+            isCollapsed={isCollapsed}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute -right-3 top-6 h-6 w-6 rounded-full border bg-background shadow-md z-10 hover:bg-accent"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-3 w-3" />
+            ) : (
+              <ChevronLeft className="h-3 w-3" />
+            )}
+          </Button>
         </div>
 
-        <InboxWrapper users={users} selectedEmail={selectedEmail}>
-          <div className="relative">{children}</div>
-        </InboxWrapper>
+        {/* Mobile Sidebar */}
+        <div className="md:hidden absolute top-4 left-4 z-50">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-72">
+              <MailSidebar
+                stats={stats}
+                onCompose={triggerCompose}
+                isCollapsed={false}
+              />
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex items-center justify-between border-b px-4 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex items-center gap-2 ml-10 md:ml-0">
+              <h1 className="text-xl font-semibold">Mail</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-full max-w-sm">
+                <MailSearch onResultClick={handleSearchResultClick} />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefresh}
+                title="Refresh"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-hidden relative">{children}</div>
+        </div>
       </div>
-    </div>
+    </InboxWrapper>
   );
 }

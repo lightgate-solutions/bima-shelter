@@ -188,7 +188,7 @@ export default function LoanTypeForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Name *</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., Emergency Loan" {...field} />
               </FormControl>
@@ -222,7 +222,7 @@ export default function LoanTypeForm({
             name="amountType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Amount Type</FormLabel>
+                <FormLabel>Amount Type *</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -278,7 +278,7 @@ export default function LoanTypeForm({
             name="tenureMonths"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tenure (Months)</FormLabel>
+                <FormLabel>Tenure (Months) *</FormLabel>
                 <FormControl>
                   <Input type="number" {...field} />
                 </FormControl>
@@ -323,7 +323,7 @@ export default function LoanTypeForm({
           name="salaryStructureIds"
           render={() => (
             <FormItem>
-              <FormLabel>Eligible Salary Structures</FormLabel>
+              <FormLabel>Eligible Salary Structures *</FormLabel>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {loadingStructures ? (
                   <p className="text-sm text-muted-foreground">Loading...</p>

@@ -97,7 +97,7 @@ export function ChangePasswordForm() {
           <FormError message={formState.error || ""} />
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor={currentId}>Current Password</Label>
+            <Label htmlFor={currentId}>Current Password *</Label>
             <div className="relative">
               <Input
                 id={currentId}
@@ -131,7 +131,7 @@ export function ChangePasswordForm() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor={newId}>New Password</Label>
+            <Label htmlFor={newId}>New Password *</Label>
             <div className="relative">
               <Input
                 id={newId}
@@ -163,7 +163,7 @@ export function ChangePasswordForm() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor={confirmId}>Confirm New Password</Label>
+            <Label htmlFor={confirmId}>Confirm New Password *</Label>
             <div className="relative">
               <Input
                 id={confirmId}

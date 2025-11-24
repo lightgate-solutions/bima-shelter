@@ -32,7 +32,7 @@ export default async function AttendancePage({
   }
 
   let allAttendance = null;
-  let filters: any;
+  let filters: { page: number; limit: number; managerId?: number } | undefined;
 
   if (isManagerOrHR) {
     const page =

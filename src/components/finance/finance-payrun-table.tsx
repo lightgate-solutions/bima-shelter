@@ -34,6 +34,7 @@ import { MoreHorizontal, Eye, CreditCard } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { getApprovedPayruns, completePayrun } from "@/actions/payroll/payrun";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type PayrunStatus =
   | "draft"
@@ -107,7 +108,7 @@ export function FinancePayrunTable() {
     }
   };
 
-  const formatDate = (day: number, month: number, year: number) => {
+  const formatDate = (_day: number, month: number, year: number) => {
     const months = [
       "Jan",
       "Feb",
@@ -145,6 +146,7 @@ export function FinancePayrunTable() {
     return (
       <div className="space-y-2">
         {[...Array(5)].map((_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton array
           <Skeleton key={i} className="h-12 w-full" />
         ))}
       </div>
@@ -152,108 +154,125 @@ export function FinancePayrunTable() {
   }
 
   return (
-    <div className="space-y-4">
-      {payruns && payruns.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Period</TableHead>
-              <TableHead className="text-right">Employees</TableHead>
-              <TableHead className="text-right">Net Pay</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Approved At</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {payruns.map((payrun: Payrun) => (
-              <TableRow key={payrun.id}>
-                <TableCell className="font-medium">{payrun.name}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="capitalize">
-                    {payrun.type}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {formatDate(payrun.day, payrun.month, payrun.year)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {payrun.totalEmployees}
-                </TableCell>
-                <TableCell className="text-right font-semibold">
-                  {formatCurrency(Number(payrun.totalNetPay))}
-                </TableCell>
-                <TableCell>{getStatusBadge(payrun.status)}</TableCell>
-                <TableCell>{formatDateTime(payrun.approvedAt)}</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Actions</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() =>
-                          router.push(`/payroll/payrun/${payrun.id}`)
-                        }
+    <Card>
+      <CardHeader>
+        <CardTitle>Pending Payruns</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {payruns && payruns.length > 0 ? (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Period</TableHead>
+                  <TableHead className="text-right">Employees</TableHead>
+                  <TableHead className="text-right">Net Pay</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Approved At</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payruns.map((payrun: Payrun) => (
+                  <TableRow key={payrun.id} className="group">
+                    <TableCell className="font-medium">{payrun.name}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className="capitalize font-normal"
                       >
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </DropdownMenuItem>
-                      {payrun.status === "approved" && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            setAlertDialog({
-                              open: true,
-                              payrunId: payrun.id,
-                              payrunName: payrun.name,
-                            })
-                          }
-                        >
-                          <CreditCard className="mr-2 h-4 w-4" />
-                          Mark as Paid
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      ) : (
-        <div className="text-center py-8 text-muted-foreground">
-          No approved payruns pending disbursement
-        </div>
-      )}
+                        {payrun.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(payrun.day, payrun.month, payrun.year)}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {payrun.totalEmployees}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {formatCurrency(Number(payrun.totalNetPay))}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(payrun.status)}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDateTime(payrun.approvedAt)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Actions</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push(`/payroll/payrun/${payrun.id}`)
+                            }
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          {payrun.status === "approved" && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setAlertDialog({
+                                  open: true,
+                                  payrunId: payrun.id,
+                                  payrunName: payrun.name,
+                                })
+                              }
+                            >
+                              <CreditCard className="mr-2 h-4 w-4" />
+                              Mark as Paid
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            No approved payruns pending disbursement
+          </div>
+        )}
 
-      <AlertDialog
-        open={alertDialog.open}
-        onOpenChange={(open) => setAlertDialog({ ...alertDialog, open })}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mark Payrun as Paid</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to mark &quot;{alertDialog.payrunName}&quot;
-              as paid? This will update loan balances and cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleComplete}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              Mark as Paid
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        <AlertDialog
+          open={alertDialog.open}
+          onOpenChange={(open) => setAlertDialog({ ...alertDialog, open })}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Mark Payrun as Paid</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to mark &quot;{alertDialog.payrunName}
+                &quot; as paid? This will update loan balances and cannot be
+                undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleComplete}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Mark as Paid
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </CardContent>
+    </Card>
   );
 }

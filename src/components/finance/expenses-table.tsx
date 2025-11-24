@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Search, Filter } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -27,8 +27,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Separator } from "@/components/ui/separator";
 import { ExpenseFormDialog } from "./expense-form-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Expense = {
   id: number;
@@ -117,142 +118,167 @@ export function ExpensesTable() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Search expenses..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <Select value={category} onValueChange={(v) => setCategory(v)}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="All categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
-            {expenseCategories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <ExpenseFormDialog
-          onCompleted={() => {
-            load();
-          }}
-          trigger={<Button className="ml-auto">New Expense</Button>}
-        />
-      </div>
-      <Separator />
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Expenses</CardTitle>
+          <ExpenseFormDialog
+            onCompleted={() => {
+              load();
+            }}
+            trigger={<Button>New Expense</Button>}
+          />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search expenses..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={category} onValueChange={(v) => setCategory(v)}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <SelectValue placeholder="All categories" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {expenseCategories.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
-                  Loading...
-                </TableCell>
+                <TableHead>Title</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : items.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center">
-                  No expenses found
-                </TableCell>
-              </TableRow>
-            ) : (
-              items.map((expense) => (
-                <TableRow key={expense.id}>
-                  <TableCell className="font-medium">{expense.title}</TableCell>
-                  <TableCell>
-                    {expense.category ? (
-                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                        {expense.category}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                  <TableCell className="font-semibold text-red-600 dark:text-red-400">
-                    {formatCurrency(expense.amount)}
-                  </TableCell>
-                  <TableCell>{formatDate(expense.expenseDate)}</TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {expense.description || "—"}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <ExpenseFormDialog
-                      initial={expense}
-                      onCompleted={() => {
-                        load();
-                      }}
-                      trigger={
-                        <Button
-                          variant="secondary"
-                          className="h-8 w-8 p-0"
-                          aria-label="Edit expense"
-                          title="Edit"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      }
-                    />
-                    <Button
-                      variant="destructive"
-                      className="h-8 w-8 p-0"
-                      onClick={() => onDelete(expense.id)}
-                      aria-label="Delete expense"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center h-24">
+                    Loading...
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      {total > limit ? (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setPage((p) => Math.max(1, p - 1));
-                }}
-              />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink isActive href="#">
-                {page}
-              </PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const totalPages = Math.max(1, Math.ceil(total / limit));
-                  setPage((p) => Math.min(totalPages, p + 1));
-                }}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      ) : null}
-    </div>
+              ) : items.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="text-center h-24 text-muted-foreground"
+                  >
+                    No expenses found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                items.map((expense) => (
+                  <TableRow key={expense.id} className="group">
+                    <TableCell className="font-medium">
+                      {expense.title}
+                    </TableCell>
+                    <TableCell>
+                      {expense.category ? (
+                        <Badge variant="secondary" className="font-normal">
+                          {expense.category}
+                        </Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className="font-semibold text-red-600 dark:text-red-400">
+                      {formatCurrency(expense.amount)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(expense.expenseDate)}
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate text-muted-foreground">
+                      {expense.description || "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ExpenseFormDialog
+                          initial={expense}
+                          onCompleted={() => {
+                            load();
+                          }}
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label="Edit expense"
+                              title="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => onDelete(expense.id)}
+                          aria-label="Delete expense"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        {total > limit ? (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage((p) => Math.max(1, p - 1));
+                  }}
+                />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLink isActive href="#">
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const totalPages = Math.max(1, Math.ceil(total / limit));
+                    setPage((p) => Math.min(totalPages, p + 1));
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }

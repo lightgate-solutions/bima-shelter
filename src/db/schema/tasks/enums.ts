@@ -6,6 +6,7 @@ export const taskStatusEnum = pgEnum("task_status", [
   "In Progress",
   "Review",
   "Completed",
+  "Pending",
 ]);
 
 export const taskPriorityEnum = pgEnum("task_priority", [
