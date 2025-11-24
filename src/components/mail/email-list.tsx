@@ -1,11 +1,11 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import { Mail, MailOpen } from "lucide-react";
+import { Mail, Archive, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CardContent } from "../ui/card";
+
+import { Button } from "@/components/ui/button";
 
 interface Email {
   id: number;
@@ -41,7 +41,7 @@ export function EmailList({
     );
   }
 
-  const getInitials = (name: string) => {
+  const _getInitials = (name: string) => {
     return name
       .split(" ")
       .map((n) => n[0])
@@ -50,83 +50,83 @@ export function EmailList({
       .slice(0, 2);
   };
 
-  const truncateText = (text: string, maxLength: number) => {
+  const _truncateText = (text: string, maxLength: number) => {
     if (text.length <= maxLength) return text;
     return `${text.slice(0, maxLength)}...`;
   };
-
   return (
-    <div className="divide-y">
+    <div className="flex flex-col gap-2 p-2">
       {emails.map((email) => (
-        <CardContent
+        <button
+          type="button"
           key={email.id}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              onEmailClick(Number(email.id));
+            }
+          }}
           onClick={() => onEmailClick(Number(email.id))}
           className={cn(
-            "flex items-start gap-3 p-4 cursor-pointer transition-colors hover:bg-muted/50",
-            Number(selectedEmailId) === email.id && "bg-muted",
-            !email.isRead && "bg-blue-50/50 dark:bg-blue-950/20",
+            "group relative flex flex-col gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent hover:shadow-sm cursor-pointer w-full",
+            Number(selectedEmailId) === email.id && "bg-muted shadow-sm",
+            !email.isRead &&
+              "bg-blue-50/50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900",
           )}
         >
-          <div className="flex-shrink-0 mt-1">
-            <Avatar className="h-10 w-10">
-              <AvatarFallback className="text-xs">
-                {getInitials(email.senderName)}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex w-full flex-col gap-1">
+            <div className="flex items-center">
               <div className="flex items-center gap-2">
-                <span
+                <div
                   className={cn(
-                    "font-medium truncate",
-                    !email.isRead && "font-semibold",
+                    "font-semibold",
+                    !email.isRead && "text-blue-700 dark:text-blue-400",
                   )}
                 >
                   {email.senderName}
-                </span>
+                </div>
                 {!email.isRead && (
-                  <div className="flex-shrink-0 h-2 w-2 bg-blue-600 rounded-full" />
+                  <span className="flex h-2 w-2 rounded-full bg-blue-600" />
                 )}
               </div>
-              <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+              <div className="ml-auto text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(email.createdAt), {
                   addSuffix: true,
                 })}
-              </span>
+              </div>
             </div>
-
-            <div className="flex items-center gap-2 mb-1">
-              <h3
-                className={cn(
-                  "text-sm truncate",
-                  !email.isRead ? "font-semibold" : "font-medium",
-                )}
-              >
-                {email.subject}
-              </h3>
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-medium">{email.subject}</div>
               {email.type !== "sent" && (
-                <Badge
-                  variant="secondary"
-                  className="text-xs flex-shrink-0 h-5"
-                >
+                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
                   {email.type}
                 </Badge>
               )}
             </div>
+          </div>
+          <div className="line-clamp-2 text-xs text-muted-foreground">
+            {email.body.substring(0, 300)}
+          </div>
 
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {truncateText(email.body, 120)}
-            </p>
+          {/* Quick Actions (Visible on Hover) */}
+          <div className="absolute right-2 top-2 hidden group-hover:flex gap-1 bg-background/80 backdrop-blur-sm rounded-md p-0.5 shadow-sm">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              title="Archive"
+            >
+              <Archive className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-destructive"
+              title="Delete"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
           </div>
-          <div className="flex-shrink-0 mt-1">
-            {email.isRead ? (
-              <MailOpen className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <Mail className="h-4 w-4 text-blue-600" />
-            )}
-          </div>
-        </CardContent>
+        </button>
       ))}
     </div>
   );

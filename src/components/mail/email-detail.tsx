@@ -10,13 +10,13 @@ import {
   ArrowLeft,
   Forward,
   Loader2,
-  MailCheck,
   Reply,
   Trash2,
   Undo2,
   X,
   FileText,
   Eye,
+  MoreVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -28,6 +28,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   archiveEmail,
   unarchiveEmail,
@@ -48,7 +55,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+
 import { ScrollArea } from "../ui/scroll-area";
 
 interface Recipient {
@@ -270,319 +277,309 @@ export function EmailDetail({
 
   return (
     <>
-      <div className="flex flex-col h-full">
-        <div className="sticky top-0 z-10 pt-2 border-b bg-background">
-          <div className="flex items-center justify-between p-4 ">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBack}
-              className="gap-2"
-            >
+      <div className="flex flex-col h-full bg-background">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between border-b p-2 px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={onBack} title="Back">
               <ArrowLeft className="h-4 w-4" />
-              Back
             </Button>
+            <Separator orientation="vertical" className="h-6 mx-1" />
 
-            <div className="flex items-center gap-2">
-              {email.isRecipient && folder !== "trash" && (
-                <div>
-                  {folder === "archive" ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleUnarchive}
-                      disabled={isLoading}
-                      className="gap-2"
-                    >
-                      <ArchiveX className="h-4 w-4" />
-                      Unarchive
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleArchive}
-                      disabled={isLoading}
-                      className="gap-2"
-                    >
-                      <Archive className="h-4 w-4" />
-                      Archive
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              {email.isRecipient && folder === "trash" && (
-                <>
+            {email.isRecipient && folder !== "trash" && (
+              <>
+                {folder === "archive" ? (
                   <Button
                     variant="ghost"
-                    size="sm"
-                    onClick={handleRestore}
+                    size="icon"
+                    onClick={handleUnarchive}
                     disabled={isLoading}
-                    className="gap-2"
+                    title="Move to Inbox"
                   >
-                    <Undo2 className="h-4 w-4" />
-                    Restore
+                    <ArchiveX className="h-4 w-4" />
                   </Button>
+                ) : (
                   <Button
                     variant="ghost"
-                    size="sm"
-                    onClick={() => confirmDelete("permanent")}
+                    size="icon"
+                    onClick={handleArchive}
                     disabled={isLoading}
-                    className="gap-2 text-destructive hover:text-destructive"
+                    title="Archive"
                   >
-                    <X className="h-4 w-4" />
-                    Delete Forever
+                    <Archive className="h-4 w-4" />
                   </Button>
-                </>
-              )}
-
-              {email.isRecipient && folder !== "trash" && (
+                )}
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => confirmDelete("trash")}
                   disabled={isLoading}
-                  className="gap-2 text-destructive hover:text-destructive"
+                  title="Delete"
+                  className="text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete
                 </Button>
-              )}
+              </>
+            )}
 
-              {email.isSender && folder === "sent" && !email.hasBeenOpened && (
+            {email.isRecipient && folder === "trash" && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleRestore}
+                  disabled={isLoading}
+                  title="Restore"
+                >
+                  <Undo2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => confirmDelete("permanent")}
+                  disabled={isLoading}
+                  title="Delete Forever"
+                  className="text-destructive hover:text-destructive"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+
+            {email.isSender && folder === "sent" && !email.hasBeenOpened && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => confirmDelete("sent")}
+                disabled={isLoading}
+                title="Delete"
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {email.isRecipient && folder !== "trash" && (
+              <>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => confirmDelete("sent")}
-                  disabled={isLoading}
-                  className="gap-2 text-destructive hover:text-destructive"
+                  onClick={onReply}
+                  className="gap-2"
                 >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
+                  <Reply className="h-4 w-4" />
+                  <span className="hidden sm:inline">Reply</span>
                 </Button>
-              )}
-            </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onForward}
+                  className="gap-2"
+                >
+                  <Forward className="h-4 w-4" />
+                  <span className="hidden sm:inline">Forward</span>
+                </Button>
+              </>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>Mark as unread</DropdownMenuItem>
+                <DropdownMenuItem>Report spam</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
-        <ScrollArea className="h-screen">
-          {/* Email Content */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="w-full space-y-6">
-              {/* Subject */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h1 className="text-2xl font-bold">
-                    Subject: {email.subject}
-                  </h1>
-                  {email.type !== "sent" && (
-                    <Badge variant="secondary">{email.type}</Badge>
-                  )}
-                </div>
-              </div>
-
-              {/* Sender Info */}
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={email.senderImage || undefined} />
-                    <AvatarFallback>
-                      {getInitials(email.senderName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-semibold">{email.senderName}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {email.senderEmail}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {format(new Date(email.createdAt), "PPpp")}
-                      {" • "}
-                      {formatDistanceToNow(new Date(email.createdAt), {
-                        addSuffix: true,
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {email.isRecipient && folder !== "trash" && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onReply}
-                      className="gap-2"
-                    >
-                      <Reply className="h-4 w-4" />
-                      Reply
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onForward}
-                      className="gap-2"
-                    >
-                      <Forward className="h-4 w-4" />
-                      Forward
-                    </Button>
-                  </div>
+        <ScrollArea className="flex-1">
+          <div className="p-6 max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="mb-8">
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <h1 className="text-2xl font-bold leading-tight">
+                  {email.subject}
+                </h1>
+                {email.type !== "sent" && (
+                  <Badge variant="outline" className="flex-shrink-0">
+                    {email.type}
+                  </Badge>
                 )}
               </div>
 
-              <Accordion
-                type="single"
-                collapsible
-                className="w-full"
-                defaultValue="item-1"
-              >
-                <AccordionItem value="item-1">
-                  <AccordionTrigger>Receipients Information</AccordionTrigger>
-                  <AccordionContent>
-                    {email.isSender && email.recipients.length > 0 && (
-                      <div className="bg-muted/50 rounded-lg p-4">
-                        <div className="text-sm font-medium mb-2">
-                          Recipients:
-                        </div>
-                        <div className="space-y-2">
-                          {email.recipients.map((recipient) => (
-                            <div
-                              key={recipient.id}
-                              className="flex items-center justify-between text-sm"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-6 w-6">
-                                  <AvatarImage
-                                    src={recipient.image || undefined}
-                                  />
-                                  <AvatarFallback className="text-xs">
-                                    {getInitials(recipient.name)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span>{recipient.name}</span>
-                                <span className="text-muted-foreground">
-                                  ({recipient.email})
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {recipient.isRead ? (
-                                  <>
-                                    <MailCheck className="h-4 w-4 text-green-600" />
-                                    <span className="text-xs text-muted-foreground">
-                                      Opened{" "}
-                                      {recipient.readAt &&
-                                        formatDistanceToNow(
-                                          new Date(recipient.readAt),
-                                          {
-                                            addSuffix: true,
-                                          },
-                                        )}
-                                    </span>
-                                  </>
-                                ) : (
-                                  <Badge variant="outline" className="text-xs">
-                                    Unread
-                                  </Badge>
+              <div className="flex items-start gap-4">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={email.senderImage || undefined} />
+                  <AvatarFallback>
+                    {getInitials(email.senderName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-semibold text-sm">
+                      {email.senderName}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(email.createdAt), "PPpp")}
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {email.senderEmail}
+                  </div>
+                  <div className="mt-1">
+                    <Accordion
+                      type="single"
+                      collapsible
+                      className="w-full border-none"
+                    >
+                      <AccordionItem value="recipients" className="border-none">
+                        <AccordionTrigger className="py-0 text-xs text-muted-foreground hover:no-underline justify-start gap-1">
+                          to {email.recipients.length} recipients
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-2">
+                          <div className="space-y-2">
+                            {email.recipients.map((recipient) => (
+                              <div
+                                key={recipient.id}
+                                className="flex items-center justify-between text-sm"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-5 w-5">
+                                    <AvatarImage
+                                      src={recipient.image || undefined}
+                                    />
+                                    <AvatarFallback className="text-[10px]">
+                                      {getInitials(recipient.name)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span>{recipient.name}</span>
+                                  <span className="text-muted-foreground text-xs">
+                                    &lt;{recipient.email}&gt;
+                                  </span>
+                                </div>
+                                {email.isSender && (
+                                  <div className="flex items-center gap-2">
+                                    {recipient.isRead ? (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[10px] text-green-600 border-green-200 bg-green-50"
+                                      >
+                                        Read{" "}
+                                        {recipient.readAt &&
+                                          formatDistanceToNow(
+                                            new Date(recipient.readAt),
+                                            { addSuffix: true },
+                                          )}
+                                      </Badge>
+                                    ) : (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[10px]"
+                                      >
+                                        Unread
+                                      </Badge>
+                                    )}
+                                  </div>
                                 )}
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator className="mb-8" />
+
+            {/* Body */}
+            <div className="prose prose-sm max-w-none dark:prose-invert mb-8">
+              <div className="whitespace-pre-wrap font-sans text-foreground leading-relaxed">
+                {email.body}
+              </div>
+            </div>
+
+            {/* Attachments */}
+            {attachments.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  {attachments.length} Attachments
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {attachments.map((attachment: any) => (
+                    <div
+                      key={attachment.id}
+                      className="group flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                        <FileText className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">
+                          {attachment.documentTitle}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {attachment.documentFileSize || "Unknown size"}
                         </div>
                       </div>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Mail Body</CardTitle>
-                </CardHeader>
-                <CardContent className="prose prose-sm max-w-none dark:prose-invert">
-                  <div className="whitespace-pre-wrap">{email.body}</div>
-                </CardContent>
-              </Card>
-
-              {/* Attachments Section */}
-              {attachments.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Attachments ({attachments.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {attachments.map((attachment: any) => (
-                        <div
-                          key={attachment.id}
-                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleViewAttachment(attachment)}
+                          title="View"
                         >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="flex-shrink-0">
-                              <FileText className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">
-                                {attachment.documentTitle}
-                              </div>
-                              <div className="text-sm text-muted-foreground truncate">
-                                {attachment.documentFileName ||
-                                  attachment.documentDescription ||
-                                  "No description"}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {attachment.documentFileSize &&
-                                  `${attachment.documentFileSize} bytes`}
-                                {attachment.documentUploader &&
-                                  ` • Uploaded by ${attachment.documentUploader}`}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewAttachment(attachment)}
-                              className="gap-1"
-                            >
-                              <Eye className="h-4 w-4" />
-                              View
-                            </Button>
-                            {email.isSender && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handleRemoveAttachment(attachment.id)
-                                }
-                                disabled={isLoading}
-                                className="gap-1 text-destructive hover:text-destructive"
-                              >
-                                <X className="h-4 w-4" />
-                                Remove
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {email.isSender && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() =>
+                              handleRemoveAttachment(attachment.id)
+                            }
+                            title="Remove"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  ))}
+                </div>
+              </div>
+            )}
 
-              {loadingAttachments && (
-                <Card>
-                  <CardContent className="flex items-center justify-center py-8">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading attachments...
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            {loadingAttachments && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading attachments...
+              </div>
+            )}
+
+            {/* Reply/Forward Actions (Bottom) */}
+            {email.isRecipient && folder !== "trash" && (
+              <div className="flex gap-3 mt-8">
+                <Button variant="outline" onClick={onReply} className="gap-2">
+                  <Reply className="h-4 w-4" />
+                  Reply
+                </Button>
+                <Button variant="outline" onClick={onForward} className="gap-2">
+                  <Forward className="h-4 w-4" />
+                  Forward
+                </Button>
+              </div>
+            )}
           </div>
         </ScrollArea>
       </div>

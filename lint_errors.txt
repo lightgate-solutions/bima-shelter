@@ -1,0 +1,464 @@
+src\components\documents\document-sheet.tsx:754:39 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    752 │                   ) : (
+    753 │                     <div className="space-y-2">
+  > 754 │                       {shares.map((u: any) => (
+        │                                       ^^^
+    755 │                         <div
+    756 │                           key={u.userId}
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+
+src\components\documents\document-sheet.tsx:797:35 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    795 │               ) : (
+    796 │                 <div className="relative border-l ml-2 space-y-6 pl-6 py-2">
+  > 797 │                   {logs.map((log: any, i) => (
+        │                                   ^^^
+    798 │                     <div key={i} className="relative">
+    799 │                       <div className="absolute -left-[29px] top-1 h-3 w-3 rounded-full border bg-background" />
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+
+src\components\documents\document-sheet.tsx:16:3 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! Several of these imports are unused.
+  
+    14 │   Eye,
+    15 │   Download,
+  > 16 │   Share,
+       │   ^^^^^^
+  > 17 │   Edit2,
+        ...
+  > 23 │   MessageSquare,
+  > 24 │   History,
+       │   ^^^^^^^
+    25 │   User,
+    26 │   FileText,
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+     14  14 │     Eye,
+     15  15 │     Download,
+     16     │ - ··Share,
+     17  16 │     Edit2,
+     18  17 │     MoreVertical,
+     19  18 │     Trash2,
+     20     │ - ··Archive,
+     21     │ - ··CheckCircle,
+     22     │ - ··Clock,
+     23  19 │     MessageSquare,
+     24     │ - ··History,
+     25  20 │     User,
+     26  21 │     FileText,
+  
+
+src\components\documents\document-sheet.tsx:46:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! This import is unused.
+  
+    44 │ import { ScrollArea } from "@/components/ui/scroll-area";
+    45 │ import { Separator } from "@/components/ui/separator";
+  > 46 │ import { Textarea } from "@/components/ui/textarea";
+       │        ^^^^^^^^^^^^
+    47 │ import { Progress } from "@/components/ui/progress";
+    48 │ import { Spinner } from "@/components/ui/spinner";
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+     44  44 │   import { ScrollArea } from "@/components/ui/scroll-area";
+     45  45 │   import { Separator } from "@/components/ui/separator";
+     46     │ - import·{·Textarea·}·from·"@/components/ui/textarea";
+     47  46 │   import { Progress } from "@/components/ui/progress";
+     48  47 │   import { Spinner } from "@/components/ui/spinner";
+  
+
+src\components\documents\document-sheet.tsx:101:10 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━
+
+  ! This variable myAccess is unused.
+  
+     99 │   const [logs, setLogs] = useState<any[]>([]);
+    100 │   const [logsLoading, setLogsLoading] = useState(false);
+  > 101 │   const [myAccess, setMyAccess] = useState<{
+        │          ^^^^^^^^
+    102 │     level: "none" | "view" | "edit" | "manage";
+    103 │     isOwner: boolean;
+  
+  i Unused variables are often the result of an incomplete refactoring, typos, or other sources of bugs.
+  
+  i Unsafe fix: If this is intentional, prepend myAccess with an underscore.
+  
+     99  99 │     const [logs, setLogs] = useState<any[]>([]);
+    100 100 │     const [logsLoading, setLogsLoading] = useState(false);
+    101     │ - ··const·[myAccess,·setMyAccess]·=·useState<{
+        101 │ + ··const·[_myAccess,·setMyAccess]·=·useState<{
+    102 102 │       level: "none" | "view" | "edit" | "manage";
+    103 103 │       isOwner: boolean;
+  
+
+src\components\documents\document-sheet.tsx:798:31 lint/suspicious/noArrayIndexKey ━━━━━━━━━━━━━━━━━
+
+  ! Avoid using the index of an array as key property in an element.
+  
+    796 │                 <div className="relative border-l ml-2 space-y-6 pl-6 py-2">
+    797 │                   {logs.map((log: any, i) => (
+  > 798 │                     <div key={i} className="relative">
+        │                               ^
+    799 │                       <div className="absolute -left-[29px] top-1 h-3 w-3 rounded-full border bg-background" />
+    800 │                       <div className="text-sm">
+  
+  i This is the source of the key value.
+  
+    795 │               ) : (
+    796 │                 <div className="relative border-l ml-2 space-y-6 pl-6 py-2">
+  > 797 │                   {logs.map((log: any, i) => (
+        │                                        ^
+    798 │                     <div key={i} className="relative">
+    799 │                       <div className="absolute -left-[29px] top-1 h-3 w-3 rounded-full border bg-background" />
+  
+  i The order of the items may change, and this also affects performances and component state.
+  
+  i Check the React documentation. 
+  
+
+src\components\finance\expenses-table.tsx:30:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! This import is unused.
+  
+    28 │   PaginationPrevious,
+    29 │ } from "@/components/ui/pagination";
+  > 30 │ import { Separator } from "@/components/ui/separator";
+       │        ^^^^^^^^^^^^^
+    31 │ import { ExpenseFormDialog } from "./expense-form-dialog";
+    32 │ import { Badge } from "@/components/ui/badge";
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+     28  28 │     PaginationPrevious,
+     29  29 │   } from "@/components/ui/pagination";
+     30     │ - import·{·Separator·}·from·"@/components/ui/separator";
+     31  30 │   import { ExpenseFormDialog } from "./expense-form-dialog";
+     32  31 │   import { Badge } from "@/components/ui/badge";
+  
+
+src\components\finance\finance-sidebar.tsx:11:3 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! Several of these imports are unused.
+  
+     9 │   Landmark,
+    10 │   History,
+  > 11 │   ChevronLeft,
+       │   ^^^^^^^^^^^^
+  > 12 │   ChevronRight,
+       │   ^^^^^^^^^^^^
+    13 │ } from "lucide-react";
+    14 │ import { cn } from "@/lib/utils";
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+      9   9 │     Landmark,
+     10  10 │     History,
+     11     │ - ··ChevronLeft,
+     12     │ - ··ChevronRight,
+     13  11 │   } from "lucide-react";
+     14  12 │   import { cn } from "@/lib/utils";
+  
+
+src\components\finance\finance-sidebar.tsx:15:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! This import is unused.
+  
+    13 │ } from "lucide-react";
+    14 │ import { cn } from "@/lib/utils";
+  > 15 │ import { Button } from "@/components/ui/button";
+       │        ^^^^^^^^^^
+    16 │ import { Separator } from "@/components/ui/separator";
+    17 │ import {
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+     13  13 │   } from "lucide-react";
+     14  14 │   import { cn } from "@/lib/utils";
+     15     │ - import·{·Button·}·from·"@/components/ui/button";
+     16  15 │   import { Separator } from "@/components/ui/separator";
+     17  16 │   import {
+  
+
+src\components\finance\finance-sidebar.tsx:16:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! This import is unused.
+  
+    14 │ import { cn } from "@/lib/utils";
+    15 │ import { Button } from "@/components/ui/button";
+  > 16 │ import { Separator } from "@/components/ui/separator";
+       │        ^^^^^^^^^^^^^
+    17 │ import {
+    18 │   Tooltip,
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+     14  14 │   import { cn } from "@/lib/utils";
+     15  15 │   import { Button } from "@/components/ui/button";
+     16     │ - import·{·Separator·}·from·"@/components/ui/separator";
+     17  16 │   import {
+     18  17 │     Tooltip,
+  
+
+src\components\finance\finance-sidebar.tsx:77:31 lint/suspicious/noArrayIndexKey ━━━━━━━━━━━━━━━━━━━
+
+  ! Avoid using the index of an array as key property in an element.
+  
+    75 │             if (isCollapsed) {
+    76 │               return (
+  > 77 │                 <Tooltip key={index}>
+       │                               ^^^^^
+    78 │                   <TooltipTrigger asChild>
+    79 │                     <Link
+  
+  i This is the source of the key value.
+  
+    68 │         </div>
+    69 │         <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
+  > 70 │           {links.map((link, index) => {
+       │                             ^^^^^
+    71 │             const isActive = link.exact
+    72 │               ? pathname === link.href
+  
+  i The order of the items may change, and this also affects performances and component state.
+  
+  i Check the React documentation. 
+  
+
+src\app\(dashboard)\mail\layout.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      4   4 │   import { useEffect, useMemo, useState } from "react";
+      5   5 │   import { usePathname, useRouter, useSearchParams } from "next/navigation";
+      6     │ - import·{
+      7     │ - ··RefreshCw,
+      8     │ - ··ChevronRight,
+      9     │ - ··ChevronLeft,
+     10     │ - ··Menu,
+     11     │ - }·from·"lucide-react";
+          6 │ + import·{·RefreshCw,·ChevronRight,·ChevronLeft,·Menu·}·from·"lucide-react";
+     12   7 │   import { Button } from "@/components/ui/button";
+     13   8 │   import { MailSearch } from "@/components/mail/mail-search";
+  
+
+src\components\documents\document-sheet.tsx:721:25 lint/a11y/useSemanticElements ━━━━━━━━━━━━━━━━━━━
+
+  × The elements with this role can be changed to the following elements:
+    <button>
+  
+    719 │                         key={s.id}
+    720 │                         className="flex items-center justify-between py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
+  > 721 │                         role="button"
+        │                         ^^^^^^^^^^^^^
+    722 │                         tabIndex={0}
+    723 │                         onKeyDown={(e) => {
+  
+  i For examples and more information, see WAI-ARIA Roles
+  
+
+src\components\documents\document-sheet.tsx:169:3 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook does not specify its dependency on loadMyAccess.
+  
+    167 │   }
+    168 │ 
+  > 169 │   useEffect(() => {
+        │   ^^^^^^^^^
+    170 │     loadMyAccess();
+    171 │   }, [doc.id]);
+  
+  i This dependency is being used here, but is not specified in the hook dependency list.
+  
+    169 │   useEffect(() => {
+  > 170 │     loadMyAccess();
+        │     ^^^^^^^^^^^^
+    171 │   }, [doc.id]);
+    172 │ 
+  
+  i Unsafe fix: Add the missing dependency to the list.
+  
+    171 │ ··},·[doc.id,·loadMyAccess]);
+        │             ++++++++++++++   
+
+src\components\documents\document-sheet.tsx:169:3 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook specifies more dependencies than necessary: doc.id
+  
+    167 │   }
+    168 │ 
+  > 169 │   useEffect(() => {
+        │   ^^^^^^^^^
+    170 │     loadMyAccess();
+    171 │   }, [doc.id]);
+  
+  i This dependency can be removed from the list.
+  
+    169 │   useEffect(() => {
+    170 │     loadMyAccess();
+  > 171 │   }, [doc.id]);
+        │       ^^^^^^
+    172 │ 
+    173 │   async function loadShares() {
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    171 │ ··},·[doc.id]);
+        │       ------   
+
+src\components\documents\document-sheet.tsx:231:3 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook does not specify its dependency on loadComments.
+  
+    229 │   }, [shareEmail]);
+    230 │ 
+  > 231 │   useEffect(() => {
+        │   ^^^^^^^^^
+    232 │     if (activeTab === "comments") loadComments();
+    233 │     if (activeTab === "versions") loadVersions();
+  
+  i This dependency is being used here, but is not specified in the hook dependency list.
+  
+    231 │   useEffect(() => {
+  > 232 │     if (activeTab === "comments") loadComments();
+        │                                   ^^^^^^^^^^^^
+    233 │     if (activeTab === "versions") loadVersions();
+    234 │     if (activeTab === "history") loadLogs();
+  
+  i Unsafe fix: Add the missing dependency to the list.
+  
+    236 │ ··},·[activeTab,·doc.id,·loadComments]);
+        │                        ++++++++++++++   
+
+src\components\documents\document-sheet.tsx:231:3 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook does not specify its dependency on loadShares.
+  
+    229 │   }, [shareEmail]);
+    230 │ 
+  > 231 │   useEffect(() => {
+        │   ^^^^^^^^^
+    232 │     if (activeTab === "comments") loadComments();
+    233 │     if (activeTab === "versions") loadVersions();
+  
+  i This dependency is being used here, but is not specified in the hook dependency list.
+  
+    233 │     if (activeTab === "versions") loadVersions();
+    234 │     if (activeTab === "history") loadLogs();
+  > 235 │     if (activeTab === "sharing") loadShares();
+        │                                  ^^^^^^^^^^
+    236 │   }, [activeTab, doc.id]);
+    237 │ 
+  
+  i Unsafe fix: Add the missing dependency to the list.
+  
+    236 │ ··},·[activeTab,·doc.id,·loadShares]);
+        │                        ++++++++++++   
+
+src\components\documents\document-sheet.tsx:231:3 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook specifies more dependencies than necessary: doc.id
+  
+    229 │   }, [shareEmail]);
+    230 │ 
+  > 231 │   useEffect(() => {
+        │   ^^^^^^^^^
+    232 │     if (activeTab === "comments") loadComments();
+    233 │     if (activeTab === "versions") loadVersions();
+  
+  i This dependency can be removed from the list.
+  
+    234 │     if (activeTab === "history") loadLogs();
+    235 │     if (activeTab === "sharing") loadShares();
+  > 236 │   }, [activeTab, doc.id]);
+        │                  ^^^^^^
+    237 │ 
+    238 │   async function handleAddComment() {
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    236 │ ··},·[activeTab,·doc.id]);
+        │                --------   
+
+src\components\documents\document-sheet.tsx:231:3 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook does not specify its dependency on loadLogs.
+  
+    229 │   }, [shareEmail]);
+    230 │ 
+  > 231 │   useEffect(() => {
+        │   ^^^^^^^^^
+    232 │     if (activeTab === "comments") loadComments();
+    233 │     if (activeTab === "versions") loadVersions();
+  
+  i This dependency is being used here, but is not specified in the hook dependency list.
+  
+    232 │     if (activeTab === "comments") loadComments();
+    233 │     if (activeTab === "versions") loadVersions();
+  > 234 │     if (activeTab === "history") loadLogs();
+        │                                  ^^^^^^^^
+    235 │     if (activeTab === "sharing") loadShares();
+    236 │   }, [activeTab, doc.id]);
+  
+  i Unsafe fix: Add the missing dependency to the list.
+  
+    236 │ ··},·[activeTab,·doc.id,·loadLogs]);
+        │                        ++++++++++   
+
+src\components\documents\document-sheet.tsx:231:3 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook does not specify its dependency on loadVersions.
+  
+    229 │   }, [shareEmail]);
+    230 │ 
+  > 231 │   useEffect(() => {
+        │   ^^^^^^^^^
+    232 │     if (activeTab === "comments") loadComments();
+    233 │     if (activeTab === "versions") loadVersions();
+  
+  i This dependency is being used here, but is not specified in the hook dependency list.
+  
+    231 │   useEffect(() => {
+    232 │     if (activeTab === "comments") loadComments();
+  > 233 │     if (activeTab === "versions") loadVersions();
+        │                                   ^^^^^^^^^^^^
+    234 │     if (activeTab === "history") loadLogs();
+    235 │     if (activeTab === "sharing") loadShares();
+  
+  i Unsafe fix: Add the missing dependency to the list.
+  
+    236 │ ··},·[activeTab,·doc.id,·loadVersions]);
+        │                        ++++++++++++++   
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 22.
+Checked 457 files in 2s. No fixes applied.
+Found 16 errors.
+Found 25 warnings.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

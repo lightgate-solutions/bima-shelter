@@ -450,7 +450,7 @@ export function ReplyForwardEmail({
                   <FormControl>
                     <Textarea
                       placeholder="Write your message..."
-                      className="min-h-[300px] resize-none font-mono text-sm"
+                      className="min-h-[300px] resize-none"
                       {...field}
                     />
                   </FormControl>

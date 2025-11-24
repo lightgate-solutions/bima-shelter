@@ -397,7 +397,7 @@ export function ComposeEmail({
                   <FormControl>
                     <Textarea
                       placeholder="Write your message..."
-                      className="min-h-[200px] resize-none"
+                      className="min-h-[300px] resize-none"
                       {...field}
                     />
                   </FormControl>

@@ -233,7 +233,7 @@ export function AppSidebar({
     };
   }, []);
 
-  const navItems = useMemo(() => {
+  const groupedItems = useMemo(() => {
     const base = data.navMain.filter((i) => i.title !== "Task/Performance");
     const taskItem = {
       title: "Task/Performance",
@@ -260,11 +260,11 @@ export function AppSidebar({
         : [{ title: "View News", url: "/news" }],
     };
 
-    const items = [...base, taskItem, newsItem];
+    const allItems = [...base, taskItem, newsItem];
 
     // Only show Data Export to admins
     if (isAdmin) {
-      items.push({
+      allItems.push({
         title: "Data Export",
         url: "/logs",
         icon: Logs,
@@ -272,14 +272,37 @@ export function AppSidebar({
       });
     }
 
-    items.push({
+    allItems.push({
       title: "Report a Bug",
       url: "/bug",
       icon: Bug,
       isActive: false,
     });
 
-    return items;
+    const groups = {
+      overview: [] as typeof allItems,
+      modules: [] as typeof allItems,
+      management: [] as typeof allItems,
+      system: [] as typeof allItems,
+    };
+
+    allItems.forEach((item) => {
+      if (item.title === "Dashboard") {
+        groups.overview.push(item);
+      } else if (
+        ["Documents", "Mail", "Projects", "Task/Performance"].includes(
+          item.title,
+        )
+      ) {
+        groups.modules.push(item);
+      } else if (["Finance", "Hr", "Payroll"].includes(item.title)) {
+        groups.management.push(item);
+      } else {
+        groups.system.push(item);
+      }
+    });
+
+    return groups;
   }, [isManager, isHrOrAdmin, isAdmin]);
 
   return (
@@ -288,7 +311,14 @@ export function AppSidebar({
         <TeamSwitcher teams={data.org} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navItems} unreadCount={unreadCount} />
+        <NavMain items={groupedItems.overview} />
+        <NavMain items={groupedItems.modules} label="Modules" />
+        <NavMain items={groupedItems.management} label="Management" />
+        <NavMain
+          items={groupedItems.system}
+          label="System"
+          unreadCount={unreadCount}
+        />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

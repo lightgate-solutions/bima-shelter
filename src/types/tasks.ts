@@ -13,7 +13,8 @@ export interface GetTasksOptions {
     | "In Progress"
     | "Technical Review"
     | "Paused"
-    | "Completed";
+    | "Completed"
+    | "Pending";
   priority?: "Low" | "Medium" | "High" | "Urgent";
   dueDateFrom?: Date;
 }
