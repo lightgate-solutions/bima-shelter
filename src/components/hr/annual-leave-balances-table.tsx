@@ -28,7 +28,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { Edit, Trash2, Settings } from "lucide-react";
+import { Edit, Trash2, Settings, Plus, User } from "lucide-react";
 import { toast } from "sonner";
 import AnnualLeaveSettingsDialog from "./annual-leave-settings-dialog";
 import {
@@ -39,6 +39,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 
 export default function AnnualLeaveBalancesTable() {
   const [selectedSetting, setSelectedSetting] = useState<any | null>(null);
@@ -73,22 +75,34 @@ export default function AnnualLeaveBalancesTable() {
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / limit);
 
+  const _getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (isLoading) {
     return (
-      <div className="p-6 text-center text-muted-foreground">
-        Loading annual leave balances...
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-8">
       {/* Global Annual Leave Settings */}
-      <Card className="p-4 shadow-sm">
-        <CardHeader>
+      <Card className="overflow-hidden border-none shadow-md bg-gradient-to-br from-card to-muted/20">
+        <CardHeader className="border-b bg-muted/30 pb-4">
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl">Annual Leave Settings</CardTitle>
+            <div className="space-y-1">
+              <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                Annual Leave Settings
+              </CardTitle>
               <CardDescription>
                 Set the global annual leave allocation for all employees
               </CardDescription>
@@ -98,23 +112,31 @@ export default function AnnualLeaveBalancesTable() {
                 setSelectedSetting(null);
                 setShowSettingsDialog(true);
               }}
+              className="shadow-sm transition-all hover:shadow-md"
             >
-              <Settings className="mr-2 h-4 w-4" />
-              Set Annual Leave Allocation
+              <Plus className="mr-2 h-4 w-4" />
+              Set Allocation
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {settings.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">
-              No annual leave settings configured. Click the button above to set
-              the allocation.
+            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+              <Settings className="h-12 w-12 mb-4 opacity-20" />
+              <p>No annual leave settings configured.</p>
+              <Button
+                variant="link"
+                onClick={() => setShowSettingsDialog(true)}
+                className="mt-2"
+              >
+                Set the allocation now
+              </Button>
             </div>
           ) : (
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead>Year</TableHead>
+                  <TableHead className="w-[100px]">Year</TableHead>
                   <TableHead>Allocated Days</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -122,18 +144,26 @@ export default function AnnualLeaveBalancesTable() {
               </TableHeader>
               <TableBody>
                 {settings.map((setting: any) => (
-                  <TableRow key={setting.id}>
-                    <TableCell className="font-medium">
+                  <TableRow
+                    key={setting.id}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
+                    <TableCell className="font-bold text-primary">
                       {setting.year}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">
+                      <Badge
+                        variant="secondary"
+                        className="font-mono text-sm px-3 py-1"
+                      >
                         {setting.allocatedDays} days
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {setting.description || (
-                        <span className="text-muted-foreground">
+                      {setting.description ? (
+                        <span className="text-sm">{setting.description}</span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">
                           No description
                         </span>
                       )}
@@ -141,8 +171,9 @@ export default function AnnualLeaveBalancesTable() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
-                          size="sm"
-                          variant="outline"
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 hover:bg-background hover:text-primary transition-colors"
                           onClick={() => {
                             setSelectedSetting(setting);
                             setShowSettingsDialog(true);
@@ -151,8 +182,9 @@ export default function AnnualLeaveBalancesTable() {
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
-                          size="sm"
-                          variant="outline"
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 hover:bg-background hover:text-destructive transition-colors"
                           onClick={async () => {
                             if (
                               !confirm(
@@ -206,85 +238,149 @@ export default function AnnualLeaveBalancesTable() {
       </Card>
 
       {/* Employee Balances */}
-      <Card className="p-4 shadow-sm">
-        <CardHeader>
-          <div>
-            <CardTitle className="text-xl">
-              Employee Annual Leave Balances
-            </CardTitle>
-            <CardDescription>
-              View annual leave balances for all employees
-            </CardDescription>
+      <Card className="overflow-hidden border-none shadow-md">
+        <CardHeader className="border-b bg-card pb-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                Employee Annual Leave Balances
+              </CardTitle>
+              <CardDescription>
+                View annual leave balances for all employees
+              </CardDescription>
+            </div>
+            {total > 0 && (
+              <Badge variant="outline" className="px-3 py-1">
+                Total Employees: {total}
+              </Badge>
+            )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {balances.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">
-              No annual leave balances found.
+            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+              <User className="h-12 w-12 mb-4 opacity-20" />
+              <p>No annual leave balances found.</p>
             </div>
           ) : (
             <>
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-muted/50">
                   <TableRow>
-                    <TableHead>Employee</TableHead>
+                    <TableHead className="w-[300px]">Employee</TableHead>
                     <TableHead>Year</TableHead>
-                    <TableHead>Total Days</TableHead>
-                    <TableHead>Used Days</TableHead>
-                    <TableHead>Remaining Days</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Usage Progress</TableHead>
+                    <TableHead className="text-right">Remaining</TableHead>
+                    <TableHead className="text-right">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {balances.map((balance: any) => (
-                    <TableRow key={balance.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{balance.employeeName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {balance.employeeEmail}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{balance.year}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {balance.totalDays} days
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{balance.usedDays} days</TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            balance.remainingDays < 0
-                              ? "bg-red-500"
-                              : balance.remainingDays < 5
-                                ? "bg-yellow-500"
-                                : "bg-green-500"
-                          }
-                        >
-                          {balance.remainingDays} days
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="text-sm text-muted-foreground">
-                          Auto-calculated
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {balances.map((balance: any) => {
+                    const percentageUsed = Math.min(
+                      100,
+                      Math.round(
+                        (balance.usedDays / balance.totalDays) * 100,
+                      ) || 0,
+                    );
+
+                    return (
+                      <TableRow
+                        key={balance.id}
+                        className="hover:bg-muted/30 transition-colors group"
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border-2 border-background shadow-sm group-hover:border-primary/20 transition-colors">
+                              <AvatarImage
+                                src={balance.employeeAvatar}
+                                alt={balance.employeeName}
+                              />
+                              <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                                {_getInitials(
+                                  balance.employeeName || "Unknown",
+                                )}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-sm">
+                                {balance.employeeName}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {balance.employeeEmail}
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium text-muted-foreground">
+                          {balance.year}
+                        </TableCell>
+                        <TableCell className="w-[300px]">
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">
+                                {balance.usedDays} used
+                              </span>
+                              <span className="font-medium">
+                                {balance.totalDays} total
+                              </span>
+                            </div>
+                            <Progress
+                              value={percentageUsed}
+                              className="h-2"
+                              indicatorClassName={
+                                percentageUsed > 80
+                                  ? "bg-red-500"
+                                  : percentageUsed > 50
+                                    ? "bg-yellow-500"
+                                    : "bg-green-500"
+                              }
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex flex-col items-end gap-1">
+                            <span
+                              className={`text-lg font-bold ${
+                                balance.remainingDays < 5
+                                  ? "text-red-600"
+                                  : balance.remainingDays < 10
+                                    ? "text-yellow-600"
+                                    : "text-green-600"
+                              }`}
+                            >
+                              {balance.remainingDays}
+                            </span>
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                              Days Left
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant="secondary"
+                            className="bg-muted text-muted-foreground hover:bg-muted"
+                          >
+                            Auto-calculated
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
 
               {totalPages > 1 && (
-                <div className="mt-4">
+                <div className="border-t p-4 bg-muted/10">
                   <Pagination>
                     <PaginationContent>
                       <PaginationItem>
                         <PaginationPrevious
                           onClick={() => setPage((p) => Math.max(1, p - 1))}
                           className={
-                            page === 1 ? "pointer-events-none opacity-50" : ""
+                            page === 1
+                              ? "pointer-events-none opacity-50"
+                              : "cursor-pointer"
                           }
                         />
                       </PaginationItem>
@@ -299,13 +395,16 @@ export default function AnnualLeaveBalancesTable() {
                           <div key={p} className="flex items-center">
                             {idx > 0 && arr[idx - 1] !== p - 1 && (
                               <PaginationItem>
-                                <span className="px-2">...</span>
+                                <span className="px-2 text-muted-foreground">
+                                  ...
+                                </span>
                               </PaginationItem>
                             )}
                             <PaginationItem>
                               <PaginationLink
                                 onClick={() => setPage(p)}
                                 isActive={p === page}
+                                className="cursor-pointer"
                               >
                                 {p}
                               </PaginationLink>
@@ -320,7 +419,7 @@ export default function AnnualLeaveBalancesTable() {
                           className={
                             page === totalPages
                               ? "pointer-events-none opacity-50"
-                              : ""
+                              : "cursor-pointer"
                           }
                         />
                       </PaginationItem>
