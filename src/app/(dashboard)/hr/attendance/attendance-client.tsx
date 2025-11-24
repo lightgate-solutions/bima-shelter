@@ -90,7 +90,7 @@ export default function AttendanceClient({
     number | null
   >(null);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [page, setPage] = useState(1);
+  const [page, _setPage] = useState(1);
 
   // State for collapsible sections - default all open
   const [openDays, setOpenDays] = useState<Record<string, boolean>>({

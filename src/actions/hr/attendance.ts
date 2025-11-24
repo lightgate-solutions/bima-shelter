@@ -201,11 +201,7 @@ export async function rejectAttendance(attendanceId: number, reason: string) {
 
     // Check permissions
     let isAuthorized = false;
-    if (
-      authData.role === "admin" ||
-      authData.role === "hr" ||
-      authData.employee.department === "HR"
-    ) {
+    if (authData.role === "admin" || authData.employee.department === "hr") {
       isAuthorized = true;
     } else {
       // Check if manager

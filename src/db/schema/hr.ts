@@ -249,3 +249,10 @@ export const employeeRelations = relations(employees, ({ one, many }) => ({
   }),
   attendance: many(attendance),
 }));
+
+export const attendanceRelations = relations(attendance, ({ one }) => ({
+  employee: one(employees, {
+    fields: [attendance.employeeId],
+    references: [employees.id],
+  }),
+}));
