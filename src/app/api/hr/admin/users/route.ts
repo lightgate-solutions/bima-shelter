@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const page = Number(searchParams.get("page") || "1");
+    const limit = Number(searchParams.get("limit") || "10");
     const offset = (page - 1) * limit;
     const sortBy = searchParams.get("sortBy") || undefined;
     let sortDirection = searchParams.get("sortDirection") || undefined;

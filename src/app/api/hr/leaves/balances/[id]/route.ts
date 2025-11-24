@@ -17,7 +17,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const balanceId = parseInt(id);
+    const balanceId = Number(id);
     if (Number.isNaN(balanceId)) {
       return NextResponse.json(
         { error: "Invalid balance ID" },

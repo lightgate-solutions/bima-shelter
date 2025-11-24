@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const employeeId = searchParams.get("employeeId");
     const yearParam = searchParams.get("year");
-    const year = yearParam ? parseInt(yearParam) : undefined;
+    const year = yearParam ? Number(yearParam) : undefined;
 
     if (!employeeId) {
       return NextResponse.json(
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const balances = await getLeaveBalance(parseInt(employeeId), year);
+    const balances = await getLeaveBalance(Number(employeeId), year);
 
     return NextResponse.json({ balances });
   } catch (error) {

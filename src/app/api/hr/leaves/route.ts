@@ -14,16 +14,16 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const employeeIdParam = searchParams.get("employeeId");
-    const employeeId = employeeIdParam ? parseInt(employeeIdParam) : undefined;
+    const employeeId = employeeIdParam ? Number(employeeIdParam) : undefined;
     const status = searchParams.get("status") || undefined;
     const leaveType = searchParams.get("leaveType") || undefined;
     const startDate = searchParams.get("startDate") || undefined;
     const endDate = searchParams.get("endDate") || undefined;
     const search = searchParams.get("search") || undefined;
     const pageParam = searchParams.get("page");
-    const page = pageParam ? parseInt(pageParam) : 1;
+    const page = pageParam ? Number(pageParam) : 1;
     const limitParam = searchParams.get("limit");
-    const limit = limitParam ? parseInt(limitParam) : 10;
+    const limit = limitParam ? Number(limitParam) : 10;
 
     const result = await getAllLeaveApplications({
       employeeId,

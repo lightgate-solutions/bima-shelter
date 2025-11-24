@@ -15,15 +15,15 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const pageParam = searchParams.get("page");
-    const page = pageParam ? parseInt(pageParam) : 1;
+    const page = pageParam ? Number(pageParam) : 1;
     const limitParam = searchParams.get("limit");
-    const limit = limitParam ? parseInt(limitParam) : 10;
+    const limit = limitParam ? Number(limitParam) : 10;
     const offset = (page - 1) * limit;
 
     // Get current year for filtering
     const currentYear = new Date().getFullYear();
     const yearParamStr = searchParams.get("year");
-    const yearParam = yearParamStr ? parseInt(yearParamStr) : currentYear;
+    const yearParam = yearParamStr ? Number(yearParamStr) : currentYear;
 
     // Get total count for this year
     const totalResult = await db

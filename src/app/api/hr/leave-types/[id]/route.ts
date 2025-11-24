@@ -16,7 +16,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const leaveTypeId = parseInt(id);
+    const leaveTypeId = Number(id);
     if (Number.isNaN(leaveTypeId)) {
       return NextResponse.json(
         { error: "Invalid leave type ID" },
@@ -58,7 +58,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const leaveTypeId = parseInt(id);
+    const leaveTypeId = Number(id);
     if (Number.isNaN(leaveTypeId)) {
       return NextResponse.json(
         { error: "Invalid leave type ID" },

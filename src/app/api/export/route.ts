@@ -26,7 +26,7 @@ import { newsArticles } from "@/db/schema/news";
 import { user, session } from "@/db/schema/auth";
 import { companyExpenses, balanceTransactions } from "@/db/schema/finance";
 import { askHrQuestions } from "@/db/schema/ask-hr";
-import { eq, and, gte, lte, inArray, desc } from "drizzle-orm";
+import { eq, and, gte, lte, inArray, desc, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 type ExportDataset =
@@ -968,15 +968,15 @@ async function fetchDataset(
         .select({
           employeeName: employees.name,
           date: attendance.date,
-          time: attendance.time,
+          time: attendance.signInTime,
           signOutTime: attendance.signOutTime,
-          checkedIn: attendance.checkedIn,
-          approvedByName: approver.name,
+          checkedIn: sql<boolean>`(${attendance.signInTime} IS NOT NULL)`.as(
+            "checkedIn",
+          ),
           createdAt: attendance.createdAt,
         })
         .from(attendance)
-        .leftJoin(employees, eq(attendance.employeeId, employees.id))
-        .leftJoin(approver, eq(attendance.approvedBy, approver.id));
+        .leftJoin(employees, eq(attendance.employeeId, employees.id));
 
       const conditions = [];
       if (dateFilters.start && dateFilters.end) {

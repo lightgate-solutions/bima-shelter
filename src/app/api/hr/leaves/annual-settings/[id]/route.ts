@@ -16,7 +16,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const settingId = parseInt(id);
+    const settingId = Number(id);
     if (Number.isNaN(settingId)) {
       return NextResponse.json(
         { error: "Invalid setting ID" },

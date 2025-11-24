@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const q = searchParams.get("q") || "";
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const limit = Number(searchParams.get("limit") || "50");
 
     const where = q ? ilike(employees.name, `%${q}%`) : undefined;
 
