@@ -64,13 +64,6 @@
       "when": 1763219028695,
       "tag": "0012_clever_electro",
       "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "7",
-      "when": 1763985134643,
-      "tag": "0013_fix_attendance_timestamps",
-      "breakpoints": true
     }
   ]
 }
