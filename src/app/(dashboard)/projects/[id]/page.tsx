@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Calendar, Receipt } from "lucide-react";
 import { ProjectHeader } from "@/components/projects/project-header";
 
 type Milestone = {
