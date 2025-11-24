@@ -74,7 +74,7 @@ export function TaskCard({
             <div className="size-5 mt-0.5 shrink-0 flex items-center justify-center bg-muted rounded-sm p-1">
               <StatusIcon />
             </div>
-            <h3 className="text-sm font-medium leading-tight flex-1">
+            <h3 className="text-xs font-medium leading-tight flex-1">
               {task.title}
             </h3>
             {task.priority === "Urgent" && !isCompleted && (

@@ -133,7 +133,7 @@ export function TaskBoard({
   }
 
   return (
-    <div className="flex h-full gap-3 px-3 pt-4 pb-2 min-w-max overflow-hidden">
+    <div className="flex h-full gap-3 px-3 pt-4 pb-2 overflow-hidden">
       {statusConfig.map((status) => (
         <TaskColumn
           key={status.id}

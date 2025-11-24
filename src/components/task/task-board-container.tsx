@@ -18,7 +18,7 @@ export function TaskBoardContainer({
   const [search, setSearch] = useState("");
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden h-screen">
+    <div className="flex-1 flex flex-col overflow-hidden h-[calc(100vh-5rem)]">
       <TaskHeader
         employeeId={employeeId}
         role={role}
