@@ -12,9 +12,7 @@ export default function NotificationBell() {
   useEffect(() => {
     const getNotificationsCount = async () => {
       try {
-        const res = await axios.get("/api/notification/unread-count", {
-          timeout: 5000, // 5 second timeout
-        });
+        const res = await axios.get("/api/notification/unread-count");
         setUnreadCount(res.data.count || 0);
       } catch (err) {
         // Only log if it's not a network error (which might be temporary)
@@ -31,10 +29,6 @@ export default function NotificationBell() {
     };
 
     getNotificationsCount();
-
-    //auto-refresh every 30s
-    const interval = setInterval(getNotificationsCount, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   return (

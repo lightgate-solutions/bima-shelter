@@ -80,55 +80,17 @@ const data = {
       title: "Finance",
       url: "/finance",
       icon: Landmark,
-      items: [
-        {
-          title: "Company Expenses",
-          url: "/finance/expenses",
-        },
-        {
-          title: "Loan Disbursement",
-          url: "/finance/loans",
-        },
-        {
-          title: "Payrun",
-          url: "/finance/payruns",
-        },
-      ],
     },
     // Task/Performance is customized per role at runtime
     {
       title: "Mail",
-      url: "/mail",
+      url: "/mail/inbox",
       icon: Mail,
-      items: [
-        {
-          title: "Inbox",
-          url: "/mail/inbox",
-        },
-        {
-          title: "Sent",
-          url: "/mail/sent",
-        },
-        {
-          title: "Archive",
-          url: "/mail/archive",
-        },
-        {
-          title: "Trash",
-          url: "/mail/trash",
-        },
-      ],
     },
     {
       title: "Projects",
       url: "/projects",
       icon: Warehouse,
-      items: [
-        {
-          title: "View All",
-          url: "/projects",
-        },
-      ],
     },
     {
       title: "Hr",
@@ -206,7 +168,6 @@ export function AppSidebar({
   useEffect(() => {
     const getNotificationsCount = async () => {
       const res = await axios.get("/api/notification/unread-count");
-      // console.log(res, "response")
       setUnreadCount(res.data.count);
     };
 
@@ -250,7 +211,6 @@ export function AppSidebar({
             { title: "Task Item", url: "/tasks" },
             { title: "To-Do", url: "/tasks/employee" },
             { title: "Task Submission", url: "/tasks/manager" },
-            { title: "History", url: "/tasks/history" },
           ]
         : [],
     };
@@ -293,7 +253,7 @@ export function AppSidebar({
     };
 
     allItems.forEach((item) => {
-      if (item.title === "Dashboard") {
+      if (["Dashboard", "Attendance"].includes(item.title)) {
         groups.overview.push(item);
       } else if (
         ["Documents", "Mail", "Projects", "Task/Performance"].includes(

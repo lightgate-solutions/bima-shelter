@@ -37,7 +37,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <NextTopLoader />
+          <NextTopLoader showSpinner={false} />
           <QueryProvider>
             <div>{children}</div>
           </QueryProvider>

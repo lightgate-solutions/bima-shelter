@@ -5,12 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet, TrendingUp, TrendingDown } from "lucide-react";
 import { BalanceUpdateDialog } from "./balance-update-dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, History } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function BalanceCard() {
-  const router = useRouter();
   const [balance, setBalance] = useState<string>("0");
   const [currency, setCurrency] = useState<string>("NGN");
   const [loading, setLoading] = useState(true);
@@ -80,20 +78,11 @@ export function BalanceCard() {
             )}
           </div>
         )}
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex flex-col items-start gap-2 justify-between mt-4">
           <p className="text-xs text-muted-foreground">
             Current available funds
           </p>
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 text-xs"
-              onClick={() => router.push("/finance/balance/history")}
-            >
-              <History className="h-3 w-3 mr-1" />
-              History
-            </Button>
             <BalanceUpdateDialog
               onCompleted={loadBalance}
               trigger={

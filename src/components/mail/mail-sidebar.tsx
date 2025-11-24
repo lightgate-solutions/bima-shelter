@@ -2,15 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Inbox,
-  Send,
-  Archive,
-  Trash2,
-  Plus,
-  Users,
-  FileText,
-} from "lucide-react";
+import { Inbox, Send, Archive, Trash2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -162,59 +154,6 @@ export function MailSidebar({
             );
           })}
         </nav>
-        <Separator />
-        <div className="mt-auto">
-          <div className="px-2 py-2">
-            {!isCollapsed && (
-              <h3 className="mb-2 px-2 text-xs font-semibold text-muted-foreground tracking-wider uppercase">
-                Labels
-              </h3>
-            )}
-            <div className="space-y-1">
-              {isCollapsed ? (
-                <>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-9 w-9">
-                        <Users className="h-4 w-4 text-blue-500" />
-                        <span className="sr-only">Personal</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Personal</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-9 w-9">
-                        <FileText className="h-4 w-4 text-orange-500" />
-                        <span className="sr-only">Work</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Work</TooltipContent>
-                  </Tooltip>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start gap-2 font-normal"
-                  >
-                    <Users className="h-4 w-4 text-blue-500" />
-                    Personal
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start gap-2 font-normal"
-                  >
-                    <FileText className="h-4 w-4 text-orange-500" />
-                    Work
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
     </TooltipProvider>
   );

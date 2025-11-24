@@ -17,6 +17,7 @@ import {
 import React from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export function NavMain({
   items,
@@ -139,7 +140,7 @@ export function NavMain({
                   isActive && "font-semibold text-primary bg-primary/10",
                 )}
               >
-                <a href={item.url} className="flex items-center">
+                <Link href={item.url} className="flex items-center">
                   {item.icon &&
                     React.createElement(item.icon, {
                       className: cn(
@@ -148,7 +149,7 @@ export function NavMain({
                       ),
                     })}
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           );

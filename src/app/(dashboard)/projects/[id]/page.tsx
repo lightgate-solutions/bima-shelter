@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { Calendar, ChevronLeft, Loader2, Receipt } from "lucide-react";
 import { ProjectHeader } from "@/components/projects/project-header";
 
 type Milestone = {
@@ -75,11 +75,13 @@ export default function ProjectDetailPage({
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(
     null,
   );
 
   const load = useCallback(async () => {
+    setLoading(true);
     const [pRes, mRes, eRes] = await Promise.all([
       fetch(`/api/projects/${projectId}`),
       fetch(`/api/projects/${projectId}/milestones`),
@@ -91,6 +93,7 @@ export default function ProjectDetailPage({
     setProject(p.project);
     setMilestones(m.milestones ?? []);
     setExpenses(e.expenses ?? []);
+    setLoading(false);
   }, [projectId]);
 
   useEffect(() => {
@@ -276,6 +279,14 @@ export default function ProjectDetailPage({
   }
 
   const [activeTab, setActiveTab] = useState("milestones");
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-white">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-2 max-w-7xl mx-auto animate-in fade-in duration-500">

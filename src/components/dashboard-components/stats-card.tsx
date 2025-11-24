@@ -69,7 +69,7 @@ export default function StatsCard({
         className,
       )}
     >
-      <CardContent className="p-6">
+      <CardContent className="p-6 max-h-20">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2 flex-1 min-w-0">
             <p className="text-sm font-bold text-gray-600 dark:text-gray-400">

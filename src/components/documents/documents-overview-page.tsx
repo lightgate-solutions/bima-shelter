@@ -18,7 +18,7 @@ export function DocumentsOverview({
   return (
     <div className="flex w-full flex-col gap-8">
       {/* Header Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-8 text-white shadow-lg">
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-8 text-white shadow-lg">
         <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-blue-100">
