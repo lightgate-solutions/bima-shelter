@@ -273,7 +273,7 @@ export function AppSidebar({
     }
 
     items.push({
-      title: "Report a Bug",
+      title: "Support/Feedback",
       url: "/bug",
       icon: Bug,
       isActive: false,
