@@ -123,6 +123,7 @@ export function ResetPasswordForm() {
                   <FieldLabel htmlFor="reset-password">Password</FieldLabel>
                   <PasswordInput
                     {...field}
+                    onChangeAction={field.onChange}
                     id="reset-password"
                     aria-invalid={fieldState.invalid}
                   />

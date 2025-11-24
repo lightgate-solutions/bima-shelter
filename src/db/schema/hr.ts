@@ -9,7 +9,6 @@ import {
   integer,
   serial,
   boolean,
-  time,
   numeric,
 } from "drizzle-orm/pg-core";
 import { tasks } from "./tasks/tasks";
@@ -47,6 +46,11 @@ export const leaveTypeEnum = pgEnum("leave_type", [
   "Bereavement",
   "Unpaid",
   "Other",
+]);
+
+export const attendanceStatusEnum = pgEnum("attendance_status", [
+  "Approved",
+  "Rejected",
 ]);
 
 export const employees = pgTable(
@@ -92,38 +96,6 @@ export const employeesDocuments = pgTable("employees_documents", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
-
-export const attendance = pgTable(
-  "attendance",
-  {
-    id: serial("id").primaryKey(),
-    employeeId: integer("employee_id")
-      .notNull()
-      .references(() => employees.id, { onDelete: "cascade" }),
-    date: date("date"),
-    time: time("time"),
-    signOutTime: time("sign_out_time"),
-    checkedIn: boolean("checked_in"),
-    approvedBy: integer("approved_by").references(() => employees.id, {
-      onDelete: "set null",
-    }),
-    signOutApproved: boolean("sign_out_approved").default(false),
-    signOutApprovedBy: integer("sign_out_approved_by").references(
-      () => employees.id,
-      { onDelete: "set null" },
-    ),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  },
-  (table) => [
-    index("attendence_employee_idx").on(table.employeeId),
-    index("attendence_approved_idx").on(table.approvedBy),
-    index("attendance_employee_date_idx").on(table.employeeId, table.date),
-    index("attendance_date_idx").on(table.date),
-    index("attendance_signout_approved_idx").on(table.signOutApproved),
-    index("attendance_signout_approved_by_idx").on(table.signOutApprovedBy),
-  ],
-);
 
 export const employeesBank = pgTable("employees_bank", {
   id: serial("id").primaryKey(),
@@ -231,6 +203,27 @@ export const leaveBalances = pgTable(
   ],
 );
 
+export const attendance = pgTable(
+  "attendance",
+  {
+    id: serial("id").primaryKey(),
+    employeeId: integer("employee_id")
+      .notNull()
+      .references(() => employees.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    signInTime: timestamp("sign_in_time"),
+    signOutTime: timestamp("sign_out_time"),
+    status: attendanceStatusEnum("status").default("Approved").notNull(),
+    rejectionReason: text("rejection_reason"),
+    rejectedBy: integer("rejected_by").references(() => employees.id),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("attendance_employee_date_idx").on(table.employeeId, table.date),
+  ],
+);
+
 export const employeeRelations = relations(employees, ({ one, many }) => ({
   manager: one(employees, {
     fields: [employees.managerId],
@@ -254,4 +247,5 @@ export const employeeRelations = relations(employees, ({ one, many }) => ({
   approvedLeaves: many(leaveApplications, {
     relationName: "approvedBy",
   }),
+  attendance: many(attendance),
 }));
