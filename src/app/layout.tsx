@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import NextTopLoader from "nextjs-toploader";
+import QueryProvider from "@/components/providers/query-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bima Shelters",
-  description: "Bima Shelters Management System",
+  title: "Bima Shelter",
+  description: "Bima Shelter Management System",
 };
 
 export default function RootLayout({
@@ -36,8 +37,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <NextTopLoader />
-          <div>{children}</div>
+          <NextTopLoader showSpinner={false} />
+          <QueryProvider>
+            <div>{children}</div>
+          </QueryProvider>
           <SonnerToaster richColors position="top-center" />
         </ThemeProvider>
       </body>

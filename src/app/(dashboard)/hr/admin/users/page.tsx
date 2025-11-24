@@ -8,7 +8,17 @@ export const metadata: Metadata = {
 
 export default function UsersPage() {
   return (
-    <div className="">
+    <div className="space-y-4">
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">User Management</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage users, roles, and permissions
+            </p>
+          </div>
+        </div>
+      </div>
       <UsersTable />
     </div>
   );

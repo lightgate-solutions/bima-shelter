@@ -112,7 +112,7 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search emails by subject, content, or sender..."
+            placeholder="Search ..."
             className="pl-9 pr-9"
           />
           {query && (

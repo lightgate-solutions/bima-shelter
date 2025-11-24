@@ -58,9 +58,11 @@ export default function Home() {
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-4xl font-bold text-balance">
-              Search Documents
-            </h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-4xl font-bold text-balance">
+                Search Documents
+              </h1>
+            </div>
           </div>
           <form
             onSubmit={(e) => onSubmit(e)}

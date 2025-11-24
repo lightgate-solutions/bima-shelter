@@ -91,12 +91,14 @@ export default async function Page({
   return (
     <div className="space-y-8">
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Archive</h1>
-          <p className="text-sm text-muted-foreground">
-            View archived folders you created and archived documents you own or
-            have access to.
-          </p>
+        <div className="flex items-start gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Archive</h1>
+            <p className="text-sm text-muted-foreground">
+              View archived folders you created and archived documents you own
+              or have access to.
+            </p>
+          </div>
         </div>
         <ViewToggle />
       </div>

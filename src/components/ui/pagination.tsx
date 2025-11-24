@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/a11y/useSemanticElements: <> */
+/** biome-ignore-all lint/a11y/useValidAnchor: <> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <> */
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -38,6 +40,7 @@ function PaginationItem({ ...props }: React.ComponentProps<"li">) {
 
 type PaginationLinkProps = {
   isActive?: boolean;
+  disabled?: boolean;
 } & Pick<React.ComponentProps<typeof Button>, "size"> &
   React.ComponentProps<"a">;
 
@@ -45,20 +48,27 @@ function PaginationLink({
   className,
   isActive,
   size = "icon",
+  disabled,
+  onClick,
   ...props
 }: PaginationLinkProps) {
   return (
     <a
       aria-current={isActive ? "page" : undefined}
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? -1 : undefined}
       data-slot="pagination-link"
       data-active={isActive}
+      data-disabled={disabled || undefined}
       className={cn(
         buttonVariants({
           variant: isActive ? "outline" : "ghost",
           size,
         }),
+        disabled && "pointer-events-none opacity-50",
         className,
       )}
+      onClick={disabled ? undefined : onClick}
       {...props}
     />
   );

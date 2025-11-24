@@ -124,7 +124,7 @@ export function MailContent({
   };
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full space-y-4">
       <div className="hidden md:grid md:h-full md:grid-cols-3">
         <div className="flex h-full flex-col border-r col-span-1 bg-background">
           <div className="sticky top-0 z-10 bg-background">

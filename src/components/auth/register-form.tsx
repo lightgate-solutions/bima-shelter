@@ -61,7 +61,7 @@ const RegisterForm = () => {
       <FormSuccess message={formState.success || ""} />
       <FormError message={formState.error || ""} />
       <div className="flex flex-col gap-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name">Name *</Label>
         <Input
           id="name"
           type="text"
@@ -74,7 +74,7 @@ const RegisterForm = () => {
         )}
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">Email *</Label>
         <Input
           id="email"
           type="email"
@@ -87,7 +87,7 @@ const RegisterForm = () => {
         )}
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">Password *</Label>
         <Controller
           name="password"
           control={control}

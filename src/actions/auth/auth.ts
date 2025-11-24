@@ -2,10 +2,12 @@
 import { db } from "@/db";
 import { documentFolders } from "@/db/schema";
 import { employees } from "@/db/schema/hr";
+import { notification_preferences } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { APIError } from "better-auth/api";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
+import { createNotification } from "../notification/notification";
 
 export async function banUser(
   userId: string,
@@ -47,6 +49,26 @@ export async function unbanUser(userId: string) {
       body: { userId },
       headers: await headers(),
     });
+
+    // Notify the user they've been unbanned
+    const employee = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.authId, userId))
+      .limit(1)
+      .then((r) => r[0]);
+
+    if (employee?.id) {
+      await createNotification({
+        user_id: employee.id,
+        title: "Account Unbanned",
+        message:
+          "Your account has been unbanned. You can now access the system again.",
+        notification_type: "message",
+        reference_id: employee.id,
+      });
+    }
+
     return {
       success: {
         reason: `User ${res.user.name} has been unbanned successful!`,
@@ -187,6 +209,7 @@ export async function createUser(data: {
           staffNumber: userData.data?.staffNumber ?? "",
           role: user.user.role ?? "user",
           isManager: data.isManager,
+          status: "active",
           department: userData.data?.department ?? "general",
           managerId: parsedManagerId,
           dateOfBirth: dobValue,
@@ -206,6 +229,14 @@ export async function createUser(data: {
         root: true,
         public: false,
         departmental: false,
+      });
+
+      // Initialize notification preferences with defaults
+      await tx.insert(notification_preferences).values({
+        user_id: emp.id,
+        email_notifications: true,
+        in_app_notifications: true,
+        notify_on_message: true,
       });
     });
     return {
@@ -239,6 +270,24 @@ export async function updateUserRole(userId: string, role: string) {
       },
       headers: await headers(),
     });
+
+    // Notify the user about their role change
+    const employee = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.authId, userId))
+      .limit(1)
+      .then((r) => r[0]);
+
+    if (employee?.id) {
+      await createNotification({
+        user_id: employee.id,
+        title: "Role Updated",
+        message: `Your account role has been changed to: ${role}`,
+        notification_type: "message",
+        reference_id: employee.id,
+      });
+    }
 
     return {
       success: { reason: "Updated users role successfully" },

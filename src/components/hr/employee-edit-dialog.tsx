@@ -83,7 +83,7 @@ export default function EmployeeEditForm({
     try {
       const res = await updateEmployee(employee.id, {
         ...values,
-        managerId: values.managerId ? parseInt(values.managerId) : null,
+        managerId: values.managerId ? Number(values.managerId) : null,
       });
 
       if (res?.error) {
@@ -113,7 +113,7 @@ export default function EmployeeEditForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Name *</FormLabel>
                   <FormControl>
                     <Input placeholder="John Doe" {...field} />
                   </FormControl>
@@ -127,7 +127,7 @@ export default function EmployeeEditForm({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email *</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -147,7 +147,7 @@ export default function EmployeeEditForm({
               name="staffNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Staff ID</FormLabel>
+                  <FormLabel>Staff ID *</FormLabel>
                   <FormControl>
                     <Input type="text" placeholder="STF-122" {...field} />
                   </FormControl>
@@ -162,9 +162,20 @@ export default function EmployeeEditForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Department</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Engineering" {...field} />
-                  </FormControl>
+                  <Select
+                    value={field.value || ""}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="hr">HR</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="general">General</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

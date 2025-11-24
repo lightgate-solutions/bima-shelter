@@ -96,7 +96,7 @@ export async function createFolder(data: CreateFoldersProps, pathname: string) {
         name: data.name.trim().toLowerCase(),
         parentId: parentIdToUse,
         public: data.public,
-        root: parentIdToUse ? false : true,
+        root: parentIdToUse === null,
         departmental: data.departmental,
         department: user.department,
         createdBy: user.id,

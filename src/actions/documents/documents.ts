@@ -18,6 +18,7 @@ import {
 import { DrizzleQueryError, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { upstashIndex } from "@/lib/upstash-client";
+import { createNotification } from "../notification/notification";
 
 export async function getActiveFolderDocuments(
   folderId: number,
@@ -209,7 +210,7 @@ export async function deleteDocumentAction(
   const user = await getUser();
   if (!user) throw new Error("Unauthorized");
   try {
-    await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const doc = await tx.query.document.findFirst({
         where: eq(document.id, documentId),
       });
@@ -218,6 +219,11 @@ export async function deleteDocumentAction(
       if (doc.uploadedBy !== user.id && user.role !== "admin") {
         throw new Error("You don't have permission to delete this document");
       }
+
+      const accessUsers = await tx
+        .select({ userId: documentAccess.userId })
+        .from(documentAccess)
+        .where(eq(documentAccess.documentId, documentId));
 
       await Promise.all([
         tx
@@ -231,9 +237,36 @@ export async function deleteDocumentAction(
       ]);
 
       await tx.delete(document).where(eq(document.id, documentId));
+
+      const recipients = accessUsers
+        .map((row) => row.userId)
+        .filter((id): id is number => !!id);
+      if (doc.uploadedBy) recipients.push(doc.uploadedBy);
+
+      return {
+        docTitle: doc.title,
+        docId: doc.id,
+        recipients,
+      };
     });
 
     revalidatePath(pathname);
+
+    if (result) {
+      const uniqueRecipients = new Set<number>(result.recipients);
+      uniqueRecipients.delete(user.id);
+
+      for (const recipientId of uniqueRecipients) {
+        await createNotification({
+          user_id: recipientId,
+          title: "Document Deleted",
+          message: `${user.name} removed "${result.docTitle}"`,
+          notification_type: "message",
+          reference_id: result.docId,
+        });
+      }
+    }
+
     return {
       success: { reason: "Document deleted successfully" },
       error: null,
@@ -285,10 +318,33 @@ export async function archiveDocumentAction(
       };
     }
 
+    const accessRows = await db
+      .select({ userId: documentAccess.userId })
+      .from(documentAccess)
+      .where(eq(documentAccess.documentId, documentId));
+
     await db
       .update(document)
       .set({ status: "archived", updatedAt: new Date() })
       .where(eq(document.id, documentId));
+
+    const recipients = accessRows
+      .map((row) => row.userId)
+      .filter((id): id is number => !!id);
+    if (doc.uploadedBy) recipients.push(doc.uploadedBy);
+
+    const uniqueRecipients = new Set<number>(recipients);
+    uniqueRecipients.delete(user.id);
+
+    for (const recipientId of uniqueRecipients) {
+      await createNotification({
+        user_id: recipientId,
+        title: "Document Archived",
+        message: `${user.name} archived "${doc.title}"`,
+        notification_type: "message",
+        reference_id: doc.id,
+      });
+    }
 
     revalidatePath(pathname);
     return {
@@ -395,7 +451,7 @@ export async function addDocumentComment(documentId: number, content: string) {
   }
 
   try {
-    const inserted = await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const doc = await tx.query.document.findFirst({
         where: eq(document.id, documentId),
       });
@@ -438,10 +494,40 @@ export async function addDocumentComment(documentId: number, content: string) {
         details: "added a comment",
       });
 
-      return commentRow;
+      const explicitUsers = accessRows
+        .map((row) => row.userId)
+        .filter((id): id is number => !!id);
+
+      return {
+        commentRow,
+        docTitle: doc.title,
+        recipients: explicitUsers,
+        uploaderId: doc.uploadedBy,
+      };
     });
 
-    return { success: inserted, error: null };
+    const notificationRecipients = new Set<number>(result.recipients ?? []);
+    if (result.uploaderId) notificationRecipients.add(result.uploaderId);
+    notificationRecipients.delete(user.id);
+
+    if (notificationRecipients.size > 0) {
+      const preview =
+        content.trim().length > 120
+          ? `${content.trim().substring(0, 120)}...`
+          : content.trim();
+
+      for (const recipientId of notificationRecipients) {
+        await createNotification({
+          user_id: recipientId,
+          title: "New Document Comment",
+          message: `${user.name} commented on "${result.docTitle}" • ${preview}`,
+          notification_type: "message",
+          reference_id: documentId,
+        });
+      }
+    }
+
+    return { success: result.commentRow, error: null };
   } catch (err) {
     if (err instanceof DrizzleQueryError) {
       return {
@@ -1173,6 +1259,7 @@ export async function addDocumentShare(
         notFound: false as const,
         userId: target.id,
         email: target.email,
+        documentName: doc.title,
       };
     });
 
@@ -1182,6 +1269,15 @@ export async function addDocumentShare(
         error: { reason: `No employee found with email ${result.email}` },
       };
     }
+
+    // Notify the user that a document was shared with them
+    await createNotification({
+      user_id: result.userId,
+      title: "Document Shared With You",
+      message: `${user.name} shared "${result.documentName}" with ${accessLevel} access`,
+      notification_type: "message",
+      reference_id: documentId,
+    });
 
     return {
       success: {
@@ -1219,7 +1315,7 @@ export async function removeDocumentShare(
   if (!user) throw new Error("User not logged in");
 
   try {
-    await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const doc = await tx.query.document.findFirst({
         where: eq(document.id, documentId),
       });
@@ -1265,6 +1361,17 @@ export async function removeDocumentShare(
         details: `revoked access from user ${targetUserId}`,
         documentVersionId: doc.currentVersionId,
       });
+
+      return { documentName: doc.title };
+    });
+
+    // Notify the user that their access was revoked
+    await createNotification({
+      user_id: targetUserId,
+      title: "Document Access Revoked",
+      message: `Your access to "${result.documentName}" has been revoked`,
+      notification_type: "message",
+      reference_id: documentId,
     });
 
     return { success: { reason: "Share removed" }, error: null };

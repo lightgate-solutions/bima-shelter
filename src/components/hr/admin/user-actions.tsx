@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Ban, MoreHorizontal, Trash2, Shield, LogOut } from "lucide-react";
+import { Ban, MoreHorizontal, Trash2, Shield, LogOut, Key } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,8 @@ import { UserDeleteDialog } from "./user-delete-dialog";
 import { UserRevokeSessionsDialog } from "./user-revoke-sessions-dialog";
 import { UserRoleDialog } from "./user-role-dialog";
 import type { UserWithDetails } from "@/actions/auth/users";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 interface UserActionsProps {
   user: UserWithDetails;
@@ -63,6 +65,33 @@ export function UserActions({
           >
             <Shield className="mr-2 h-4 w-4" />
             <span>Update Role</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-xs"
+            onClick={async () => {
+              setDropdownOpen(false);
+
+              await authClient.requestPasswordReset(
+                {
+                  email: user.email,
+                  redirectTo: "/auth/reset-password",
+                },
+                {
+                  onError: (err) => {
+                    toast.error(
+                      err.error.message ||
+                        "Failed to send password reset email",
+                    );
+                  },
+                  onSuccess: () => {
+                    toast.success("Password reset email sent");
+                  },
+                },
+              );
+            }}
+          >
+            <Key className="mr-2 h-4 w-4" />
+            <span>Reset Password</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {user.banned ? (

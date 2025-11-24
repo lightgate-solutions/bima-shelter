@@ -4,11 +4,13 @@
 "use server";
 
 import { db } from "@/db";
-import { employees } from "@/db/schema";
+import { employees, employmentHistory, user } from "@/db/schema";
 import { DrizzleQueryError, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireAuth, requireHROrAdmin } from "@/actions/auth/dal";
 
 export async function getAllEmployees() {
+  await requireAuth();
   return await db
     .select({
       id: employees.id,
@@ -20,8 +22,25 @@ export async function getAllEmployees() {
       phone: employees.phone,
       dateOfBirth: employees.dateOfBirth,
       staffNumber: employees.staffNumber,
+      status: employees.status,
+      maritalStatus: employees.maritalStatus,
+      startDate: employmentHistory.startDate,
     })
-    .from(employees);
+    .from(employees)
+    .leftJoin(
+      employmentHistory,
+      eq(employees.id, employmentHistory.employeeId),
+    );
+}
+
+export async function getEmployee(employeeId: number) {
+  await requireAuth();
+  return await db
+    .select()
+    .from(employees)
+    .where(eq(employees.id, employeeId))
+    .limit(1)
+    .then((res) => res[0]);
 }
 
 export async function updateEmployee(
@@ -39,19 +58,27 @@ export async function updateEmployee(
     employmentType: string;
   }>,
 ) {
+  await requireHROrAdmin();
   const processedUpdates: any = { ...updates, updatedAt: new Date() };
 
-  // Convert empty string fields to null
   for (const key in processedUpdates) {
     if (processedUpdates[key] === "") {
       processedUpdates[key] = null;
     }
   }
   try {
-    await db
-      .update(employees)
-      .set(processedUpdates)
-      .where(eq(employees.id, employeeId));
+    await db.transaction(async (tx) => {
+      const [emp] = await tx
+        .update(employees)
+        .set(processedUpdates)
+        .where(eq(employees.id, employeeId))
+        .returning();
+
+      await tx
+        .update(user)
+        .set({ name: updates.name, email: updates.email })
+        .where(eq(user.id, emp.authId));
+    });
 
     revalidatePath("/hr/employees");
     return {

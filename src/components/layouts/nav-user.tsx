@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  BadgeCheck,
   Bell,
   ChevronsUpDown,
   LogOut,
   Moon,
+  Settings,
   Sun,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,10 +27,12 @@ import {
 import type { User } from "better-auth";
 import { SignOut } from "@/actions/auth/login";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 
 export function NavUser({ user }: { user: User }) {
   const { theme, setTheme, systemTheme } = useTheme();
   const { isMobile } = useSidebar();
+  const router = useRouter();
 
   return (
     <SidebarMenu>
@@ -89,24 +91,26 @@ export function NavUser({ user }: { user: User }) {
               >
                 {theme === "dark" ||
                 (theme === "system" && systemTheme === "dark") ? (
-                  <>
+                  <div className="flex gap-2">
                     <Sun />
                     Light mode
-                  </>
+                  </div>
                 ) : (
-                  <>
+                  <div className="flex gap-2">
                     <Moon />
                     Dark mode
-                  </>
+                  </div>
                 )}
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => router.push("/notification-preferences")}
+              >
                 <Bell />
-                Notifications
+                Notification Preferences
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/settings")}>
+                <Settings />
+                Settings
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
