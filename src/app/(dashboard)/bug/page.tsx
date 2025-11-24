@@ -82,10 +82,11 @@ export default function BugReportPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bug className="h-6 w-6" />
-            Report a Bug
+            Report a Bug or Give Feedback
           </CardTitle>
           <CardDescription>
-            Found an issue? Help us improve by reporting it below.
+            Found an issue or have a suggestion for us? Help us improve the
+            application's experience by reporting it below.
           </CardDescription>
         </CardHeader>
         <CardContent>
