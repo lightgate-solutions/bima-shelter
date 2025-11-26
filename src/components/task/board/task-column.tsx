@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TaskFormDialog } from "../dialogs/task-form-dialog";
+import { Draggable, Droppable } from "@hello-pangea/dnd";
 
 interface TaskColumnProps {
   status: Status;
@@ -72,29 +73,52 @@ export function TaskColumn({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 overflow-y-auto h-full">
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onStatusChange={onStatusChange}
-              employeeId={employeeId}
-              role={role}
-            />
-          ))}
-
-          {canCreate && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-xs h-auto py-1 px-0 self-start hover:bg-background"
-              onClick={() => setShowCreateDialog(true)}
+        <Droppable droppableId={status.name}>
+          {(provided) => (
+            <div
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              className="flex flex-col gap-3 overflow-y-auto h-full min-h-[100px]"
             >
-              <Plus className="size-4" />
-              <span>Add task</span>
-            </Button>
+              {tasks.map((task, index) => (
+                <Draggable
+                  key={task.id}
+                  draggableId={task.id.toString()}
+                  index={index}
+                >
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      style={{ ...provided.draggableProps.style }}
+                    >
+                      <TaskCard
+                        task={task}
+                        onStatusChange={onStatusChange}
+                        employeeId={employeeId}
+                        role={role}
+                      />
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+
+              {canCreate && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2 text-xs h-auto py-1 px-0 self-start hover:bg-background"
+                  onClick={() => setShowCreateDialog(true)}
+                >
+                  <Plus className="size-4" />
+                  <span>Add task</span>
+                </Button>
+              )}
+            </div>
           )}
-        </div>
+        </Droppable>
       </div>
 
       {canCreate && (
