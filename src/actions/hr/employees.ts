@@ -20,6 +20,7 @@ export async function getAllEmployees() {
       department: employees.department,
       employmentType: employees.employmentType,
       phone: employees.phone,
+      isManager: employees.isManager,
       dateOfBirth: employees.dateOfBirth,
       staffNumber: employees.staffNumber,
       status: employees.status,
@@ -50,6 +51,7 @@ export async function updateEmployee(
     email: string;
     phone: string;
     staffNumber: string;
+    isManager: boolean;
     department: string;
     managerId: number | null;
     dateOfBirth: string;

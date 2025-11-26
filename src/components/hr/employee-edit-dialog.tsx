@@ -25,6 +25,7 @@ import { useState } from "react";
 import { getAllEmployees, updateEmployee } from "@/actions/hr/employees";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { Switch } from "../ui/switch";
 
 const employeeSchema = z.object({
   name: z.string().min(2),
@@ -34,6 +35,7 @@ const employeeSchema = z.object({
     .string()
     .min(2, { message: "Staff id must be atleast 2 characters" }),
   department: z.string().optional(),
+  isManager: z.boolean(),
   role: z.string(),
   managerId: z.string().optional().nullable(),
   dateOfBirth: z.string().optional(),
@@ -66,6 +68,7 @@ export default function EmployeeEditForm({
       name: employee.name || "",
       email: employee.email || "",
       phone: employee.phone || "",
+      isManager: employee.isManager || false,
       staffNumber: employee.staffNumber || "",
       department: employee.department || "",
       role: employee.role || "Employee",
@@ -264,16 +267,35 @@ export default function EmployeeEditForm({
                       <SelectValue placeholder="Select manager" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">No Manager</SelectItem>
+                      <SelectItem value="none">Assign Manager</SelectItem>
                       {employees
                         .filter((e: any) => e.isManager === true)
                         .map((mgr: any) => (
                           <SelectItem key={mgr.id} value={mgr.id.toString()}>
                             {mgr.name}
                           </SelectItem>
-                        ))}
+                        )) ?? <SelectItem value="none">No Manager</SelectItem>}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div>
+            <FormField
+              control={form.control}
+              name="isManager"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Is user a manager?</FormLabel>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
