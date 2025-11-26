@@ -15,6 +15,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { CardContent } from "@/components/ui/card";
 import { searchEmails } from "@/actions/mail/email";
 import { toast } from "sonner";
@@ -74,7 +81,7 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => performSearch(), 500);
+    debounceRef.current = setTimeout(() => performSearch(), 2000);
   }, [query, folder, performSearch]);
 
   // --- Keyboard navigation ---
@@ -88,6 +95,7 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
     } else if (e.key === "Enter" && highlightIndex >= 0) {
       const selected = results[highlightIndex];
       onResultClick(selected.id, selected.folder);
+      setShowResults(false);
     }
   };
 
@@ -158,27 +166,22 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
       </div>
 
       {/* Results */}
-      {showResults && (
-        <div className="border rounded-lg overflow-hidden animate-fadeIn">
-          <div className="bg-muted px-4 py-2 font-medium text-sm flex justify-between">
-            <span>
-              {results.length} result{results.length !== 1 ? "s" : ""}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs px-2 h-6"
-              onClick={() => setShowResults(false)}
-            >
-              Close
-            </Button>
-          </div>
-
-          <div className="divide-y max-h-[400px] overflow-y-auto scrollbar-thin">
+      <Dialog open={showResults} onOpenChange={setShowResults}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Search Results</DialogTitle>
+            <DialogDescription>
+              {results.length} result{results.length !== 1 ? "s" : ""} found.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="divide-y border rounded-lg max-h-[60vh] overflow-y-auto scrollbar-thin">
             {results.map((result, idx) => (
               <CardContent
                 key={idx}
-                onClick={() => onResultClick(result.id, result.folder)}
+                onClick={() => {
+                  onResultClick(result.id, result.folder);
+                  setShowResults(false);
+                }}
                 className={`p-4 cursor-pointer transition-colors ${
                   highlightIndex === idx ? "bg-muted/70" : "hover:bg-muted/40"
                 }`}
@@ -205,8 +208,8 @@ export function MailSearch({ onResultClick }: MailSearchProps) {
               </CardContent>
             ))}
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
