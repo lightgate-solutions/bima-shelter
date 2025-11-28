@@ -24,6 +24,11 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Bug } from "lucide-react";
+import {
+  Dropzone,
+  type FileWithMetadata,
+  useDropzoneCleanup,
+} from "@/components/ui/dropzone";
 
 const bugReportSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -38,6 +43,9 @@ type BugReportForm = z.infer<typeof bugReportSchema>;
 
 export default function BugReportPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [files, setFiles] = useState<FileWithMetadata[]>([]);
+
+  useDropzoneCleanup(files);
 
   const {
     register,
@@ -55,12 +63,65 @@ export default function BugReportPage() {
   const onSubmit = async (data: BugReportForm) => {
     setIsSubmitting(true);
     try {
+      // Upload files to R2 if any
+      const uploadedFiles: {
+        originalFileName: string;
+        filePath: string;
+        fileSize: string;
+        mimeType: string;
+      }[] = [];
+
+      for (const fileWithMetadata of files) {
+        const { file } = fileWithMetadata;
+
+        // Get presigned URL
+        const uploadResponse = await fetch("/api/r2/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type,
+            size: file.size,
+          }),
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to get upload URL");
+        }
+
+        const { presignedUrl, publicUrl } = await uploadResponse.json();
+
+        // Upload file to R2
+        const uploadFileResponse = await fetch(presignedUrl, {
+          method: "PUT",
+          body: file,
+          headers: {
+            "Content-Type": file.type,
+          },
+        });
+
+        if (!uploadFileResponse.ok) {
+          throw new Error("Failed to upload file");
+        }
+
+        uploadedFiles.push({
+          originalFileName: file.name,
+          filePath: publicUrl,
+          fileSize: file.size.toString(),
+          mimeType: file.type,
+        });
+      }
+
+      // Submit bug report with attachments
       const response = await fetch("/api/bug-report", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          attachments: uploadedFiles,
+        }),
       });
 
       if (!response.ok) {
@@ -69,6 +130,7 @@ export default function BugReportPage() {
 
       toast.success("Bug report submitted successfully!");
       reset();
+      setFiles([]);
     } catch {
       toast.error("Failed to submit bug report. Please try again.");
     } finally {
@@ -175,6 +237,27 @@ export default function BugReportPage() {
                 placeholder="1. Go to...&#10;2. Click on...&#10;3. See error..."
                 rows={4}
                 {...register("stepsToReproduce")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Attachments (Optional)</Label>
+              <Dropzone
+                provider="cloudflare-r2"
+                variant="compact"
+                maxFiles={5}
+                maxSize={1024 * 1024 * 10}
+                onFilesChange={setFiles}
+                disabled={isSubmitting}
+                helperText="Upload screenshots or files (Max 10MB per file, up to 5 files)"
+                accept={{
+                  "image/*": [],
+                  "application/pdf": [],
+                  "application/msword": [],
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                    [],
+                  "video/*": [],
+                }}
               />
             </div>
 
