@@ -1,7 +1,6 @@
-/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <> */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { TaskColumn } from "./task-column";
 import type { BoardTask, Status, StatusType } from "../types";
 import {
@@ -12,6 +11,7 @@ import {
   Loader2,
   Timer,
 } from "lucide-react";
+import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 
 const statusConfig: Status[] = [
   { id: "Backlog", name: "Backlog", color: "#53565A", icon: CircleDotDashed },
@@ -62,7 +62,7 @@ export function TaskBoard({
   });
   const [loading, setLoading] = useState(true);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       const params = new URLSearchParams({
         employeeId: employeeId.toString(),
@@ -90,11 +90,11 @@ export function TaskBoard({
     } finally {
       setLoading(false);
     }
-  };
+  }, [employeeId, role, priority, assignee, search]);
 
   useEffect(() => {
     fetchTasks();
-  }, [employeeId, role, priority, assignee, search]);
+  }, [fetchTasks]);
 
   // Listen for task changes
   useEffect(() => {
@@ -106,7 +106,7 @@ export function TaskBoard({
     return () => {
       window.removeEventListener("tasks:changed", handleTasksChanged);
     };
-  }, []);
+  }, [fetchTasks]);
 
   const handleStatusChange = async (taskId: number, newStatus: StatusType) => {
     try {
@@ -124,6 +124,62 @@ export function TaskBoard({
     }
   };
 
+  const onDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) {
+      return;
+    }
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    const sourceStatus = source.droppableId as StatusType;
+    const destStatus = destination.droppableId as StatusType;
+
+    // Create a copy of the current state
+    const newTasksByStatus = { ...tasksByStatus };
+
+    // Remove from source column
+    const sourceTasks = Array.from(newTasksByStatus[sourceStatus]);
+    const [movedTask] = sourceTasks.splice(source.index, 1);
+
+    // Update task status locally
+    const updatedTask = { ...movedTask, status: destStatus };
+
+    // Add to destination column
+    const destTasks = Array.from(newTasksByStatus[destStatus]);
+    destTasks.splice(destination.index, 0, updatedTask);
+
+    // Update state
+    newTasksByStatus[sourceStatus] = sourceTasks;
+    newTasksByStatus[destStatus] = destTasks;
+    setTasksByStatus(newTasksByStatus);
+
+    // Call API if status changed
+    if (sourceStatus !== destStatus) {
+      try {
+        await fetch("/api/tasks/board", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            taskId: Number.parseInt(draggableId),
+            status: destStatus,
+          }),
+        });
+        window.dispatchEvent(new CustomEvent("tasks:changed"));
+      } catch (error) {
+        console.error("Error updating task status:", error);
+        // Revert on error (optional, but good practice)
+        fetchTasks();
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -133,17 +189,19 @@ export function TaskBoard({
   }
 
   return (
-    <div className="flex h-full gap-3 px-3 pt-4 pb-2 overflow-hidden">
-      {statusConfig.map((status) => (
-        <TaskColumn
-          key={status.id}
-          status={status}
-          tasks={tasksByStatus[status.name] || []}
-          onStatusChange={handleStatusChange}
-          employeeId={employeeId}
-          role={role}
-        />
-      ))}
-    </div>
+    <DragDropContext onDragEnd={onDragEnd}>
+      <div className="flex h-full gap-3 px-3 pt-4 pb-2 overflow-hidden overflow-x-auto">
+        {statusConfig.map((status) => (
+          <TaskColumn
+            key={status.id}
+            status={status}
+            tasks={tasksByStatus[status.name] || []}
+            onStatusChange={handleStatusChange}
+            employeeId={employeeId}
+            role={role}
+          />
+        ))}
+      </div>
+    </DragDropContext>
   );
 }

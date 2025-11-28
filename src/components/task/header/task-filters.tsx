@@ -47,8 +47,22 @@ export function TaskFilters({
   onAssigneeChange,
 }: TaskFiltersProps) {
   const [open, setOpen] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const hasFilters = priority !== "all" || assignee !== "all";
+
+  if (!mounted) {
+    return (
+      <Button variant="secondary" size="sm" className="sm:gap-2">
+        <SlidersHorizontal className="size-4" />
+        <span className="hidden sm:inline">Filter</span>
+      </Button>
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
