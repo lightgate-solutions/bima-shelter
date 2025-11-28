@@ -13,6 +13,7 @@ import NotificationBell from "@/components/ui/notification-bell";
 import { AttendanceSignInPopup } from "@/components/hr/attendance-signin-popup";
 import { requireAuth } from "@/actions/auth/dal";
 import { getMyTodayAttendance } from "@/actions/hr/attendance";
+import { ConvexClientProvider } from "@/lib/convex-client-provider";
 
 export default async function RootLayout({
   children,
@@ -32,29 +33,31 @@ export default async function RootLayout({
 
   return (
     <section className="p-1">
-      <SidebarProvider>
-        <AppSidebar user={session.user} />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-            <div className="flex w-full items-center justify-between gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <div className=" flex gap-4 justify-center items-center">
-                <ThemeToggle />
-                <NotificationBell />
+      <ConvexClientProvider>
+        <SidebarProvider>
+          <AppSidebar user={session.user} employeeId={authData.employee.id} />
+          <SidebarInset>
+            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+              <div className="flex w-full items-center justify-between gap-2 px-4">
+                <SidebarTrigger className="-ml-1" />
+                <div className=" flex gap-4 justify-center items-center">
+                  <ThemeToggle />
+                  <NotificationBell employeeId={authData.employee.id} />
+                </div>
               </div>
-            </div>
-          </header>
-          <Separator className="mr-2 data-[orientation=vertical]:h-4" />
-          <div className="p-2">{children}</div>
-        </SidebarInset>
-      </SidebarProvider>
+            </header>
+            <Separator className="mr-2 data-[orientation=vertical]:h-4" />
+            <div className="p-2">{children}</div>
+          </SidebarInset>
+        </SidebarProvider>
 
-      {/* Attendance Sign-In Pop-up - Global */}
-      <AttendanceSignInPopup
-        currentEmployeeId={authData.employee.id}
-        hasSignedInToday={hasSignedInToday}
-        isLoading={false}
-      />
+        {/* Attendance Sign-In Pop-up - Global */}
+        <AttendanceSignInPopup
+          currentEmployeeId={authData.employee.id}
+          hasSignedInToday={hasSignedInToday}
+          isLoading={false}
+        />
+      </ConvexClientProvider>
     </section>
   );
 }

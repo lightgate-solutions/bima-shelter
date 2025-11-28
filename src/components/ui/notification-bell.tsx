@@ -1,41 +1,26 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import { useState, useEffect } from "react";
-import axios from "axios";
-
 import Link from "next/link";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
-export default function NotificationBell() {
-  const [unreadCount, setUnreadCount] = useState(0);
+interface NotificationBellProps {
+  employeeId: number;
+}
 
-  useEffect(() => {
-    const getNotificationsCount = async () => {
-      try {
-        const res = await axios.get("/api/notification/unread-count");
-        setUnreadCount(res.data.count || 0);
-      } catch (err) {
-        // Only log if it's not a network error (which might be temporary)
-        if (axios.isAxiosError(err)) {
-          // Network errors are common during server restarts, don't spam console
-          if (err.code !== "ERR_NETWORK" && err.code !== "ECONNABORTED") {
-            console.error("Failed to fetch unread count", err);
-          }
-        } else {
-          console.error("Failed to fetch unread count", err);
-        }
-        // Keep current count on error, don't reset to 0
-      }
-    };
-
-    getNotificationsCount();
-  }, []);
+export default function NotificationBell({
+  employeeId,
+}: NotificationBellProps) {
+  const unreadCount = useQuery(api.notifications.getUnreadCount, {
+    userId: employeeId,
+  });
 
   return (
     <Link href="/notification">
       <div className="relative cursor-pointer hover:text-primary transition-colors">
         <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
+        {(unreadCount ?? 0) > 0 && (
           <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500" />
         )}
       </div>

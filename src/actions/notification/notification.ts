@@ -1,17 +1,14 @@
 "use server";
 
-import { db } from "@/db";
-import { notifications } from "@/db/schema/notifications";
-import { eq, and, inArray, desc } from "drizzle-orm";
 import { getUser } from "../auth/dal";
-import { notification_preferences } from "@/db/schema";
-import { sendEmail } from "../mail/email";
+import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { api } from "../../../convex/_generated/api";
 
 type CreateNotificationInput = {
   user_id: number;
   title: string;
   message: string;
-  notification_type: string;
+  notification_type: "approval" | "deadline" | "message";
   reference_id?: number;
   is_read?: boolean;
 };
@@ -35,35 +32,15 @@ export async function createNotification({
       };
     }
 
-    const prefs = await db.query.notification_preferences.findFirst({
-      where: eq(notification_preferences.user_id, user_id),
+    await fetchMutation(api.notifications.createNotification, {
+      created_by: currentUser.id,
+      title,
+      reference_id,
+      user_id,
+      message,
+      notification_type,
+      is_read,
     });
-
-    if (prefs?.in_app_notifications) {
-      await db.insert(notifications).values({
-        user_id,
-        title,
-        message,
-        created_by: currentUser.id,
-        notification_type: notification_type as
-          | "message"
-          | "approval"
-          | "deadline",
-        reference_id,
-        is_read,
-      });
-    }
-
-    if (prefs?.email_notifications) {
-      await sendEmail(
-        {
-          recipientIds: [user_id],
-          subject: title,
-          body: message,
-        },
-        false,
-      );
-    }
 
     return {
       success: true,
@@ -93,13 +70,12 @@ export async function getUserNotifications() {
     };
   }
 
-  const user_id = currentUser.id;
+  const userId = currentUser.id;
 
-  const userNotifications = await db
-    .select()
-    .from(notifications)
-    .where(eq(notifications.user_id, user_id))
-    .orderBy(desc(notifications.created_at));
+  const userNotifications = await fetchQuery(
+    api.notifications.getUserNotifications,
+    { userId },
+  );
 
   return { success: true, data: userNotifications, error: null };
 }
@@ -114,14 +90,7 @@ export async function markNotificationsAsRead(ids: string[]) {
       error: "Log in to continue",
     };
   }
-  const user_id = currentUser.id;
-
-  await db
-    .update(notifications)
-    .set({ is_read: true })
-    .where(
-      and(eq(notifications.user_id, user_id), inArray(notifications.id, ids)),
-    );
+  const userId = currentUser.id;
 
   return { success: true, data: null, error: null };
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import type * as React from "react";
-import axios from "axios";
 import {
   AlarmClockCheck,
   Folder,
@@ -31,6 +30,8 @@ import { NavUser } from "./nav-user";
 import type { User } from "better-auth";
 import { useEffect, useMemo, useState } from "react";
 import { getUser as getEmployee } from "@/actions/auth/dal";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 const data = {
   org: [
@@ -158,21 +159,16 @@ const data = {
 
 export function AppSidebar({
   user,
+  employeeId,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { user: User }) {
+}: React.ComponentProps<typeof Sidebar> & { user: User; employeeId: number }) {
   const [isManager, setIsManager] = useState<boolean | null>(null);
   const [isHrOrAdmin, setIsHrOrAdmin] = useState<boolean>(false);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    const getNotificationsCount = async () => {
-      const res = await axios.get("/api/notification/unread-count");
-      setUnreadCount(res.data.count);
-    };
-
-    getNotificationsCount();
-  }, []);
+  const notifications = useQuery(api.notifications.getUserNotifications, {
+    userId: employeeId,
+  });
+  const unreadCount = notifications?.filter((n) => !n.isRead).length;
 
   useEffect(() => {
     let active = true;
