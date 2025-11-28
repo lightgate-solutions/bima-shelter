@@ -37,7 +37,7 @@ const userSchema = z.object({
   autoVerify: z.boolean(),
   isManager: z.boolean(),
   phone: z.string().optional(),
-  staffNumber: z.string().min(2, "Staff id must be at least 2 characters."),
+  staffNumber: z.string().optional(),
   department: z.string().min(2, "Department is required"),
   managerId: z.string().optional(),
   dateOfBirth: z.date().nullable(),
@@ -284,9 +284,6 @@ export function UserAddDialog({
             }}
             placeholder="Enter staff id number"
           />
-          {errors.staffNumber && (
-            <p className="text-sm text-red-500">{errors.staffNumber}</p>
-          )}
         </div>
 
         <div className="grid gap-2">
