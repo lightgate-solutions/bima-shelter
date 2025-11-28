@@ -28,6 +28,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Filter } from "lucide-react";
+import { toast } from "sonner";
 
 type Transaction = {
   id: number;
@@ -65,8 +66,8 @@ export function BalanceHistoryPage() {
       const data = await res.json();
       setTransactions(data.transactions ?? []);
       setTotal(data.total ?? 0);
-    } catch (error) {
-      console.error("Error loading transactions:", error);
+    } catch (_error) {
+      toast.error("Error loading transactions:");
     } finally {
       setLoading(false);
     }

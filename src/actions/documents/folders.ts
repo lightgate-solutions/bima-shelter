@@ -266,7 +266,6 @@ export async function deleteFolder(folderId: number, pathname: string) {
       };
     }
 
-    console.error(err);
     return {
       error: { reason: "Couldn't delete folder. Check inputs and try again!" },
       success: null,
@@ -353,7 +352,6 @@ export async function archiveFolder(folderId: number, pathname: string) {
       };
     }
 
-    console.error(err);
     return {
       error: { reason: "Couldn't archive folder. Check inputs and try again!" },
       success: null,

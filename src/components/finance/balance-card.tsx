@@ -7,6 +7,7 @@ import { BalanceUpdateDialog } from "./balance-update-dialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export function BalanceCard() {
   const [balance, setBalance] = useState<string>("0");
@@ -19,8 +20,8 @@ export function BalanceCard() {
       const data = await res.json();
       setBalance(data.balance?.balance || "0");
       setCurrency(data.balance?.currency || "NGN");
-    } catch (error) {
-      console.error("Error loading balance:", error);
+    } catch (_error) {
+      toast.error("Error loading balance:");
     } finally {
       setLoading(false);
     }

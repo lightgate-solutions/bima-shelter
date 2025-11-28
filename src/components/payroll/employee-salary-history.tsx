@@ -19,6 +19,7 @@ import {
 import { getEmployeeSalaryHistory } from "@/actions/payroll/employee-salary";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 type Props = {
   trigger: React.ReactNode;
@@ -54,8 +55,8 @@ export function EmployeeSalaryHistory({
       try {
         const historyData = await getEmployeeSalaryHistory(employeeId);
         setHistory(historyData);
-      } catch (error) {
-        console.error("Failed to load salary history:", error);
+      } catch (_error) {
+        toast.error("Failed to load salary history:");
       } finally {
         setLoading(false);
       }

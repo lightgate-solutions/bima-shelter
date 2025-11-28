@@ -214,7 +214,7 @@ export function StructureAllowancesTable({
   };
 
   if (isErrorStructureAllowances) {
-    console.error(structureAllowancesError);
+    toast.error(structureAllowancesError.message);
     return (
       <div className="text-destructive">Error loading structure allowances</div>
     );

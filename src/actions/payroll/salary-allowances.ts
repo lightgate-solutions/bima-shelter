@@ -105,7 +105,6 @@ export async function addAllowanceToStructure(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't add allowance to structure. Please try again later.",
@@ -181,7 +180,6 @@ export async function removeAllowanceFromStructure(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason:
@@ -224,8 +222,7 @@ export async function getStructureAllowances(structureId: number) {
       .orderBy(desc(salaryAllowances.effectiveFrom));
 
     return result;
-  } catch (error) {
-    console.error("Error fetching structure allowances:", error);
+  } catch (_error) {
     return [];
   }
 }

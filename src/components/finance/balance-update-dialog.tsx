@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 type Props = {
   trigger: React.ReactNode;
@@ -32,8 +33,8 @@ export function BalanceUpdateDialog({ trigger, onCompleted }: Props) {
       const res = await fetch("/api/finance/balance");
       const data = await res.json();
       setBalance(data.balance?.balance || "0");
-    } catch (error) {
-      console.error("Error loading balance:", error);
+    } catch (_error) {
+      toast.error("Error loading balance:");
     }
   }, []);
 
@@ -70,9 +71,8 @@ export function BalanceUpdateDialog({ trigger, onCompleted }: Props) {
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("expenses:changed"));
       }
-    } catch (error) {
-      console.error("Error updating balance:", error);
-      alert("Failed to update balance");
+    } catch (_error) {
+      toast.error("Error updating balance:");
     } finally {
       setSaving(false);
     }

@@ -105,7 +105,6 @@ export async function addDeductionToStructure(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't add deduction to structure. Please try again later.",
@@ -181,7 +180,6 @@ export async function removeDeductionFromStructure(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason:
@@ -221,8 +219,7 @@ export async function getStructureDeductions(structureId: number) {
       .orderBy(desc(salaryDeductions.effectiveFrom));
 
     return result;
-  } catch (error) {
-    console.error("Error fetching structure deductions:", error);
+  } catch (_error) {
     return [];
   }
 }

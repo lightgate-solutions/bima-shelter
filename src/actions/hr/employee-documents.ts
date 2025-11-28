@@ -86,8 +86,7 @@ export async function getEmployeeDocuments(employeeId: number) {
       data: documents,
       error: null,
     };
-  } catch (err) {
-    console.error("Error fetching employee documents:", err);
+  } catch (_err) {
     return {
       success: false,
       data: null,

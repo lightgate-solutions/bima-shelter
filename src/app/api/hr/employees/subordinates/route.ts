@@ -27,9 +27,9 @@ export async function GET(request: NextRequest) {
         { status: 400 },
       );
     }
-    let where: ReturnType<typeof and> | undefined = and(
-      eq(employees.managerId, employeeId),
-      eq(employees.isManager, false),
+    let where: ReturnType<typeof and> | undefined = eq(
+      employees.managerId,
+      employeeId,
     );
     if (q) {
       where = where

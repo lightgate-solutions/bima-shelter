@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireAuth, requireHROrAdmin } from "@/actions/auth/dal";
+import { toast } from "sonner";
 
 const employmentHistorySchema = z.object({
   employeeId: z.number(),
@@ -30,9 +31,8 @@ export async function getEmployeeHistory(employeeId: number) {
     });
 
     return history;
-  } catch (error) {
-    console.error("Error fetching employee history:", error);
-    throw new Error("Failed to fetch employee history");
+  } catch (_error) {
+    toast.error("Error fetching employee history:");
   }
 }
 
@@ -51,8 +51,7 @@ export async function addEmploymentHistory(data: EmploymentHistoryFormValues) {
 
     revalidatePath(`/dashboard/hr/employees`);
     return { success: true };
-  } catch (error) {
-    console.error("Error adding employment history:", error);
+  } catch (_error) {
     return { success: false, error: "Failed to add employment history" };
   }
 }
@@ -78,8 +77,7 @@ export async function updateEmploymentHistory(
 
     revalidatePath(`/dashboard/hr/employees`);
     return { success: true };
-  } catch (error) {
-    console.error("Error updating employment history:", error);
+  } catch (_error) {
     return { success: false, error: "Failed to update employment history" };
   }
 }
@@ -92,8 +90,7 @@ export async function deleteEmploymentHistory(id: number) {
 
     revalidatePath(`/dashboard/hr/employees`);
     return { success: true };
-  } catch (error) {
-    console.error("Error deleting employment history:", error);
+  } catch (_error) {
     return { success: false, error: "Failed to delete employment history" };
   }
 }

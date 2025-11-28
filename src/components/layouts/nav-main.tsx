@@ -50,7 +50,6 @@ export function NavMain({
               ? pathname === "/"
               : pathname?.startsWith(item.url);
 
-          // 📌 CASE 1: Item with subitems (collapsible)
           if (hasSubItems) {
             return (
               <Collapsible

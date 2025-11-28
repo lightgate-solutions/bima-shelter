@@ -194,7 +194,6 @@ export async function createLoanType(data: {
       data: newLoanType,
     };
   } catch (err: any) {
-    console.error("Error creating loan type:", err);
     return {
       success: null,
       error: { reason: err.message || "Failed to create loan type" },
@@ -263,7 +262,6 @@ export async function updateLoanType(
       error: null,
     };
   } catch (err: any) {
-    console.error("Error updating loan type:", err);
     return {
       success: null,
       error: { reason: err.message || "Failed to update loan type" },
@@ -294,7 +292,6 @@ export async function deleteLoanType(loanTypeId: number) {
       error: null,
     };
   } catch (err: any) {
-    console.error("Error deleting loan type:", err);
     return {
       success: null,
       error: { reason: err.message || "Failed to delete loan type" },
@@ -534,7 +531,6 @@ export async function applyForLoan(data: {
       data: result,
     };
   } catch (err: any) {
-    console.error("Error applying for loan:", err);
     return {
       success: null,
       error: { reason: err.message || "Failed to submit loan application" },
@@ -868,7 +864,6 @@ export async function hrReviewLoan(data: {
       error: null,
     };
   } catch (err: any) {
-    console.error("Error reviewing loan:", err);
     return {
       success: null,
       error: { reason: err.message || "Failed to review loan" },
@@ -998,7 +993,6 @@ export async function disburseLoan(data: {
       error: null,
     };
   } catch (err: any) {
-    console.error("Error disbursing loan:", err);
     return {
       success: null,
       error: { reason: err.message || "Failed to disburse loan" },
@@ -1092,7 +1086,6 @@ export async function cancelLoanApplication(
       error: null,
     };
   } catch (err: any) {
-    console.error("Error cancelling loan:", err);
     return {
       success: null,
       error: { reason: err.message || "Failed to cancel loan application" },
@@ -1142,60 +1135,56 @@ export async function getLoanStatistics() {
 
 // Check and mark loan as completed if all repayments are paid
 export async function checkAndCompleteLoan(applicationId: number) {
-  try {
-    // Get all repayments for this loan
-    const repayments = await db
-      .select()
-      .from(loanRepayments)
-      .where(eq(loanRepayments.loanApplicationId, applicationId));
+  // Get all repayments for this loan
+  const repayments = await db
+    .select()
+    .from(loanRepayments)
+    .where(eq(loanRepayments.loanApplicationId, applicationId));
 
-    if (repayments.length === 0) return;
+  if (repayments.length === 0) return;
 
-    // Check if all repayments are paid
-    const allPaid = repayments.every((r) => r.status === "paid");
+  // Check if all repayments are paid
+  const allPaid = repayments.every((r) => r.status === "paid");
 
-    if (allPaid) {
-      // Update loan status to completed
+  if (allPaid) {
+    // Update loan status to completed
+    await db
+      .update(loanApplications)
+      .set({
+        status: "completed",
+        completedAt: new Date(),
+        remainingBalance: "0",
+        updatedAt: new Date(),
+      })
+      .where(eq(loanApplications.id, applicationId));
+
+    // Deactivate the employee deduction
+    const [application] = await db
+      .select({ employeeDeductionId: loanApplications.employeeDeductionId })
+      .from(loanApplications)
+      .where(eq(loanApplications.id, applicationId))
+      .limit(1);
+
+    if (application?.employeeDeductionId) {
       await db
-        .update(loanApplications)
+        .update(employeeDeductions)
         .set({
-          status: "completed",
-          completedAt: new Date(),
-          remainingBalance: "0",
-          updatedAt: new Date(),
+          active: false,
+          effectiveTo: new Date(),
         })
-        .where(eq(loanApplications.id, applicationId));
-
-      // Deactivate the employee deduction
-      const [application] = await db
-        .select({ employeeDeductionId: loanApplications.employeeDeductionId })
-        .from(loanApplications)
-        .where(eq(loanApplications.id, applicationId))
-        .limit(1);
-
-      if (application?.employeeDeductionId) {
-        await db
-          .update(employeeDeductions)
-          .set({
-            active: false,
-            effectiveTo: new Date(),
-          })
-          .where(eq(employeeDeductions.id, application.employeeDeductionId));
-      }
-
-      // Log history
-      await db.insert(loanHistory).values({
-        loanApplicationId: applicationId,
-        action: "completed",
-        description: "Loan fully repaid and marked as completed",
-        performedBy: null,
-      });
-
-      revalidatePath("/hr/loans");
-      revalidatePath("/finance/loans");
+        .where(eq(employeeDeductions.id, application.employeeDeductionId));
     }
-  } catch (err: any) {
-    console.error("Error checking loan completion:", err);
+
+    // Log history
+    await db.insert(loanHistory).values({
+      loanApplicationId: applicationId,
+      action: "completed",
+      description: "Loan fully repaid and marked as completed",
+      performedBy: null,
+    });
+
+    revalidatePath("/hr/loans");
+    revalidatePath("/finance/loans");
   }
 }
 
@@ -1240,7 +1229,6 @@ export async function markOverdueRepayments() {
       message: `Marked ${overdueRepayments.length} repayments as overdue`,
     };
   } catch (err: any) {
-    console.error("Error marking overdue repayments:", err);
     return {
       success: false,
       error: err.message || "Failed to mark overdue repayments",
@@ -1393,7 +1381,6 @@ export async function makeEarlyRepayment(data: {
       error: null,
     };
   } catch (err: any) {
-    console.error("Error processing early repayment:", err);
     return {
       success: null,
       error: { reason: err.message || "Failed to process early repayment" },

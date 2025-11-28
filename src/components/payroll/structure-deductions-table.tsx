@@ -195,7 +195,7 @@ export function StructureDeductionsTable({
   };
 
   if (isErrorStructureDeductions) {
-    console.error(structureDeductionsError);
+    toast.error(structureDeductionsError.message);
     return (
       <div className="text-destructive">Error loading structure deductions</div>
     );

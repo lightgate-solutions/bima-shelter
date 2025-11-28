@@ -65,7 +65,6 @@ export async function createSalaryStructure(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason:
@@ -121,8 +120,7 @@ export async function getAllSalaryStructures() {
       ...structure,
       createdBy: creatorsMap[structure.createdById] || "Unknown",
     }));
-  } catch (error) {
-    console.error("Error fetching salary structures:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -162,8 +160,7 @@ export async function getSalaryStructure(id: number) {
       ...structure[0],
       createdBy: creator.length > 0 ? creator[0].name : "Unknown",
     };
-  } catch (error) {
-    console.error("Error fetching salary structure:", error);
+  } catch (_error) {
     return null;
   }
 }
@@ -243,7 +240,6 @@ export async function updateSalaryStructure(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason:
@@ -320,7 +316,6 @@ export async function toggleSalaryStructureStatus(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason:

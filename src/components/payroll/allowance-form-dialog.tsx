@@ -157,8 +157,7 @@ export function AllowanceFormDialog({
         handleOpenChange(false);
         onCompleteAction?.();
       }
-    } catch (error) {
-      console.error("Error saving allowance:", error);
+    } catch (_error) {
       toast.error("Failed to save allowance");
     } finally {
       setSaving(false);

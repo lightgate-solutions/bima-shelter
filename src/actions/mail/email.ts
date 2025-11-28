@@ -159,7 +159,6 @@ export async function sendEmail(
 
     return emailRecord;
   } catch (error) {
-    console.error(error);
     return {
       success: false,
       data: null,

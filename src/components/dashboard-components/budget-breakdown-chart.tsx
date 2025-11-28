@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 interface BudgetData {
   department: string;
@@ -55,7 +56,7 @@ export default function BudgetBreakdownChart() {
           // (though this component should only be visible to admins)
           if (response.status !== 403) {
             const errorData = await response.json().catch(() => ({}));
-            console.error(
+            toast.error(
               "Error fetching budget breakdown:",
               errorData.error || response.statusText,
             );
@@ -66,8 +67,8 @@ export default function BudgetBreakdownChart() {
 
         const data = await response.json();
         setBudgetData(data.breakdown || []);
-      } catch (error) {
-        console.error("Error fetching budget breakdown:", error);
+      } catch (_error) {
+        toast.error("Error fetching budget breakdown");
         setBudgetData([]);
       } finally {
         setLoading(false);

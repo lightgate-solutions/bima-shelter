@@ -106,8 +106,7 @@ export function SalaryStructureFormDialog({
         handleOpenChange(false);
         onCompleteAction?.();
       }
-    } catch (error) {
-      console.error("Error saving salary structure:", error);
+    } catch (_error) {
       toast.error("Failed to save salary structure");
     } finally {
       setSaving(false);

@@ -159,8 +159,7 @@ export default function EmployeeDocumentsUpload({
       setProgress(100);
       const url = process.env.CLOUDFLARE_R2_PUBLIC_URL!;
       return publicUrl ?? `${url}/${encodeURIComponent(key)}`;
-    } catch (error) {
-      console.error(error);
+    } catch (_error) {
       toast.error("Upload failed");
       setFiles((prevFiles) =>
         prevFiles?.map((f) =>
@@ -220,8 +219,7 @@ export default function EmployeeDocumentsUpload({
       } else {
         toast.error(result.error?.reason || "Failed to upload document");
       }
-    } catch (error) {
-      console.error(error);
+    } catch (_error) {
       toast.error("Upload failed. Try again!");
     } finally {
       setIsUploading(false);

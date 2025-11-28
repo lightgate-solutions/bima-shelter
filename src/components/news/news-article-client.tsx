@@ -49,8 +49,8 @@ export function NewsArticleClient({ article }: NewsArticleClientProps) {
     try {
       const data = await getNewsComments(article.id);
       setComments(data);
-    } catch (err) {
-      console.error("Error loading comments:", err);
+    } catch (_err) {
+      toast.error("Error loading comments:");
     } finally {
       setLoadingComments(false);
     }

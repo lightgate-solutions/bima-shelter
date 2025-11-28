@@ -193,7 +193,6 @@ export async function getActiveFolderDocuments(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't fetch documents. Please try again.",
@@ -279,7 +278,6 @@ export async function deleteDocumentAction(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't delete document. Please try again.",
@@ -359,7 +357,6 @@ export async function archiveDocumentAction(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't delete document. Please try again.",

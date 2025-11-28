@@ -125,7 +125,6 @@ export function EmployeeStructureAssignDialog({
         }
       }
     } catch (error) {
-      console.error("Failed to load salary structures:", error);
       toast.error(
         error instanceof Error
           ? error.message
@@ -206,8 +205,7 @@ export function EmployeeStructureAssignDialog({
           onCompleteAction();
         }
       }
-    } catch (error) {
-      console.error("Error assigning salary structure:", error);
+    } catch (_error) {
       toast.error("Failed to assign salary structure");
     } finally {
       setSaving(false);
@@ -240,8 +238,7 @@ export function EmployeeStructureAssignDialog({
           onCompleteAction();
         }
       }
-    } catch (error) {
-      console.error("Error removing salary structure:", error);
+    } catch (_error) {
       toast.error("Failed to remove salary structure");
     } finally {
       setSaving(false);

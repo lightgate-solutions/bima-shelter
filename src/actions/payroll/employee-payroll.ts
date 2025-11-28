@@ -78,8 +78,7 @@ export async function getAllEmployeesWithPayroll() {
     });
 
     return employeesWithPayroll;
-  } catch (error) {
-    console.error("Error fetching employees with payroll:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -307,8 +306,7 @@ export async function calculateEmployeeTakeHomePay(employeeId: number) {
       grossPay,
       netPay,
     };
-  } catch (error) {
-    console.error("Error calculating take-home pay:", error);
+  } catch (_error) {
     return null;
   }
 }

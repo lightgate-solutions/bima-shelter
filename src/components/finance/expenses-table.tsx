@@ -30,6 +30,7 @@ import {
 import { ExpenseFormDialog } from "./expense-form-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 
 type Expense = {
   id: number;
@@ -95,9 +96,8 @@ export function ExpensesTable() {
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("expenses:changed"));
       }
-    } catch (error) {
-      console.error("Error deleting expense:", error);
-      alert("Failed to delete expense");
+    } catch (_error) {
+      toast.error("Error deleting expense:");
     }
   }
 

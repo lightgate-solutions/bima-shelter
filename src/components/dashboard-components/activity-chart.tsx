@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 interface ActivityTrend {
   date: string;
@@ -58,7 +59,7 @@ export default function ActivityChart() {
           // (though this component should only be visible to admins)
           if (response.status !== 403 && response.status !== 401) {
             const errorData = await response.json().catch(() => ({}));
-            console.error(
+            toast.error(
               "Error fetching activity trends:",
               errorData.error || response.statusText,
             );
@@ -84,7 +85,7 @@ export default function ActivityChart() {
         ) {
           // Network error - don't spam console
         } else {
-          console.error("Error fetching activity trends:", error);
+          toast.error("Error fetching activity trends");
         }
         setActivityData([]);
       } finally {

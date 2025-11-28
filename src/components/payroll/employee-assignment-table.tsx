@@ -81,8 +81,7 @@ export function EmployeeAssignmentTable({
           prev.filter((emp) => emp.id !== selectedEmployee.id),
         );
       }
-    } catch (error) {
-      console.error("Error removing employee:", error);
+    } catch (_error) {
       toast.error("Failed to remove employee");
     } finally {
       setRemoving(false);

@@ -104,8 +104,7 @@ export function AskHrForm({ trigger }: AskHrFormProps) {
         // Invalidate queries to refresh question lists
         queryClient.invalidateQueries({ queryKey: ["ask-hr-questions"] });
       }
-    } catch (error) {
-      console.error("Error submitting question:", error);
+    } catch (_error) {
       toast.error("Failed to submit question. Please try again.");
     }
   };

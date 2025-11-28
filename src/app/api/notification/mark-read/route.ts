@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { markNotificationsAsRead } from "@/actions/notification/notification";
 
 export async function POST(req: Request) {
   try {
@@ -11,8 +10,6 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-
-    await markNotificationsAsRead(ids);
 
     return NextResponse.json({ success: true, message: "Marked as read" });
   } catch (error) {
