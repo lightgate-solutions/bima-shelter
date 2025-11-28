@@ -305,7 +305,7 @@ export function UserAddDialog({
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="hr">HR</SelectItem>
               <SelectItem value="finance">Finance</SelectItem>
-              <SelectItem value="general">General</SelectItem>
+              <SelectItem value="operations">Operations</SelectItem>
             </SelectContent>
           </Select>
           {errors.department && (

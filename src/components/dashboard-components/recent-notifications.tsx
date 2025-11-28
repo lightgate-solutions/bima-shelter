@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Bell, Mail, CheckSquare } from "lucide-react";
 import {
@@ -14,17 +13,22 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { toast } from "sonner";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 dayjs.extend(relativeTime);
 
-interface Notification {
-  id: string;
+interface _Notification {
+  _id: Id<"notifications">;
+  _creationTime: number;
   title: string;
   message: string;
-  notification_type: string;
-  is_read: boolean;
-  created_at: string;
+  notificationType: string;
+  referenceId?: number;
+  isRead: boolean;
+  createdBy: number;
+  userId: number;
 }
 
 const getNotificationIcon = (type: string) => {
@@ -64,63 +68,18 @@ const getNotificationColor = (type: string) => {
   }
 };
 
-export default function RecentNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function RecentNotifications({
+  employeeId,
+}: {
+  employeeId: number;
+}) {
+  const allNotifications = useQuery(api.notifications.getUserNotifications, {
+    userId: employeeId,
+  });
 
-  useEffect(() => {
-    async function fetchNotifications() {
-      try {
-        setLoading(true);
-        const response = await fetch("/api/notification", {
-          credentials: "include",
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          // Don't log 401 errors as they're expected for unauthenticated users
-          if (response.status !== 401) {
-            const errorData = await response.json().catch(() => ({}));
-            toast.error(
-              "Error fetching notifications:",
-              errorData.error || response.statusText,
-            );
-          }
-          setNotifications([]);
-          return;
-        }
-
-        const data = await response.json();
-        // Get first 3 notifications, sorted by most recent (already sorted by getUserNotifications)
-        type NotificationData = {
-          id: number;
-          title?: string;
-          message?: string;
-          notification_type?: string;
-          is_read?: boolean;
-          created_at?: string;
-        };
-        const recentNotifs = (data.data || [])
-          .slice(0, 3)
-          .map((n: NotificationData) => ({
-            id: n.id,
-            title: n.title || "",
-            message: n.message || "",
-            notification_type: n.notification_type || "message",
-            is_read: n.is_read || false,
-            created_at: n.created_at || new Date().toISOString(),
-          }));
-        setNotifications(recentNotifs);
-      } catch (_error) {
-        toast.error("Error fetching notifications:");
-        setNotifications([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchNotifications();
-  }, []);
+  // Get first 3 notifications
+  const notifications = allNotifications?.slice(0, 3) ?? [];
+  const loading = allNotifications === undefined;
 
   if (loading) {
     return (
@@ -183,16 +142,16 @@ export default function RecentNotifications() {
       <CardContent>
         <div className="space-y-3">
           {notifications.map((notif) => {
-            const Icon = getNotificationIcon(notif.notification_type);
-            const iconColor = getNotificationColor(notif.notification_type);
-            const timeAgo = dayjs(notif.created_at).fromNow();
+            const Icon = getNotificationIcon(notif.notificationType);
+            const iconColor = getNotificationColor(notif.notificationType);
+            const timeAgo = dayjs(notif._creationTime).fromNow();
 
             return (
               <Link
-                key={notif.id}
+                key={notif._id}
                 href="/notification"
                 className={`block p-3 rounded-lg border transition-all backdrop-blur-sm ${
-                  notif.is_read
+                  notif.isRead
                     ? "border-amber-100/50 dark:border-gray-800 bg-white/60 dark:bg-gray-800/30"
                     : "border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/30"
                 } hover:bg-white dark:hover:bg-gray-800/70`}
@@ -206,7 +165,7 @@ export default function RecentNotifications() {
                       <p className="text-sm font-bold text-gray-900 dark:text-gray-100 line-clamp-1">
                         {notif.title}
                       </p>
-                      {!notif.is_read && (
+                      {!notif.isRead && (
                         <Badge
                           variant="default"
                           className="shrink-0 text-xs bg-blue-600 dark:bg-blue-500 text-white"

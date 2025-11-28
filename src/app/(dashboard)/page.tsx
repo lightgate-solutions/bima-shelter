@@ -71,7 +71,7 @@ export default async function DashboardPage() {
 
   // Admin always gets admin dashboard
   if (normalizedRole === "admin") {
-    return <AdminDashboard />;
+    return <AdminDashboard employeeId={user.id} />;
   }
 
   // If user has manager flag and is not admin, show manager dashboard

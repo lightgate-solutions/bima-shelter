@@ -61,7 +61,7 @@ export const employees = pgTable(
     authId: text("auth_id").notNull().default(""),
     email: text("email").notNull().unique(),
     phone: text("phone"),
-    staffNumber: text("staff_number").notNull(),
+    staffNumber: text("staff_number"),
     role: text("role").notNull(),
     isManager: boolean("is_manager").notNull().default(false),
     department: text("department").notNull(),

@@ -11,7 +11,6 @@ import {
   document,
   documentVersions,
 } from "@/db/schema";
-// import { notifications } from "@/db/schema/notifications";
 import { createNotification } from "../notification/notification";
 import { and, eq, or, ilike, sql, desc, inArray } from "drizzle-orm";
 import * as z from "zod";
@@ -1776,6 +1775,105 @@ export async function getAccessibleDocumentsForAttachment() {
       data: documents,
       error: null,
     };
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : "Failed to get documents",
+    };
+  }
+}
+
+export async function getAccessibleDocumentsForAttachmentPaginated(
+  page = 1,
+  limit = 20,
+  searchQuery = "",
+) {
+  try {
+    const currentUser = await getUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        data: null,
+        error: "Log in to continue",
+      };
+    }
+
+    const offset = (page - 1) * limit;
+
+    return await db.transaction(async (tx) => {
+      // Build the base WHERE clause for access control
+      const baseWhere = and(
+        eq(document.status, "active"),
+        or(
+          eq(document.uploadedBy, currentUser.id),
+          eq(document.public, true),
+          and(
+            eq(document.departmental, true),
+            eq(document.department, currentUser.department),
+          ),
+        ),
+      );
+
+      // Add search filter if provided
+      const whereClause = searchQuery
+        ? and(
+            baseWhere,
+            or(
+              ilike(document.title, `%${searchQuery}%`),
+              ilike(document.description, `%${searchQuery}%`),
+              ilike(document.originalFileName, `%${searchQuery}%`),
+            ),
+          )
+        : baseWhere;
+
+      // Fetch documents
+      const documents = await tx
+        .select({
+          id: document.id,
+          title: document.title,
+          description: document.description,
+          originalFileName: document.originalFileName,
+          department: document.department,
+          public: document.public,
+          departmental: document.departmental,
+          createdAt: document.createdAt,
+          uploader: employees.name,
+          uploaderEmail: employees.email,
+          fileSize: documentVersions.fileSize,
+          mimeType: documentVersions.mimeType,
+        })
+        .from(document)
+        .leftJoin(employees, eq(document.uploadedBy, employees.id))
+        .leftJoin(
+          documentVersions,
+          eq(document.currentVersionId, documentVersions.id),
+        )
+        .where(whereClause)
+        .orderBy(desc(document.updatedAt))
+        .limit(limit)
+        .offset(offset);
+
+      // Get total count for pagination
+      const [{ count }] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(document)
+        .where(whereClause);
+
+      return {
+        success: true,
+        data: {
+          documents,
+          pagination: {
+            page,
+            limit,
+            total: count,
+            totalPages: Math.ceil(count / limit),
+          },
+        },
+        error: null,
+      };
+    });
   } catch (error) {
     return {
       success: false,
