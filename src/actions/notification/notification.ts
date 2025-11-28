@@ -48,7 +48,6 @@ export async function createNotification({
       error: null,
     };
   } catch (error) {
-    console.error("Error creating notification:", error);
     return {
       success: false,
       data: null,
@@ -78,19 +77,4 @@ export async function getUserNotifications() {
   );
 
   return { success: true, data: userNotifications, error: null };
-}
-
-export async function markNotificationsAsRead(ids: string[]) {
-  const currentUser = await getUser();
-
-  if (!currentUser) {
-    return {
-      success: false,
-      data: null,
-      error: "Log in to continue",
-    };
-  }
-  const userId = currentUser.id;
-
-  return { success: true, data: null, error: null };
 }

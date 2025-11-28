@@ -95,7 +95,6 @@ export async function createAllowance(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't create allowance. Please check inputs and try again.",
@@ -153,8 +152,7 @@ export async function getAllAllowances() {
       ...allowance,
       createdBy: creatorsMap[allowance.createdById] || "Unknown",
     }));
-  } catch (error) {
-    console.error("Error fetching allowances:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -208,8 +206,7 @@ export async function getAllAllowancesMonthly() {
       ...allowance,
       createdBy: creatorsMap[allowance.createdById] || "Unknown",
     }));
-  } catch (error) {
-    console.error("Error fetching allowances:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -251,8 +248,7 @@ export async function getAllowance(id: number) {
       ...allowance[0],
       createdBy: creator.length > 0 ? creator[0].name : "Unknown",
     };
-  } catch (error) {
-    console.error("Error fetching allowance:", error);
+  } catch (_error) {
     return null;
   }
 }
@@ -358,7 +354,6 @@ export async function updateAllowance(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't update allowance. Please check inputs and try again.",
@@ -411,7 +406,6 @@ export async function deleteAllowance(id: number, pathname: string) {
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't delete allowance. It might be in use.",

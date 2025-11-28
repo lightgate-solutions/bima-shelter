@@ -3,6 +3,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface Email {
   id: number;
@@ -82,8 +83,8 @@ export function useMailPagination({
         setTotal(result.data.pagination.total);
         setHasMore(nextPage < result.data.pagination.totalPages);
       }
-    } catch (error) {
-      console.error("Failed to load more emails:", error);
+    } catch (_error) {
+      toast.error("Failed to load more emails");
     } finally {
       setLoading(false);
     }
@@ -100,8 +101,8 @@ export function useMailPagination({
         setTotal(result.data.pagination.total);
         setHasMore(1 < result.data.pagination.totalPages);
       }
-    } catch (error) {
-      console.error("Failed to refresh emails:", error);
+    } catch (_error) {
+      toast.error("Failed to refresh emails:");
     } finally {
       setLoading(false);
     }

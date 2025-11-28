@@ -19,8 +19,7 @@ export async function getCurrentUser() {
       role: session.user.role,
       createdAt: session.user.createdAt,
     };
-  } catch (error) {
-    console.error("Error getting current user:", error);
+  } catch (_error) {
     return null;
   }
 }

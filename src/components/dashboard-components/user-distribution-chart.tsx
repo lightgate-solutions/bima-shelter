@@ -10,6 +10,7 @@ import {
   Tooltip,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 interface UserDistributionData {
   name: string;
@@ -59,7 +60,7 @@ export default function UserDistributionChart() {
           setUserDistributionData([]);
         }
       } catch (err) {
-        console.error("Error fetching user distribution:", err);
+        toast.error("Error fetching user distribution:");
         setError(
           err instanceof Error
             ? err.message

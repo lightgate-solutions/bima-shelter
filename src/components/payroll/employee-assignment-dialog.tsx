@@ -109,7 +109,6 @@ export function EmployeeAssignmentDialog({
         }, 500);
       }
     } catch (error) {
-      console.error("Failed to load employees:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to load employees",
       );
@@ -171,8 +170,7 @@ export function EmployeeAssignmentDialog({
           onCompleteAction();
         }
       }
-    } catch (error) {
-      console.error("Error assigning employee:", error);
+    } catch (_error) {
       toast.error("Failed to assign employee");
     } finally {
       setSaving(false);

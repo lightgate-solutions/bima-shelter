@@ -97,8 +97,7 @@ export default function EmployeeEditForm({
         if (onCloseAction) onCloseAction();
         form.reset(values);
       }
-    } catch (err) {
-      console.error(err);
+    } catch (_err) {
       toast.error("Something went wrong");
     } finally {
       setIsSubmitting(false);

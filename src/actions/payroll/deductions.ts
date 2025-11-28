@@ -80,7 +80,6 @@ export async function createDeduction(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't create deduction. Please check inputs and try again.",
@@ -135,8 +134,7 @@ export async function getAllDeductions() {
       ...deduction,
       createdBy: creatorsMap[deduction.createdById] || "Unknown",
     }));
-  } catch (error) {
-    console.error("Error fetching deductions:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -187,8 +185,7 @@ export async function getAllRecurringDeductions() {
       ...deduction,
       createdBy: creatorsMap[deduction.createdById] || "Unknown",
     }));
-  } catch (error) {
-    console.error("Error fetching deductions:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -227,8 +224,7 @@ export async function getDeduction(id: number) {
       ...deduction[0],
       createdBy: creator.length > 0 ? creator[0].name : "Unknown",
     };
-  } catch (error) {
-    console.error("Error fetching deduction:", error);
+  } catch (_error) {
     return null;
   }
 }
@@ -311,7 +307,6 @@ export async function updateDeduction(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't update deduction. Please check inputs and try again.",
@@ -364,7 +359,6 @@ export async function deleteDeduction(id: number, pathname: string) {
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't delete deduction. It might be in use.",

@@ -204,8 +204,7 @@ export async function getAskHrQuestions(filters?: {
       limit,
       totalPages: Math.ceil(total / limit),
     };
-  } catch (error) {
-    console.error("Error fetching questions:", error);
+  } catch (_error) {
     return {
       questions: [],
       total: 0,
@@ -312,8 +311,7 @@ export async function getAskHrQuestion(questionId: number) {
       canRespond,
       canRedirect: isHrAdmin,
     };
-  } catch (error) {
-    console.error("Error fetching question:", error);
+  } catch (_error) {
     return { error: "Failed to fetch question details" };
   }
 }
@@ -734,27 +732,23 @@ async function notifyHrDepartment(
   message: string,
   referenceId: number,
 ) {
-  try {
-    // Get all HR department members
-    const hrEmployees = await db
-      .select({
-        id: employees.id,
-      })
-      .from(employees)
-      .where(eq(employees.department, "HR"));
+  // Get all HR department members
+  const hrEmployees = await db
+    .select({
+      id: employees.id,
+    })
+    .from(employees)
+    .where(eq(employees.department, "HR"));
 
-    // Create notifications for each HR employee
-    for (const employee of hrEmployees) {
-      await createNotification({
-        user_id: employee.id,
-        title,
-        message,
-        notification_type: "message",
-        reference_id: referenceId,
-      });
-    }
-  } catch (error) {
-    console.error("Failed to notify HR department:", error);
+  // Create notifications for each HR employee
+  for (const employee of hrEmployees) {
+    await createNotification({
+      user_id: employee.id,
+      title,
+      message,
+      notification_type: "message",
+      reference_id: referenceId,
+    });
   }
 }
 
@@ -780,8 +774,7 @@ export async function getEmployeesForRedirection() {
       })
       .from(employees)
       .orderBy(employees.name);
-  } catch (error) {
-    console.error("Error fetching employees for redirection:", error);
+  } catch (_error) {
     return [];
   }
 }

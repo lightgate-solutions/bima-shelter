@@ -123,8 +123,7 @@ export function EmployeeAllowanceDialog({
 
       setAllowances(activeAllowances);
       setAvailableAllowances(available);
-    } catch (error) {
-      console.error("Error loading employee allowances:", error);
+    } catch (_error) {
       toast.error("Failed to load allowances");
     } finally {
       setLoading(false);
@@ -166,8 +165,7 @@ export function EmployeeAllowanceDialog({
         setSelectedAllowanceId("");
         loadData();
       }
-    } catch (error) {
-      console.error("Error assigning allowance:", error);
+    } catch (_error) {
       toast.error("Failed to assign allowance");
     } finally {
       setLoadingAssign(false);
@@ -187,8 +185,7 @@ export function EmployeeAllowanceDialog({
         toast.success(result.success.reason);
         loadData();
       }
-    } catch (error) {
-      console.error("Error removing allowance:", error);
+    } catch (_error) {
       toast.error("Failed to remove allowance");
     }
   };

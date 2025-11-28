@@ -100,8 +100,7 @@ export function AskHrRedirectDialog({
           queryKey: ["ask-hr-questions"],
         });
       }
-    } catch (error) {
-      console.error("Error redirecting question:", error);
+    } catch (_error) {
       toast.error("Failed to redirect question. Please try again.");
     }
   };

@@ -122,8 +122,7 @@ export async function createNewsArticle(data: CreateNewsInput) {
       success: { reason: "News article created successfully" },
       error: null,
     };
-  } catch (err) {
-    console.error("Error creating news article:", err);
+  } catch (_err) {
     return {
       success: null,
       error: { reason: "Failed to create news article" },
@@ -203,8 +202,7 @@ export async function updateNewsArticle(data: UpdateNewsInput) {
       success: { reason: "News article updated successfully" },
       error: null,
     };
-  } catch (err) {
-    console.error("Error updating news article:", err);
+  } catch (_err) {
     return {
       success: null,
       error: { reason: "Failed to update news article" },
@@ -224,8 +222,7 @@ export async function deleteNewsArticle(id: string) {
       success: { reason: "News article deleted successfully" },
       error: null,
     };
-  } catch (err) {
-    console.error("Error deleting news article:", err);
+  } catch (_err) {
     return {
       success: null,
       error: { reason: "Failed to delete news article" },
@@ -482,8 +479,7 @@ export async function addNewsComment(articleId: string, content: string) {
     revalidatePath(`/news/${articleId}`);
 
     return { success: { reason: "Comment added successfully" }, error: null };
-  } catch (err) {
-    console.error("Error adding comment:", err);
+  } catch (_err) {
     return { success: null, error: { reason: "Failed to add comment" } };
   }
 }
@@ -516,8 +512,7 @@ export async function deleteNewsComment(commentId: string) {
     revalidatePath(`/news/${comment.articleId}`);
 
     return { success: { reason: "Comment deleted successfully" }, error: null };
-  } catch (err) {
-    console.error("Error deleting comment:", err);
+  } catch (_err) {
     return { success: null, error: { reason: "Failed to delete comment" } };
   }
 }

@@ -52,8 +52,8 @@ export function extractKeyFromUrl(url: string): string | null {
   try {
     const urlObj = new URL(url);
     return urlObj.pathname.substring(1);
-  } catch (error) {
-    console.error("Error extracting key from URL:", error);
+  } catch (_error) {
+    toast.error("Error extracting key from URL");
     return null;
   }
 }
@@ -119,8 +119,7 @@ export function Dropzone({
 
       setFiles((prevFiles) => prevFiles.filter((f) => f.id !== fileId));
       toast.success("File removed successfully");
-    } catch (error) {
-      console.error(error);
+    } catch (_error) {
       toast.error("Failed to delete file");
       setFiles((prevFiles) =>
         prevFiles.map((f) =>

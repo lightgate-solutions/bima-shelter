@@ -35,8 +35,7 @@ export async function getEmployeesBySalaryStructure(structureId: number) {
       .orderBy(desc(employeeSalary.effectiveFrom));
 
     return result;
-  } catch (error) {
-    console.error("Error fetching employees by salary structure:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -65,8 +64,7 @@ export async function getEmployeeSalaryHistory(employeeId: number) {
       .orderBy(desc(employeeSalary.effectiveFrom));
 
     return history;
-  } catch (error) {
-    console.error("Error fetching employee salary history:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -90,7 +88,6 @@ export async function getEmployeesNotInStructure(structureId: number) {
       .orderBy(employees.name);
 
     if (allEmployees.length === 0) {
-      console.error("No employees found in database");
       return [];
     }
 
@@ -143,10 +140,7 @@ export async function getEmployeesNotInStructure(structureId: number) {
       });
 
     return availableEmployees;
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error(error.message);
-    }
+  } catch (_error) {
     return [];
   }
 }
@@ -288,7 +282,6 @@ export async function assignEmployeeToStructure(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason:
@@ -344,7 +337,6 @@ export async function removeEmployeeFromStructure(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason:

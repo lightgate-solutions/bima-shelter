@@ -24,8 +24,7 @@ export async function getEmployeeBankDetails(employeeId: number) {
     });
 
     return bankDetails ?? null;
-  } catch (error) {
-    console.error("Error fetching employee bank details:", error);
+  } catch (_error) {
     throw new Error("Failed to fetch employee bank details");
   }
 }
@@ -65,7 +64,6 @@ export async function saveBankDetails(data: BankDetailsFormValues) {
     revalidateTag(`employee-bank-${employeeId}`);
     return { success: true, message: "Bank details saved successfully" };
   } catch (error) {
-    console.error("Error saving bank details:", error);
     if (error instanceof z.ZodError) {
       return {
         success: false,
@@ -87,7 +85,12 @@ export async function deleteBankDetails(employeeId: number) {
     revalidateTag(`employee-bank-${employeeId}`);
     return { success: true, message: "Bank details deleted successfully" };
   } catch (error) {
-    console.error("Error deleting bank details:", error);
+    if (error instanceof z.ZodError) {
+      return {
+        success: false,
+        message: "Failed to delete",
+      };
+    }
     return { success: false, message: "Failed to delete bank details" };
   }
 }

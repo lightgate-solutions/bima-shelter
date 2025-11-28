@@ -286,7 +286,6 @@ export async function generatePayrun(
       };
     });
   } catch (err) {
-    console.error("Error generating payrun:", err);
     return {
       error: {
         reason:
@@ -657,8 +656,7 @@ export async function getPayruns() {
       .orderBy(desc(payrun.createdAt));
 
     return payruns;
-  } catch (error) {
-    console.error("Error fetching payruns:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -746,8 +744,7 @@ export async function getPayrunById(id: number) {
       ...payrunData[0],
       items: itemsWithDetails,
     };
-  } catch (error) {
-    console.error("Error fetching payrun:", error);
+  } catch (_error) {
     return null;
   }
 }
@@ -807,8 +804,7 @@ export async function approvePayrun(id: number, pathname: string) {
       success: { reason: "Payrun approved successfully" },
       error: null,
     };
-  } catch (error) {
-    console.error("Error approving payrun:", error);
+  } catch (_error) {
     return {
       error: { reason: "Failed to approve payrun" },
       success: null,
@@ -985,8 +981,7 @@ export async function completePayrun(id: number, pathname: string) {
       success: { reason: "Payrun completed successfully" },
       error: null,
     };
-  } catch (error) {
-    console.error("Error completing payrun:", error);
+  } catch (_error) {
     return {
       error: { reason: "Failed to complete payrun" },
       success: null,
@@ -1033,8 +1028,7 @@ export async function rollbackPayrun(id: number, pathname: string) {
       success: { reason: "Payrun rolled back successfully" },
       error: null,
     };
-  } catch (error) {
-    console.error("Error rolling back payrun:", error);
+  } catch (_error) {
     return {
       error: { reason: "Failed to rollback payrun" },
       success: null,
@@ -1073,8 +1067,7 @@ export async function getApprovedPayruns() {
       .orderBy(desc(payrun.approvedAt));
 
     return payruns;
-  } catch (error) {
-    console.error("Error fetching approved payruns:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -1093,8 +1086,7 @@ export async function getAllAllowances() {
       })
       .from(allowances)
       .orderBy(allowances.name);
-  } catch (error) {
-    console.error("Error fetching allowances:", error);
+  } catch (_error) {
     return [];
   }
 }

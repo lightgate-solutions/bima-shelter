@@ -126,8 +126,7 @@ export function NewsFormDialog({
 
       setAttachments((prev) => [...prev, ...newAttachments]);
       toast.success(`${newAttachments.length} file(s) uploaded`);
-    } catch (err) {
-      console.error("Upload error:", err);
+    } catch (_err) {
       toast.error("Failed to upload file(s)");
     } finally {
       setUploading(false);

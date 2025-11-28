@@ -42,8 +42,7 @@ export async function getEmployeeDeductions(employeeId: number) {
       .orderBy(desc(employeeDeductions.effectiveFrom));
 
     return result;
-  } catch (error) {
-    console.error("Error fetching employee deductions:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -83,8 +82,7 @@ export async function getActiveEmployeeDeductions(employeeId: number) {
       .orderBy(desc(employeeDeductions.effectiveFrom));
 
     return result;
-  } catch (error) {
-    console.error("Error fetching active employee deductions:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -108,8 +106,7 @@ export async function getDeductionTypes() {
       .orderBy(deductionsSchema.name);
 
     return result;
-  } catch (error) {
-    console.error("Error fetching deduction types:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -211,7 +208,6 @@ export async function addDeductionToEmployee(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason:
@@ -296,7 +292,6 @@ export async function updateEmployeeDeduction(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason: "Couldn't update employee deduction. Please try again later.",
@@ -368,7 +363,6 @@ export async function deactivateEmployeeDeduction(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason:

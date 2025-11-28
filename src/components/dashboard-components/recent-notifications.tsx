@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { toast } from "sonner";
 
 dayjs.extend(relativeTime);
 
@@ -80,7 +81,7 @@ export default function RecentNotifications() {
           // Don't log 401 errors as they're expected for unauthenticated users
           if (response.status !== 401) {
             const errorData = await response.json().catch(() => ({}));
-            console.error(
+            toast.error(
               "Error fetching notifications:",
               errorData.error || response.statusText,
             );
@@ -110,8 +111,8 @@ export default function RecentNotifications() {
             created_at: n.created_at || new Date().toISOString(),
           }));
         setNotifications(recentNotifs);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
+      } catch (_error) {
+        toast.error("Error fetching notifications:");
         setNotifications([]);
       } finally {
         setLoading(false);

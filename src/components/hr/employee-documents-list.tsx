@@ -144,8 +144,7 @@ export default function EmployeeDocumentsList({
 
       window.URL.revokeObjectURL(url);
       window.document.body.removeChild(link);
-    } catch (error) {
-      console.error(error);
+    } catch (_error) {
       toast.error("Failed to download document");
     }
   };

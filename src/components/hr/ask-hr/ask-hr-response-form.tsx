@@ -80,8 +80,7 @@ export function AskHrResponseForm({
         // Call the callback if provided
         onResponseSubmitted?.();
       }
-    } catch (error) {
-      console.error("Error submitting response:", error);
+    } catch (_error) {
       toast.error("Failed to submit response. Please try again.");
     }
   };

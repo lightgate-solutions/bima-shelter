@@ -25,8 +25,7 @@ export async function createPayment(data: {
       })
       .returning();
     return payment;
-  } catch (error) {
-    console.error("Error creating payment:", error);
+  } catch (_error) {
     throw new Error("Failed to create payment");
   }
 }
@@ -35,8 +34,7 @@ export async function getAllPayments() {
   await requireAuth();
   try {
     return await db.select().from(payments);
-  } catch (error) {
-    console.error("Error fetching payments:", error);
+  } catch (_error) {
     throw new Error("Failed to fetch payments");
   }
 }
@@ -48,8 +46,7 @@ export async function getApprovedPayments() {
       .select()
       .from(payments)
       .where(eq(payments.payment_status, "successful"));
-  } catch (error) {
-    console.error("Error fetching successful payments:", error);
+  } catch (_error) {
     throw new Error("Failed to fetch successful payments");
   }
 }
@@ -61,8 +58,7 @@ export async function updatePaymentStatus(id: string, status: PaymentStatus) {
       .update(payments)
       .set({ payment_status: status })
       .where(eq(payments.id, id));
-  } catch (error) {
-    console.error("Error updating payment status:", error);
+  } catch (_error) {
     throw new Error("Failed to update payment status");
   }
 }

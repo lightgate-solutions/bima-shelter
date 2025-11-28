@@ -1,6 +1,7 @@
 # Form Implementation Patterns - BIMA Shelters
 
 ## Overview
+
 This guide documents the form patterns, server actions, and data table implementations used in the BIMA Shelters codebase. Use these patterns as reference for implementing your salary structure feature.
 
 ---
@@ -8,6 +9,7 @@ This guide documents the form patterns, server actions, and data table implement
 ## 1. PROJECT STRUCTURE
 
 ### Actions Organization
+
 ```
 src/actions/
 ├── auth/
@@ -27,6 +29,7 @@ src/actions/
 **Key Point**: Actions are organized by feature/domain. Create `src/actions/payroll/` for your salary structure server actions.
 
 ### Component Organization
+
 ```
 src/components/
 ├── payroll/
@@ -52,6 +55,7 @@ src/components/
 ## 2. SERVER ACTIONS PATTERN
 
 ### Return Type Structure
+
 All server actions follow this consistent pattern:
 
 ```typescript
@@ -63,6 +67,7 @@ All server actions follow this consistent pattern:
 ```
 
 ### Example: Server Action with Error Handling
+
 From `src/actions/documents/folders.ts`:
 
 ```typescript
@@ -109,7 +114,6 @@ export async function createFolder(data: CreateFoldersProps, pathname: string) {
       };
     }
 
-    console.error(err);
     return {
       error: { reason: "Couldn't create folder. Check inputs and try again!" },
       success: null,
@@ -118,7 +122,8 @@ export async function createFolder(data: CreateFoldersProps, pathname: string) {
 }
 ```
 
-### Key Patterns:
+### Key Patterns
+
 1. Always verify user is authenticated: `const user = await getUser();`
 2. Use transactions for complex operations: `db.transaction(async (tx) => { ... })`
 3. Handle both custom errors and DrizzleQueryError
@@ -131,6 +136,7 @@ export async function createFolder(data: CreateFoldersProps, pathname: string) {
 ## 3. FORM DIALOG PATTERNS
 
 ### Pattern A: Simple Dialog Form (Expenses & Projects)
+
 From `src/components/finance/expense-form-dialog.tsx`:
 
 ```typescript
@@ -201,7 +207,6 @@ export function ExpenseFormDialog({ trigger, initial, onCompleted }: Props) {
       setOpen(false);
       onCompleted?.();
     } catch (error) {
-      console.error("Error saving:", error);
       alert("Failed to save");
     } finally {
       setSaving(false);
@@ -243,6 +248,7 @@ export function ExpenseFormDialog({ trigger, initial, onCompleted }: Props) {
 ```
 
 **Key Features:**
+
 - Props include `trigger` (button/icon that opens dialog), `initial` (for edit mode), `onCompleted` callback
 - Uses Dialog component from shadcn/ui
 - State resets when dialog opens via useEffect
@@ -250,6 +256,7 @@ export function ExpenseFormDialog({ trigger, initial, onCompleted }: Props) {
 - Manual validation with alerts (or use Zod/React Hook Form for complex forms)
 
 ### Pattern B: Form Dialog with React Hook Form
+
 From `src/components/auth/login-form.tsx`:
 
 ```typescript
@@ -322,6 +329,7 @@ const LoginForm = () => {
 ```
 
 **Key Features:**
+
 - Uses Zod for validation schema
 - Uses React Hook Form for form state management
 - Server action called directly (no API route)
@@ -329,6 +337,7 @@ const LoginForm = () => {
 - Better for complex validation
 
 ### Pattern C: Complex Form with Multiple Sections
+
 From `src/components/tasks/task-form-dialog.tsx`:
 
 ```typescript
@@ -419,6 +428,7 @@ export function TaskFormDialog({ user, onCompleted, trigger }) {
 ```
 
 **Key Features:**
+
 - Uses Zod for validation
 - Separate component state management (not React Hook Form)
 - Field-level error display
@@ -430,6 +440,7 @@ export function TaskFormDialog({ user, onCompleted, trigger }) {
 ## 4. DATA TABLE PATTERNS
 
 ### Pattern: Tables with Actions (Dropdown Menus)
+
 From `src/components/documents/folders-table.tsx`:
 
 ```typescript
@@ -564,6 +575,7 @@ function FolderAction({ id, type }) {
 ```
 
 **Key Patterns:**
+
 - Use `<MoreVertical />` icon in button for ellipsis menu
 - `DropdownMenu` for action buttons
 - `AlertDialog` for confirmation dialogs
@@ -573,6 +585,7 @@ function FolderAction({ id, type }) {
 - "text-right" on actions header, "text-right" on actions cell
 
 ### Pattern: Table with Pagination
+
 From `src/components/documents/documents-table.tsx`:
 
 ```typescript
@@ -661,6 +674,7 @@ toast.loading("Processing...");
 ## 6. DIALOG/SHEET COMPONENTS
 
 ### Dialog vs Sheet
+
 - **Dialog**: Centered overlay, good for forms and confirmations
 - **Sheet**: Side panel, good for detailed views and complex operations
 
@@ -721,6 +735,7 @@ import {
 Based on the patterns observed, here's the recommended structure for your salary structure feature:
 
 ### 1. Create Server Actions
+
 File: `src/actions/payroll/salary-structure.ts`
 
 ```typescript
@@ -867,6 +882,7 @@ export async function getAllSalaryStructures() {
 ```
 
 ### 2. Create Form Dialog Component
+
 File: `src/components/payroll/salary-structure-form-dialog.tsx`
 
 ```typescript
@@ -1014,6 +1030,7 @@ export function SalaryStructureFormDialog({
 ```
 
 ### 3. Create Data Table Component
+
 File: `src/components/payroll/salary-structures-table.tsx`
 
 ```typescript
@@ -1194,6 +1211,7 @@ function DeleteStructureAction({
 ```
 
 ### 4. Create Main Page Component
+
 File: `src/components/payroll/structure-page.tsx` (update existing)
 
 ```typescript
@@ -1297,4 +1315,3 @@ The project uses shadcn/ui components. Common ones needed for forms:
 8. **DropdownMenu** with MoreVertical icon for table actions
 9. **Separate components** for complex operations (forms, actions)
 10. **Verify user authentication** in every server action
-

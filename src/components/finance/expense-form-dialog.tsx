@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 
 type Props = {
   trigger: React.ReactNode;
@@ -113,9 +114,8 @@ export function ExpenseFormDialog({ trigger, initial, onCompleted }: Props) {
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("expenses:changed"));
       }
-    } catch (error) {
-      console.error("Error saving expense:", error);
-      alert("Failed to save expense");
+    } catch (_error) {
+      toast.error("Error saving expense:");
     } finally {
       setSaving(false);
     }

@@ -41,8 +41,7 @@ export async function getEmployeeAllowances(employeeId: number) {
       .orderBy(desc(employeeAllowances.effectiveFrom));
 
     return result;
-  } catch (error) {
-    console.error("Error fetching employee allowances:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -82,8 +81,7 @@ export async function getActiveEmployeeAllowances(employeeId: number) {
       .orderBy(desc(employeeAllowances.effectiveFrom));
 
     return result;
-  } catch (error) {
-    console.error("Error fetching active employee allowances:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -135,8 +133,7 @@ export async function getAvailableAllowancesForEmployee(employeeId: number) {
       .orderBy(allowancesSchema.name);
 
     return availableAllowances;
-  } catch (error) {
-    console.error("Error fetching available allowances for employee:", error);
+  } catch (_error) {
     return [];
   }
 }
@@ -227,7 +224,6 @@ export async function addAllowanceToEmployee(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason:
@@ -304,7 +300,6 @@ export async function removeAllowanceFromEmployee(
       };
     }
 
-    console.error(err);
     return {
       error: {
         reason:

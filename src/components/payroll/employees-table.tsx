@@ -66,7 +66,6 @@ export function EmployeesTable() {
 
   if (error) {
     toast.error("Failed to load employees");
-    console.error(error);
   }
 
   const handleAssignStructure = (employee: any) => {
@@ -87,9 +86,8 @@ export function EmployeesTable() {
     try {
       const details = await calculateEmployeeTakeHomePay(employeeId);
       setTakeHomeDetails(details);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to calculate take-home pay");
-      console.error(error);
     } finally {
       setIsCalculatingPay(false);
     }

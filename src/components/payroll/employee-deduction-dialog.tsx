@@ -145,8 +145,7 @@ export function EmployeeDeductionDialog({
       // Find active salary structure
       const active = salary.find((s) => s.effectiveTo === null);
       setActiveSalaryStructure(active || null);
-    } catch (error) {
-      console.error("Error loading employee deductions:", error);
+    } catch (_error) {
       toast.error("Failed to load deductions");
     } finally {
       setLoading(false);
@@ -247,8 +246,7 @@ export function EmployeeDeductionDialog({
         setDeductionPercentage("");
         loadData();
       }
-    } catch (error) {
-      console.error("Error adding deduction:", error);
+    } catch (_error) {
       toast.error("Failed to add deduction");
     } finally {
       setLoadingAssign(false);
@@ -268,8 +266,7 @@ export function EmployeeDeductionDialog({
         toast.success(result.success.reason);
         loadData();
       }
-    } catch (error) {
-      console.error("Error removing deduction:", error);
+    } catch (_error) {
       toast.error("Failed to remove deduction");
     }
   };

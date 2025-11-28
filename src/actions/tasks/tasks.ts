@@ -84,7 +84,6 @@ export async function createTask(taskData: CreateTaskWithAssignees) {
       error: null,
     };
   } catch (err) {
-    console.error("Error creating task:", err);
     if (err instanceof DrizzleQueryError) {
       return {
         success: null,
