@@ -1,11 +1,17 @@
-"use client";
-
-import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TableSkeleton } from "@/components/skeletons";
 
 export default function Loading() {
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-background">
-      <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-    </div>
+    <section className="p-6">
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Logs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TableSkeleton columns={6} rows={10} showActions={false} />
+        </CardContent>
+      </Card>
+    </section>
   );
 }
