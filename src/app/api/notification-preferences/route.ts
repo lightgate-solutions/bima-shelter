@@ -17,6 +17,21 @@ export async function GET() {
     .from(notification_preferences)
     .where(eq(notification_preferences.user_id, user.id));
 
+  // If no preferences found, return defaults
+  if (!prefs[0]) {
+    return NextResponse.json({
+      success: true,
+      data: {
+        email_notifications: true,
+        in_app_notifications: true,
+        email_on_in_app_message: true,
+        email_on_task_notification: false,
+        email_on_general_notification: false,
+        notify_on_message: true,
+      },
+    });
+  }
+
   return NextResponse.json({ success: true, data: prefs[0] });
 }
 
@@ -30,10 +45,19 @@ export async function POST(req: Request) {
       );
 
     const body = await req.json();
-    console.log("trying to save user prefernces", body, user.id, {
-      ...body,
-      user_id: user.id,
-    });
+
+    // Prepare updates with defaults for new fields
+    const updates = {
+      email_notifications: body.email_notifications ?? true,
+      in_app_notifications: body.in_app_notifications ?? true,
+      email_on_in_app_message: body.email_on_in_app_message ?? true,
+      email_on_task_notification: body.email_on_task_notification ?? true,
+      email_on_general_notification: body.email_on_general_notification ?? true,
+      notify_on_message: true, // Keep forcing this to true
+    };
+
+    console.log("trying to save user preferences", updates, user.id);
+
     const existingPref = await db.query.notification_preferences.findFirst({
       where: eq(notification_preferences.user_id, user.id),
     });
@@ -41,13 +65,12 @@ export async function POST(req: Request) {
     if (existingPref) {
       await db
         .update(notification_preferences)
-        .set({ ...body, user_id: user.id, notify_on_message: true })
+        .set(updates)
         .where(eq(notification_preferences.user_id, user.id));
     } else {
       await db.insert(notification_preferences).values({
-        ...body,
+        ...updates,
         user_id: user.id,
-        notify_on_message: true,
       });
     }
 

@@ -87,7 +87,7 @@ export default function NotificationsClient({
   };
 
   return (
-    <div className="max-w-3xl space-y-4">
+    <div className="max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Notifications</h1>
         <div />

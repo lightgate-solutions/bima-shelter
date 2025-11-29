@@ -2,7 +2,7 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <> */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,10 +27,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  sendEmail,
-  getAccessibleDocumentsForAttachment,
-} from "@/actions/mail/email";
+import { sendEmail } from "@/actions/mail/email";
+import { DocumentSelectionDialog } from "@/components/mail/document-selection-dialog";
 
 const composeEmailSchema = z.object({
   recipientIds: z
@@ -57,8 +55,8 @@ interface Document {
   description: string | null;
   originalFileName: string | null;
   department: string;
-  public: boolean;
-  departmental: boolean;
+  public: boolean | null;
+  departmental: boolean | null;
   createdAt: Date;
   uploader: string | null;
   uploaderEmail: string | null;
@@ -84,9 +82,9 @@ export function ComposeEmail({
   const [searchQuery, setSearchQuery] = useState("");
   const [documentSearchQuery, setDocumentSearchQuery] = useState("");
   const [showUserList, setShowUserList] = useState(false);
-  const [showDocumentList, setShowDocumentList] = useState(false);
-  const [documents, setDocuments] = useState<any>([]);
-  const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [_showDocumentList, setShowDocumentList] = useState(false);
+  const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
+  const [documents, _setDocuments] = useState<any>([]);
 
   const form = useForm<ComposeEmailFormData>({
     resolver: zodResolver(composeEmailSchema),
@@ -118,22 +116,12 @@ export function ComposeEmail({
     }
   };
 
-  // Load accessible documents when dialog opens
-  useEffect(() => {
-    if (open) {
-      loadDocuments();
-    }
-  }, [open]);
-
-  const loadDocuments = async () => {
-    setLoadingDocuments(true);
-    const result = await getAccessibleDocumentsForAttachment();
-    if (result.success) {
-      setDocuments(result.data || []);
-    } else {
-      toast.error(result.error || "Failed to load documents");
-    }
-    setLoadingDocuments(false);
+  const handleDocumentsSelected = (documents: Document[]) => {
+    setSelectedDocuments(documents);
+    form.setValue(
+      "attachmentIds",
+      documents.map((d) => d.id),
+    );
   };
 
   const handleUserSelect = (user: User) => {
@@ -158,7 +146,7 @@ export function ComposeEmail({
     );
   };
 
-  const handleDocumentSelect = (document: Document) => {
+  const _handleDocumentSelect = (document: Document) => {
     if (!selectedDocuments.find((d) => d.id === document.id)) {
       const newSelectedDocuments = [...selectedDocuments, document];
       setSelectedDocuments(newSelectedDocuments);
@@ -189,7 +177,7 @@ export function ComposeEmail({
       !selectedUsers.find((u) => u.id === user.id),
   );
 
-  const filteredDocuments = documents.filter(
+  const _filteredDocuments = documents.filter(
     (document: any) =>
       (document.title
         .toLowerCase()
@@ -314,73 +302,40 @@ export function ComposeEmail({
                   <FormLabel>Attachments</FormLabel>
                   <FormControl>
                     <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[42px]">
-                        {selectedDocuments.map((document) => (
-                          <Badge
-                            key={document.id}
-                            variant="secondary"
-                            className="gap-1"
-                          >
-                            <FileText className="h-3 w-3" />
-                            {document.title}
-                            <button
-                              type="button"
-                              onClick={() => handleDocumentRemove(document.id)}
-                              className="ml-1 hover:text-destructive"
+                      {selectedDocuments.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedDocuments.map((document) => (
+                            <Badge
+                              key={document.id}
+                              variant="secondary"
+                              className="gap-1"
                             >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                        <div className="relative flex-1 min-w-[200px]">
-                          <Input
-                            value={documentSearchQuery}
-                            onChange={(e) => {
-                              setDocumentSearchQuery(e.target.value);
-                              setShowDocumentList(true);
-                            }}
-                            onFocus={() => setShowDocumentList(true)}
-                            placeholder="Search documents..."
-                            className="border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                            disabled={loadingDocuments}
-                          />
-                          {showDocumentList &&
-                            documentSearchQuery &&
-                            filteredDocuments.length > 0 && (
-                              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
-                                {filteredDocuments.map((document: any) => (
-                                  <button
-                                    key={document.id}
-                                    type="button"
-                                    onClick={() =>
-                                      handleDocumentSelect(document)
-                                    }
-                                    className="w-full text-left px-3 py-2 hover:bg-muted transition-colors"
-                                  >
-                                    <div className="font-medium">
-                                      {document.title}
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">
-                                      {document.originalFileName ||
-                                        document.description ||
-                                        "No description"}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {document.uploader} •{" "}
-                                      {document.department}
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                      {loadingDocuments && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Loading documents...
+                              <FileText className="h-3 w-3" />
+                              {document.title}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleDocumentRemove(document.id)
+                                }
+                                className="ml-1 hover:text-destructive"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
                         </div>
                       )}
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setDocumentDialogOpen(true)}
+                          className="shrink-0"
+                        >
+                          <FileText className="mr-2 h-4 w-4" />
+                          Browse
+                        </Button>
+                      </div>
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -435,6 +390,13 @@ export function ComposeEmail({
             </div>
           </form>
         </Form>
+
+        <DocumentSelectionDialog
+          open={documentDialogOpen}
+          onOpenChange={setDocumentDialogOpen}
+          selectedDocuments={selectedDocuments}
+          onDocumentsSelected={handleDocumentsSelected}
+        />
       </DialogContent>
     </Dialog>
   );

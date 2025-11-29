@@ -11,11 +11,98 @@ import {
   document,
   documentVersions,
 } from "@/db/schema";
-// import { notifications } from "@/db/schema/notifications";
 import { createNotification } from "../notification/notification";
 import { and, eq, or, ilike, sql, desc, inArray } from "drizzle-orm";
 import * as z from "zod";
 import { getUser } from "../auth/dal";
+import { sendInAppEmailNotification } from "@/lib/emails";
+import { filterUsersByEmailPreference } from "@/lib/notification-helpers";
+
+/**
+ * Send external email notifications to recipients who have email notifications enabled
+ * This runs asynchronously and does not block the main email send operation
+ */
+async function sendExternalEmailNotifications({
+  recipientIds,
+  emailId,
+  emailSubject,
+  emailBody,
+  emailType,
+  senderName,
+  senderEmail,
+  attachmentCount = 0,
+}: {
+  recipientIds: number[];
+  emailId: number;
+  emailSubject: string;
+  emailBody: string;
+  emailType: "sent" | "reply" | "forward";
+  senderName: string;
+  senderEmail: string;
+  attachmentCount?: number;
+}) {
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    // Filter users by preference (hierarchical check built-in)
+    const recipientsToNotify = await filterUsersByEmailPreference(
+      recipientIds,
+      "in_app_message",
+    );
+
+    if (recipientsToNotify.length === 0) {
+      console.log(
+        "No recipients opted in for in-app message email notifications",
+      );
+      return;
+    }
+
+    // Fetch recipient email addresses
+    const recipients = await db
+      .select({
+        employeeId: employees.id,
+        employeeName: employees.name,
+        employeeEmail: employees.email,
+      })
+      .from(employees)
+      .where(inArray(employees.id, recipientsToNotify));
+
+    // Send emails in parallel
+    const emailPromises = recipients.map((recipient) =>
+      sendInAppEmailNotification({
+        recipient: {
+          email: recipient.employeeEmail,
+          name: recipient.employeeName,
+        },
+        sender: {
+          name: senderName,
+          email: senderEmail,
+        },
+        emailData: {
+          id: emailId,
+          subject: emailSubject,
+          body: emailBody,
+          attachmentCount,
+          emailType,
+        },
+        appUrl,
+      }).catch((error) => {
+        console.error(
+          `Failed to send external email notification to ${recipient.employeeEmail}:`,
+          error,
+        );
+        return { error: error.message };
+      }),
+    );
+
+    await Promise.allSettled(emailPromises);
+    console.log(
+      `Sent ${recipients.length} external email notifications for email ${emailId}`,
+    );
+  } catch (error) {
+    console.error("Error sending external email notifications:", error);
+  }
+}
 
 const sendEmailSchema = z.object({
   recipientIds: z
@@ -155,6 +242,20 @@ export async function sendEmail(
           reference_id: emailRecord.data.id,
         });
       }
+
+      // Send external email notifications (async, non-blocking)
+      sendExternalEmailNotifications({
+        recipientIds: validated.recipientIds,
+        emailId: emailRecord.data.id,
+        emailSubject: validated.subject,
+        emailBody: validated.body,
+        emailType: "sent",
+        senderName: currentUser.name,
+        senderEmail: currentUser.email,
+        attachmentCount: validated.attachmentIds?.length || 0,
+      }).catch((error) => {
+        console.error("External email notification failed:", error);
+      });
     }
 
     return emailRecord;
@@ -180,7 +281,7 @@ export async function replyToEmail(data: z.infer<typeof replyEmailSchema>) {
 
     const validated = replyEmailSchema.parse(data);
 
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const [parentEmail] = await tx
         .select()
         .from(email)
@@ -270,6 +371,40 @@ export async function replyToEmail(data: z.infer<typeof replyEmailSchema>) {
         data: newEmail,
       };
     });
+
+    // Return error if transaction failed
+    if (!result.success) {
+      return result;
+    }
+
+    if (result.data) {
+      // Send in-app notifications
+      for (const recipientId of validated.recipientIds) {
+        await createNotification({
+          user_id: recipientId,
+          title: "New reply received",
+          message: `${currentUser.name} replied to: "${validated.subject}"`,
+          notification_type: "message",
+          reference_id: result.data.id,
+        });
+      }
+
+      // Send external email notifications (async, non-blocking)
+      sendExternalEmailNotifications({
+        recipientIds: validated.recipientIds,
+        emailId: result.data.id,
+        emailSubject: validated.subject,
+        emailBody: validated.body,
+        emailType: "reply",
+        senderName: currentUser.name,
+        senderEmail: currentUser.email,
+        attachmentCount: validated.attachmentIds?.length || 0,
+      }).catch((error) => {
+        console.error("External email notification failed:", error);
+      });
+    }
+
+    return result;
   } catch (error) {
     return {
       success: false,
@@ -292,7 +427,7 @@ export async function forwardEmail(data: z.infer<typeof forwardEmailSchema>) {
     }
     const validated = forwardEmailSchema.parse(data);
 
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const [parentEmail] = await tx
         .select()
         .from(email)
@@ -382,6 +517,40 @@ export async function forwardEmail(data: z.infer<typeof forwardEmailSchema>) {
         data: newEmail,
       };
     });
+
+    // Return error if transaction failed
+    if (!result.success) {
+      return result;
+    }
+
+    if (result.data) {
+      // Send in-app notifications
+      for (const recipientId of validated.recipientIds) {
+        await createNotification({
+          user_id: recipientId,
+          title: "Message forwarded to you",
+          message: `${currentUser.name} forwarded you a message: "${validated.subject}"`,
+          notification_type: "message",
+          reference_id: result.data.id,
+        });
+      }
+
+      // Send external email notifications (async, non-blocking)
+      sendExternalEmailNotifications({
+        recipientIds: validated.recipientIds,
+        emailId: result.data.id,
+        emailSubject: validated.subject,
+        emailBody: validated.body,
+        emailType: "forward",
+        senderName: currentUser.name,
+        senderEmail: currentUser.email,
+        attachmentCount: validated.attachmentIds?.length || 0,
+      }).catch((error) => {
+        console.error("External email notification failed:", error);
+      });
+    }
+
+    return result;
   } catch (error) {
     return {
       success: false,
@@ -1776,6 +1945,105 @@ export async function getAccessibleDocumentsForAttachment() {
       data: documents,
       error: null,
     };
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : "Failed to get documents",
+    };
+  }
+}
+
+export async function getAccessibleDocumentsForAttachmentPaginated(
+  page = 1,
+  limit = 20,
+  searchQuery = "",
+) {
+  try {
+    const currentUser = await getUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        data: null,
+        error: "Log in to continue",
+      };
+    }
+
+    const offset = (page - 1) * limit;
+
+    return await db.transaction(async (tx) => {
+      // Build the base WHERE clause for access control
+      const baseWhere = and(
+        eq(document.status, "active"),
+        or(
+          eq(document.uploadedBy, currentUser.id),
+          eq(document.public, true),
+          and(
+            eq(document.departmental, true),
+            eq(document.department, currentUser.department),
+          ),
+        ),
+      );
+
+      // Add search filter if provided
+      const whereClause = searchQuery
+        ? and(
+            baseWhere,
+            or(
+              ilike(document.title, `%${searchQuery}%`),
+              ilike(document.description, `%${searchQuery}%`),
+              ilike(document.originalFileName, `%${searchQuery}%`),
+            ),
+          )
+        : baseWhere;
+
+      // Fetch documents
+      const documents = await tx
+        .select({
+          id: document.id,
+          title: document.title,
+          description: document.description,
+          originalFileName: document.originalFileName,
+          department: document.department,
+          public: document.public,
+          departmental: document.departmental,
+          createdAt: document.createdAt,
+          uploader: employees.name,
+          uploaderEmail: employees.email,
+          fileSize: documentVersions.fileSize,
+          mimeType: documentVersions.mimeType,
+        })
+        .from(document)
+        .leftJoin(employees, eq(document.uploadedBy, employees.id))
+        .leftJoin(
+          documentVersions,
+          eq(document.currentVersionId, documentVersions.id),
+        )
+        .where(whereClause)
+        .orderBy(desc(document.updatedAt))
+        .limit(limit)
+        .offset(offset);
+
+      // Get total count for pagination
+      const [{ count }] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(document)
+        .where(whereClause);
+
+      return {
+        success: true,
+        data: {
+          documents,
+          pagination: {
+            page,
+            limit,
+            total: count,
+            totalPages: Math.ceil(count / limit),
+          },
+        },
+        error: null,
+      };
+    });
   } catch (error) {
     return {
       success: false,
