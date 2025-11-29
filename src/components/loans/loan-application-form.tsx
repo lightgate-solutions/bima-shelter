@@ -189,18 +189,6 @@ export default function LoanApplicationForm({
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground">Interest Rate</p>
-                <p className="font-medium">
-                  {eligibilityData.interestRate || 0}% p.a.
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Total Interest</p>
-                <p className="font-medium">
-                  {formatCurrency(calculatedDetails?.totalInterest || 0)}
-                </p>
-              </div>
-              <div>
                 <p className="text-muted-foreground">Total Repayment</p>
                 <p className="font-medium">
                   {formatCurrency(calculatedDetails?.totalRepayment || 0)}
