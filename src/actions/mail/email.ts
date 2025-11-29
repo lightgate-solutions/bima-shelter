@@ -10,13 +10,13 @@ import {
   employees,
   document,
   documentVersions,
-  notification_preferences,
 } from "@/db/schema";
 import { createNotification } from "../notification/notification";
 import { and, eq, or, ilike, sql, desc, inArray } from "drizzle-orm";
 import * as z from "zod";
 import { getUser } from "../auth/dal";
 import { sendInAppEmailNotification } from "@/lib/emails";
+import { filterUsersByEmailPreference } from "@/lib/notification-helpers";
 
 /**
  * Send external email notifications to recipients who have email notifications enabled
@@ -42,32 +42,33 @@ async function sendExternalEmailNotifications({
   attachmentCount?: number;
 }) {
   try {
-    // Get app URL from environment or use default
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-    // Fetch recipients with their email addresses and notification preferences
-    const recipientsWithPrefs = await db
+    // Filter users by preference (hierarchical check built-in)
+    const recipientsToNotify = await filterUsersByEmailPreference(
+      recipientIds,
+      "in_app_message",
+    );
+
+    if (recipientsToNotify.length === 0) {
+      console.log(
+        "No recipients opted in for in-app message email notifications",
+      );
+      return;
+    }
+
+    // Fetch recipient email addresses
+    const recipients = await db
       .select({
         employeeId: employees.id,
         employeeName: employees.name,
         employeeEmail: employees.email,
-        emailNotifications: notification_preferences.email_notifications,
       })
       .from(employees)
-      .leftJoin(
-        notification_preferences,
-        eq(notification_preferences.user_id, employees.id),
-      )
-      .where(inArray(employees.id, recipientIds));
+      .where(inArray(employees.id, recipientsToNotify));
 
-    // Filter recipients who have email notifications enabled
-    // If preference doesn't exist, default to true (email_notifications defaults to true in schema)
-    const recipientsToNotify = recipientsWithPrefs.filter(
-      (recipient) => recipient.emailNotifications !== false,
-    );
-
-    // Send email notifications asynchronously
-    const emailPromises = recipientsToNotify.map((recipient) =>
+    // Send emails in parallel
+    const emailPromises = recipients.map((recipient) =>
       sendInAppEmailNotification({
         recipient: {
           email: recipient.employeeEmail,
@@ -86,7 +87,6 @@ async function sendExternalEmailNotifications({
         },
         appUrl,
       }).catch((error) => {
-        // Log error but don't throw - we don't want to break the email send
         console.error(
           `Failed to send external email notification to ${recipient.employeeEmail}:`,
           error,
@@ -95,14 +95,11 @@ async function sendExternalEmailNotifications({
       }),
     );
 
-    // Wait for all emails to be sent (or fail)
     await Promise.allSettled(emailPromises);
-
     console.log(
-      `Sent ${recipientsToNotify.length} external email notifications for email ${emailId}`,
+      `Sent ${recipients.length} external email notifications for email ${emailId}`,
     );
   } catch (error) {
-    // Log error but don't throw - this is a non-critical operation
     console.error("Error sending external email notifications:", error);
   }
 }

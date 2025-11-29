@@ -154,3 +154,143 @@ To manage your notification preferences, log in to your account.
     `.trim(),
   });
 }
+
+export function sendTaskNotificationEmail({
+  recipient,
+  taskData,
+  appUrl,
+}: {
+  recipient: { email: string; name: string };
+  taskData: {
+    id: number;
+    title: string;
+    description: string;
+    dueDate?: string;
+    type: "assignment" | "deadline" | "approval";
+  };
+  appUrl: string;
+}) {
+  const taskLink = `${appUrl}/tasks/${taskData.id}`;
+  const typeLabel =
+    taskData.type === "assignment"
+      ? "New Task Assigned"
+      : taskData.type === "deadline"
+        ? "Task Deadline Reminder"
+        : "Task Approval Required";
+
+  return sendEmail({
+    to: recipient.email,
+    subject: `${typeLabel}: ${taskData.title}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #f3f4f6; padding: 24px; border-radius: 8px 8px 0 0;">
+          <h2 style="color: #1f2937; margin: 0;">${typeLabel}</h2>
+        </div>
+
+        <div style="background-color: white; padding: 24px; border: 1px solid #e5e7eb;">
+          <div style="margin-bottom: 16px;">
+            <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 14px;">Task:</p>
+            <p style="margin: 0; color: #1f2937; font-weight: 600;">${taskData.title}</p>
+          </div>
+
+          ${
+            taskData.description
+              ? `
+          <div style="margin-bottom: 16px;">
+            <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 14px;">Description:</p>
+            <p style="margin: 0; color: #374151;">${taskData.description}</p>
+          </div>
+          `
+              : ""
+          }
+
+          ${
+            taskData.dueDate
+              ? `
+          <div style="margin-bottom: 24px;">
+            <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 14px;">Due Date:</p>
+            <p style="margin: 0; color: #dc2626; font-weight: 600;">${taskData.dueDate}</p>
+          </div>
+          `
+              : ""
+          }
+
+          <a href="${taskLink}" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
+            View Task Details
+          </a>
+        </div>
+
+        <div style="background-color: #f9fafb; padding: 16px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">
+            This is an automated notification from BIMA Shelters.
+          </p>
+        </div>
+      </div>
+    `,
+    text: `
+${typeLabel}
+
+Task: ${taskData.title}
+${taskData.description ? `\nDescription: ${taskData.description}` : ""}
+${taskData.dueDate ? `\nDue Date: ${taskData.dueDate}` : ""}
+
+View task details: ${taskLink}
+
+---
+This is an automated notification from BIMA Shelters.
+    `.trim(),
+  });
+}
+
+export function sendGeneralNotificationEmail({
+  recipient,
+  notificationData,
+  appUrl,
+}: {
+  recipient: { email: string; name: string };
+  notificationData: {
+    id: number;
+    title: string;
+    message: string;
+    type: "approval" | "deadline" | "general";
+  };
+  appUrl: string;
+}) {
+  const notificationLink = `${appUrl}/notifications`;
+
+  return sendEmail({
+    to: recipient.email,
+    subject: notificationData.title,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #f3f4f6; padding: 24px; border-radius: 8px 8px 0 0;">
+          <h2 style="color: #1f2937; margin: 0;">${notificationData.title}</h2>
+        </div>
+
+        <div style="background-color: white; padding: 24px; border: 1px solid #e5e7eb;">
+          <p style="margin: 0; color: #374151; white-space: pre-wrap;">${notificationData.message}</p>
+
+          <a href="${notificationLink}" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; margin-top: 24px;">
+            View in Dashboard
+          </a>
+        </div>
+
+        <div style="background-color: #f9fafb; padding: 16px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">
+            This is an automated notification from BIMA Shelters.
+          </p>
+        </div>
+      </div>
+    `,
+    text: `
+${notificationData.title}
+
+${notificationData.message}
+
+View in dashboard: ${notificationLink}
+
+---
+This is an automated notification from BIMA Shelters.
+    `.trim(),
+  });
+}

@@ -236,6 +236,9 @@ export async function createUser(data: {
         user_id: emp.id,
         email_notifications: true,
         in_app_notifications: true,
+        email_on_in_app_message: true,
+        email_on_task_notification: false,
+        email_on_general_notification: false,
         notify_on_message: true,
       });
     });
