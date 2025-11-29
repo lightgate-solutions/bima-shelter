@@ -55,8 +55,8 @@ interface Document {
   description: string | null;
   originalFileName: string | null;
   department: string;
-  public: boolean;
-  departmental: boolean;
+  public: boolean | null;
+  departmental: boolean | null;
   createdAt: Date;
   uploader: string | null;
   uploaderEmail: string | null;
@@ -82,7 +82,7 @@ export function ComposeEmail({
   const [searchQuery, setSearchQuery] = useState("");
   const [documentSearchQuery, setDocumentSearchQuery] = useState("");
   const [showUserList, setShowUserList] = useState(false);
-  const [showDocumentList, setShowDocumentList] = useState(false);
+  const [_showDocumentList, setShowDocumentList] = useState(false);
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
   const [documents, _setDocuments] = useState<any>([]);
 
@@ -146,7 +146,7 @@ export function ComposeEmail({
     );
   };
 
-  const handleDocumentSelect = (document: Document) => {
+  const _handleDocumentSelect = (document: Document) => {
     if (!selectedDocuments.find((d) => d.id === document.id)) {
       const newSelectedDocuments = [...selectedDocuments, document];
       setSelectedDocuments(newSelectedDocuments);
@@ -177,7 +177,7 @@ export function ComposeEmail({
       !selectedUsers.find((u) => u.id === user.id),
   );
 
-  const filteredDocuments = documents.filter(
+  const _filteredDocuments = documents.filter(
     (document: any) =>
       (document.title
         .toLowerCase()
@@ -326,51 +326,6 @@ export function ComposeEmail({
                         </div>
                       )}
                       <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[42px]">
-                            <div className="relative flex-1 min-w-[200px]">
-                              <Input
-                                value={documentSearchQuery}
-                                onChange={(e) => {
-                                  setDocumentSearchQuery(e.target.value);
-                                  setShowDocumentList(true);
-                                }}
-                                onFocus={() => setShowDocumentList(true)}
-                                placeholder="Search documents..."
-                                className="border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                              />
-                              {showDocumentList &&
-                                documentSearchQuery &&
-                                filteredDocuments.length > 0 && (
-                                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
-                                    {filteredDocuments.map((document: any) => (
-                                      <button
-                                        key={document.id}
-                                        type="button"
-                                        onClick={() =>
-                                          handleDocumentSelect(document)
-                                        }
-                                        className="w-full text-left px-3 py-2 hover:bg-muted transition-colors"
-                                      >
-                                        <div className="font-medium">
-                                          {document.title}
-                                        </div>
-                                        <div className="text-sm text-muted-foreground">
-                                          {document.originalFileName ||
-                                            document.description ||
-                                            "No description"}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          {document.uploader} •{" "}
-                                          {document.department}
-                                        </div>
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                            </div>
-                          </div>
-                        </div>
                         <Button
                           type="button"
                           variant="outline"

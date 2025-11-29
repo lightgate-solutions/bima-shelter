@@ -10,11 +10,102 @@ import {
   employees,
   document,
   documentVersions,
+  notification_preferences,
 } from "@/db/schema";
 import { createNotification } from "../notification/notification";
 import { and, eq, or, ilike, sql, desc, inArray } from "drizzle-orm";
 import * as z from "zod";
 import { getUser } from "../auth/dal";
+import { sendInAppEmailNotification } from "@/lib/emails";
+
+/**
+ * Send external email notifications to recipients who have email notifications enabled
+ * This runs asynchronously and does not block the main email send operation
+ */
+async function sendExternalEmailNotifications({
+  recipientIds,
+  emailId,
+  emailSubject,
+  emailBody,
+  emailType,
+  senderName,
+  senderEmail,
+  attachmentCount = 0,
+}: {
+  recipientIds: number[];
+  emailId: number;
+  emailSubject: string;
+  emailBody: string;
+  emailType: "sent" | "reply" | "forward";
+  senderName: string;
+  senderEmail: string;
+  attachmentCount?: number;
+}) {
+  try {
+    // Get app URL from environment or use default
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    // Fetch recipients with their email addresses and notification preferences
+    const recipientsWithPrefs = await db
+      .select({
+        employeeId: employees.id,
+        employeeName: employees.name,
+        employeeEmail: employees.email,
+        emailNotifications: notification_preferences.email_notifications,
+      })
+      .from(employees)
+      .leftJoin(
+        notification_preferences,
+        eq(notification_preferences.user_id, employees.id),
+      )
+      .where(inArray(employees.id, recipientIds));
+
+    // Filter recipients who have email notifications enabled
+    // If preference doesn't exist, default to true (email_notifications defaults to true in schema)
+    const recipientsToNotify = recipientsWithPrefs.filter(
+      (recipient) => recipient.emailNotifications !== false,
+    );
+
+    // Send email notifications asynchronously
+    const emailPromises = recipientsToNotify.map((recipient) =>
+      sendInAppEmailNotification({
+        recipient: {
+          email: recipient.employeeEmail,
+          name: recipient.employeeName,
+        },
+        sender: {
+          name: senderName,
+          email: senderEmail,
+        },
+        emailData: {
+          id: emailId,
+          subject: emailSubject,
+          body: emailBody,
+          attachmentCount,
+          emailType,
+        },
+        appUrl,
+      }).catch((error) => {
+        // Log error but don't throw - we don't want to break the email send
+        console.error(
+          `Failed to send external email notification to ${recipient.employeeEmail}:`,
+          error,
+        );
+        return { error: error.message };
+      }),
+    );
+
+    // Wait for all emails to be sent (or fail)
+    await Promise.allSettled(emailPromises);
+
+    console.log(
+      `Sent ${recipientsToNotify.length} external email notifications for email ${emailId}`,
+    );
+  } catch (error) {
+    // Log error but don't throw - this is a non-critical operation
+    console.error("Error sending external email notifications:", error);
+  }
+}
 
 const sendEmailSchema = z.object({
   recipientIds: z
@@ -154,6 +245,20 @@ export async function sendEmail(
           reference_id: emailRecord.data.id,
         });
       }
+
+      // Send external email notifications (async, non-blocking)
+      sendExternalEmailNotifications({
+        recipientIds: validated.recipientIds,
+        emailId: emailRecord.data.id,
+        emailSubject: validated.subject,
+        emailBody: validated.body,
+        emailType: "sent",
+        senderName: currentUser.name,
+        senderEmail: currentUser.email,
+        attachmentCount: validated.attachmentIds?.length || 0,
+      }).catch((error) => {
+        console.error("External email notification failed:", error);
+      });
     }
 
     return emailRecord;
@@ -179,7 +284,7 @@ export async function replyToEmail(data: z.infer<typeof replyEmailSchema>) {
 
     const validated = replyEmailSchema.parse(data);
 
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const [parentEmail] = await tx
         .select()
         .from(email)
@@ -269,6 +374,40 @@ export async function replyToEmail(data: z.infer<typeof replyEmailSchema>) {
         data: newEmail,
       };
     });
+
+    // Return error if transaction failed
+    if (!result.success) {
+      return result;
+    }
+
+    if (result.data) {
+      // Send in-app notifications
+      for (const recipientId of validated.recipientIds) {
+        await createNotification({
+          user_id: recipientId,
+          title: "New reply received",
+          message: `${currentUser.name} replied to: "${validated.subject}"`,
+          notification_type: "message",
+          reference_id: result.data.id,
+        });
+      }
+
+      // Send external email notifications (async, non-blocking)
+      sendExternalEmailNotifications({
+        recipientIds: validated.recipientIds,
+        emailId: result.data.id,
+        emailSubject: validated.subject,
+        emailBody: validated.body,
+        emailType: "reply",
+        senderName: currentUser.name,
+        senderEmail: currentUser.email,
+        attachmentCount: validated.attachmentIds?.length || 0,
+      }).catch((error) => {
+        console.error("External email notification failed:", error);
+      });
+    }
+
+    return result;
   } catch (error) {
     return {
       success: false,
@@ -291,7 +430,7 @@ export async function forwardEmail(data: z.infer<typeof forwardEmailSchema>) {
     }
     const validated = forwardEmailSchema.parse(data);
 
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const [parentEmail] = await tx
         .select()
         .from(email)
@@ -381,6 +520,40 @@ export async function forwardEmail(data: z.infer<typeof forwardEmailSchema>) {
         data: newEmail,
       };
     });
+
+    // Return error if transaction failed
+    if (!result.success) {
+      return result;
+    }
+
+    if (result.data) {
+      // Send in-app notifications
+      for (const recipientId of validated.recipientIds) {
+        await createNotification({
+          user_id: recipientId,
+          title: "Message forwarded to you",
+          message: `${currentUser.name} forwarded you a message: "${validated.subject}"`,
+          notification_type: "message",
+          reference_id: result.data.id,
+        });
+      }
+
+      // Send external email notifications (async, non-blocking)
+      sendExternalEmailNotifications({
+        recipientIds: validated.recipientIds,
+        emailId: result.data.id,
+        emailSubject: validated.subject,
+        emailBody: validated.body,
+        emailType: "forward",
+        senderName: currentUser.name,
+        senderEmail: currentUser.email,
+        attachmentCount: validated.attachmentIds?.length || 0,
+      }).catch((error) => {
+        console.error("External email notification failed:", error);
+      });
+    }
+
+    return result;
   } catch (error) {
     return {
       success: false,
