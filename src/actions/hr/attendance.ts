@@ -20,7 +20,14 @@ function isWithinTimeRange(
 }
 
 // Sign In
-export async function signIn(employeeId: number) {
+export async function signIn(
+  employeeId: number,
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  },
+) {
   const authData = await requireAuth();
 
   // Verify user can only sign in for themselves unless admin/hr (though usually attendance is personal)
@@ -67,6 +74,9 @@ export async function signIn(employeeId: number) {
       employeeId,
       date: today,
       signInTime: now,
+      signInLatitude: location?.latitude?.toString(),
+      signInLongitude: location?.longitude?.toString(),
+      signInLocation: location?.address,
       status: "Approved",
     });
 
@@ -315,6 +325,9 @@ export async function getAttendanceRecords(filters?: {
       date: attendance.date,
       signInTime: attendance.signInTime,
       signOutTime: attendance.signOutTime,
+      signInLatitude: attendance.signInLatitude,
+      signInLongitude: attendance.signInLongitude,
+      signInLocation: attendance.signInLocation,
       status: attendance.status,
       rejectionReason: attendance.rejectionReason,
       rejectedBy: attendance.rejectedBy,

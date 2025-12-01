@@ -57,6 +57,9 @@ interface AttendanceRecord {
   date: string;
   signInTime: Date | null;
   signOutTime: Date | null;
+  signInLatitude: string | null;
+  signInLongitude: string | null;
+  signInLocation: string | null;
   status: "Approved" | "Rejected" | string;
   rejectionReason: string | null;
   rejectedBy: number | null;
@@ -127,7 +130,17 @@ export default function AttendanceClient({
 
   // Mutations
   const signInMutation = useMutation({
-    mutationFn: signIn,
+    mutationFn: ({
+      employeeId,
+      location,
+    }: {
+      employeeId: number;
+      location?: {
+        latitude: number;
+        longitude: number;
+        address?: string;
+      };
+    }) => signIn(employeeId, location),
     onSuccess: (res) => {
       if (res.error) {
         toast.error(res.error.reason);
@@ -175,7 +188,50 @@ export default function AttendanceClient({
   });
 
   const handleSignIn = () => {
-    signInMutation.mutate(currentEmployeeId);
+    // Check if geolocation is supported
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    // Get user's location
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        // Optional: Reverse geocode to get address (if you want to add this later)
+        // For now, we'll just use coordinates
+        signInMutation.mutate({
+          employeeId: currentEmployeeId,
+          location: {
+            latitude,
+            longitude,
+          },
+        });
+      },
+      (error) => {
+        // If location access is denied or fails, show error
+        let errorMessage = "Failed to get location";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage =
+              "Location access denied. Please enable location services to sign in.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out.";
+            break;
+        }
+        toast.error(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      },
+    );
   };
 
   const handleSignOut = () => {
@@ -328,6 +384,7 @@ export default function AttendanceClient({
                             <TableHead>Employee</TableHead>
                             <TableHead>Sign In</TableHead>
                             <TableHead>Sign Out</TableHead>
+                            <TableHead>Location</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Actions</TableHead>
                           </TableRow>
@@ -336,7 +393,7 @@ export default function AttendanceClient({
                           {records.length === 0 ? (
                             <TableRow>
                               <TableCell
-                                colSpan={5}
+                                colSpan={6}
                                 className="text-center text-muted-foreground"
                               >
                                 No records for this day
@@ -364,6 +421,24 @@ export default function AttendanceClient({
                                   {record.signOutTime
                                     ? format(new Date(record.signOutTime), "p")
                                     : "-"}
+                                </TableCell>
+                                <TableCell>
+                                  {record.signInLatitude &&
+                                  record.signInLongitude ? (
+                                    <a
+                                      href={`https://www.google.com/maps?q=${record.signInLatitude},${record.signInLongitude}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-blue-600 hover:underline"
+                                      title={`Lat: ${record.signInLatitude}, Lng: ${record.signInLongitude}`}
+                                    >
+                                      View Map
+                                    </a>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">
+                                      -
+                                    </span>
+                                  )}
                                 </TableCell>
                                 <TableCell>
                                   {getStatusBadge(record.status)}
