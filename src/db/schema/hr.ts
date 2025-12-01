@@ -203,6 +203,17 @@ export const leaveBalances = pgTable(
   ],
 );
 
+export const attendanceSettings = pgTable("attendance_settings", {
+  id: serial("id").primaryKey(),
+  signInStartHour: integer("sign_in_start_hour").notNull().default(6),
+  signInEndHour: integer("sign_in_end_hour").notNull().default(9),
+  signOutStartHour: integer("sign_out_start_hour").notNull().default(14),
+  signOutEndHour: integer("sign_out_end_hour").notNull().default(20),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const attendance = pgTable(
   "attendance",
   {
@@ -213,6 +224,9 @@ export const attendance = pgTable(
     date: date("date").notNull(),
     signInTime: timestamp("sign_in_time"),
     signOutTime: timestamp("sign_out_time"),
+    signInLatitude: numeric("sign_in_latitude", { precision: 10, scale: 8 }),
+    signInLongitude: numeric("sign_in_longitude", { precision: 11, scale: 8 }),
+    signInLocation: text("sign_in_location"),
     status: attendanceStatusEnum("status").default("Approved").notNull(),
     rejectionReason: text("rejection_reason"),
     rejectedBy: integer("rejected_by").references(() => employees.id),
