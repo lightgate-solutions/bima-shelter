@@ -78,6 +78,7 @@ export function ProjectFormDialog({ trigger, initial, onCompleted }: Props) {
   }, [initial, open]);
 
   async function onSubmit() {
+    if (!name || !status) return;
     setSaving(true);
     try {
       const payload = {
@@ -165,7 +166,7 @@ export function ProjectFormDialog({ trigger, initial, onCompleted }: Props) {
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label>Status</Label>
+            <Label>Status *</Label>
             <Select value={status} onValueChange={(v) => setStatus(v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />

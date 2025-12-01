@@ -116,6 +116,7 @@ export default function ProjectDetailPage({
   );
 
   async function saveMilestone() {
+    if (!title || !dueDate) return;
     if (editingMilestone?.id) {
       await fetch(`/api/projects/${projectId}/milestones`, {
         method: "PUT",
@@ -365,7 +366,7 @@ export default function ProjectDetailPage({
                     </DialogHeader>
                     <div className="grid sm:grid-cols-3 gap-3">
                       <div className="grid gap-1">
-                        <Label htmlFor="ms-title">Title</Label>
+                        <Label htmlFor="ms-title">Title *</Label>
                         <Input
                           id="ms-title"
                           value={title}
@@ -373,7 +374,7 @@ export default function ProjectDetailPage({
                         />
                       </div>
                       <div className="grid gap-1">
-                        <Label htmlFor="ms-due">Due date</Label>
+                        <Label htmlFor="ms-due">Due date *</Label>
                         <Input
                           id="ms-due"
                           type="date"

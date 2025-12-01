@@ -99,14 +99,14 @@ export default function AnnualLeaveSettingsDialog({
           name="year"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Year</FormLabel>
+              <FormLabel>Year *</FormLabel>
               <FormControl>
                 <Input
                   type="number"
                   {...field}
                   onChange={(e) =>
                     field.onChange(
-                      parseInt(e.target.value) || new Date().getFullYear(),
+                      Number(e.target.value) || new Date().getFullYear(),
                     )
                   }
                   min={2020}
@@ -127,7 +127,7 @@ export default function AnnualLeaveSettingsDialog({
           name="allocatedDays"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Annual Leave Days (All Employees)</FormLabel>
+              <FormLabel>Annual Leave Days (All Employees) *</FormLabel>
               <FormControl>
                 <Input
                   type="number"
