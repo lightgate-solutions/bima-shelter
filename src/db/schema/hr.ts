@@ -203,6 +203,17 @@ export const leaveBalances = pgTable(
   ],
 );
 
+export const attendanceSettings = pgTable("attendance_settings", {
+  id: serial("id").primaryKey(),
+  signInStartHour: integer("sign_in_start_hour").notNull().default(6),
+  signInEndHour: integer("sign_in_end_hour").notNull().default(9),
+  signOutStartHour: integer("sign_out_start_hour").notNull().default(14),
+  signOutEndHour: integer("sign_out_end_hour").notNull().default(20),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const attendance = pgTable(
   "attendance",
   {

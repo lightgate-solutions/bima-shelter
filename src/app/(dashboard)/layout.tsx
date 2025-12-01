@@ -12,7 +12,10 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import NotificationBell from "@/components/ui/notification-bell";
 import { AttendanceSignInPopup } from "@/components/hr/attendance-signin-popup";
 import { requireAuth } from "@/actions/auth/dal";
-import { getMyTodayAttendance } from "@/actions/hr/attendance";
+import {
+  getMyTodayAttendance,
+  getCurrentAttendanceSettings,
+} from "@/actions/hr/attendance";
 import { ConvexClientProvider } from "@/lib/convex-client-provider";
 
 export default async function RootLayout({
@@ -28,6 +31,7 @@ export default async function RootLayout({
   // Get employee data and today's attendance for the pop-up
   const authData = await requireAuth();
   const myAttendance = await getMyTodayAttendance();
+  const settings = await getCurrentAttendanceSettings();
   const hasSignedInToday =
     myAttendance !== null && myAttendance.signInTime !== null;
 
@@ -56,6 +60,7 @@ export default async function RootLayout({
           currentEmployeeId={authData.employee.id}
           hasSignedInToday={hasSignedInToday}
           isLoading={false}
+          settings={settings}
         />
       </ConvexClientProvider>
     </section>

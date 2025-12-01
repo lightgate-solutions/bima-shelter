@@ -46,7 +46,8 @@ import {
   getAttendanceRecords,
   getMyTodayAttendance,
 } from "@/actions/hr/attendance";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Settings } from "lucide-react";
+import Link from "next/link";
 
 interface AttendanceRecord {
   id: number;
@@ -77,6 +78,13 @@ interface AttendanceClientProps {
   isManagerOrHR: boolean;
   currentEmployeeId: number;
   managerIdFilter?: number;
+  settings: {
+    signInStartHour: number;
+    signInEndHour: number;
+    signOutStartHour: number;
+    signOutEndHour: number;
+  };
+  isHROrAdmin: boolean;
 }
 
 export default function AttendanceClient({
@@ -85,6 +93,8 @@ export default function AttendanceClient({
   isManagerOrHR,
   currentEmployeeId,
   managerIdFilter,
+  settings,
+  isHROrAdmin,
 }: AttendanceClientProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -283,11 +293,27 @@ export default function AttendanceClient({
       {/* My Attendance Section */}
       <Card>
         <CardHeader>
-          <CardTitle>My Attendance</CardTitle>
-          <CardDescription>
-            Sign in between 06:00am - 09:00am. Sign out between 02:00pm -
-            08:00pm.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>My Attendance</CardTitle>
+              <CardDescription>
+                Sign in between{" "}
+                {settings.signInStartHour.toString().padStart(2, "0")}:00 -{" "}
+                {settings.signInEndHour.toString().padStart(2, "0")}:00. Sign
+                out between{" "}
+                {settings.signOutStartHour.toString().padStart(2, "0")}:00 -{" "}
+                {settings.signOutEndHour.toString().padStart(2, "0")}:00.
+              </CardDescription>
+            </div>
+            {isHROrAdmin && (
+              <Link href="/hr/attendance/settings">
+                <Button variant="outline" size="sm">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Button>
+              </Link>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
