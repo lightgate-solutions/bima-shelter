@@ -100,7 +100,7 @@ const data = {
       items: [
         {
           title: "User Management",
-          url: "/hr/admin",
+          url: "/hr/admin/users?page=1&limit=10",
         },
         {
           title: "View Employees",
