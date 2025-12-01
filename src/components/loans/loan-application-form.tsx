@@ -141,7 +141,7 @@ export default function LoanApplicationForm({
           name="loanTypeId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Loan Type</FormLabel>
+              <FormLabel>Loan Type *</FormLabel>
               <Select
                 onValueChange={(value) => {
                   const typeId = Number(value);

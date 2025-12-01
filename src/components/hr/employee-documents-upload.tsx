@@ -315,7 +315,7 @@ export default function EmployeeDocumentsUpload({
             />
 
             <FieldSet>
-              <FieldLabel>Upload File</FieldLabel>
+              <FieldLabel>Upload File *</FieldLabel>
               <FieldDescription>
                 Upload a document file (PDF, DOCX, JPG, PNG, etc.)
               </FieldDescription>

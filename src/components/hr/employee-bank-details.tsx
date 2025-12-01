@@ -178,7 +178,7 @@ export default function EmployeeBankDetails({
               name="bankName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Bank Name</FormLabel>
+                  <FormLabel>Bank Name *</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Enter bank name" />
                   </FormControl>
@@ -192,7 +192,7 @@ export default function EmployeeBankDetails({
               name="accountName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Account Name</FormLabel>
+                  <FormLabel>Account Name *</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Enter account holder name" />
                   </FormControl>
@@ -206,7 +206,7 @@ export default function EmployeeBankDetails({
               name="accountNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Account Number</FormLabel>
+                  <FormLabel>Account Number *</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Enter account number" />
                   </FormControl>

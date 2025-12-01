@@ -56,7 +56,7 @@ export function UserRoleDialog({
     >
       <div className="grid gap-4 py-4">
         <div className="grid gap-2">
-          <Label htmlFor="role">Select Role</Label>
+          <Label htmlFor="role">Select Role *</Label>
           <Select value={selectedRole} onValueChange={setSelectedRole}>
             <SelectTrigger id="role" className="w-full">
               <SelectValue placeholder="Select role" />

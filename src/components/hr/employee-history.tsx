@@ -302,7 +302,7 @@ export default function EmployeeHistory({
                 name="department"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Department</FormLabel>
+                    <FormLabel>Department *</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Enter department"
@@ -321,7 +321,7 @@ export default function EmployeeHistory({
                 name="employmentType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Employment Type</FormLabel>
+                    <FormLabel>Employment Type *</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value || undefined}
@@ -349,7 +349,7 @@ export default function EmployeeHistory({
                 name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
+                    <FormLabel>Start Date *</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} value={field.value || ""} />
                     </FormControl>
@@ -364,7 +364,7 @@ export default function EmployeeHistory({
                 name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Date</FormLabel>
+                    <FormLabel>End Date *</FormLabel>
                     <FormControl>
                       <Input
                         type="date"

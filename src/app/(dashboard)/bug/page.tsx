@@ -155,7 +155,7 @@ export default function BugReportPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Your Name</Label>
+                <Label htmlFor="name">Your Name *</Label>
                 <Input id="name" placeholder="John Doe" {...register("name")} />
                 {errors.name && (
                   <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -163,7 +163,7 @@ export default function BugReportPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Your Email</Label>
+                <Label htmlFor="email">Your Email *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -177,7 +177,7 @@ export default function BugReportPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">Title *</Label>
               <Input
                 id="title"
                 placeholder="Brief description of the issue or feedback"
@@ -214,7 +214,7 @@ export default function BugReportPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Description *</Label>
               <Textarea
                 id="description"
                 placeholder="Describe the issue or feedback in detail..."

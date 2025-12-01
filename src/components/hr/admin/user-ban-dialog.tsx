@@ -48,7 +48,7 @@ export function UserBanDialog({
     if (banDuration === "permanent") {
       banExpiresIn = undefined;
     } else {
-      banExpiresIn = parseInt(banDuration) * 24 * 60 * 60; // Days to seconds
+      banExpiresIn = Number(banDuration) * 24 * 60 * 60; // Days to seconds
     }
 
     const res = await banUser(user.id, reason, banExpiresIn);
@@ -82,7 +82,7 @@ export function UserBanDialog({
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="banDuration">Ban duration</Label>
+          <Label htmlFor="banDuration">Ban duration *</Label>
           <Select value={banDuration} onValueChange={setBanDuration}>
             <SelectTrigger id="banDuration" className="w-full">
               <SelectValue placeholder="Select duration" />

@@ -33,7 +33,8 @@ const employeeSchema = z.object({
   phone: z.string().optional(),
   staffNumber: z
     .string()
-    .min(2, { message: "Staff id must be atleast 2 characters" }),
+    .min(2, { message: "Staff id must be atleast 2 characters" })
+    .optional(),
   department: z.string().optional(),
   isManager: z.boolean(),
   role: z.string(),
@@ -149,7 +150,7 @@ export default function EmployeeEditForm({
               name="staffNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Staff ID *</FormLabel>
+                  <FormLabel>Staff ID</FormLabel>
                   <FormControl>
                     <Input type="text" placeholder="STF-122" {...field} />
                   </FormControl>

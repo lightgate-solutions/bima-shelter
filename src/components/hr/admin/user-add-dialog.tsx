@@ -151,8 +151,9 @@ export function UserAddDialog({
       },
     });
 
-    if (res.error) toast.error(res.error.reason);
-    else {
+    if (res.error) {
+      toast.error(res.error.reason);
+    } else {
       toast.success(
         formData.autoVerify
           ? "User created and verified successfully"
@@ -274,19 +275,6 @@ export function UserAddDialog({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="staffNumber">Staff ID Number *</Label>
-          <Input
-            name="staffNumber"
-            value={employeeData.staffNumber}
-            onChange={(e) => {
-              setEmployeeData((p) => ({ ...p, staffNumber: e.target.value }));
-              validateField("staffNumber", e.target.value);
-            }}
-            placeholder="Enter staff id number"
-          />
-        </div>
-
-        <div className="grid gap-2">
           <Label htmlFor="department">Department *</Label>
           <Select
             value={employeeData.department}
@@ -380,7 +368,7 @@ export function UserAddDialog({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="maritalStatus">Marital Status *</Label>
+          <Label htmlFor="maritalStatus">Marital Status</Label>
           <Select
             value={employeeData.maritalStatus}
             onValueChange={(
@@ -400,7 +388,7 @@ export function UserAddDialog({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="employmentType">Employment Type *</Label>
+          <Label htmlFor="employmentType">Employment Type</Label>
           <Select
             value={employeeData.employmentType}
             onValueChange={(
