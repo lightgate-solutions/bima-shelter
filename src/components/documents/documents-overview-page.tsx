@@ -1,13 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Dialog } from "../ui/dialog";
 import CreateFolderButton from "./folders/create-folder-button";
 import FoldersViewWrapper from "./folders/folders-view-wrapper";
 import UploadDocumentButton from "./upload-document-button";
 import { ViewToggle } from "./view-toggle/view-toggle";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "../ui/button";
+import { DocumentSearch } from "./document-search";
 
 export function DocumentsOverview({
   usersFolders,
@@ -16,16 +15,16 @@ export function DocumentsOverview({
   usersFolders: { id: number; name: string; path?: string; updatedAt: Date }[];
   department: string;
 }) {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredFolders = usersFolders.filter((folder) =>
+    folder.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="w-full flex justify-between pt-2">
         <div className="flex items-start gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="size-4" />
-              Back to Dashboard
-            </Button>
-          </Link>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">
               All Documents
@@ -37,6 +36,7 @@ export function DocumentsOverview({
         </div>
 
         <div className="flex items-start gap-3">
+          <DocumentSearch value={searchTerm} onChange={setSearchTerm} />
           <ViewToggle />
           <div className="space-y-2">
             <Dialog>
@@ -57,7 +57,7 @@ export function DocumentsOverview({
       </div>
 
       <div>
-        <FoldersViewWrapper folders={usersFolders} department={department} />
+        <FoldersViewWrapper folders={filteredFolders} department={department} />
       </div>
     </div>
   );
