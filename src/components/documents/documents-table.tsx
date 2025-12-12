@@ -124,6 +124,7 @@ export default function DocumentsTable({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [openSheetDocId, setOpenSheetDocId] = useState<number | null>(null);
 
   const page = paging?.page ?? Number(searchParams?.get("page") ?? 1);
   const pageSize =
@@ -175,7 +176,11 @@ export default function DocumentsTable({
               </TableRow>
             ) : (
               documents.map((doc, idx) => (
-                <TableRow key={idx}>
+                <TableRow
+                  key={idx}
+                  className="cursor-pointer"
+                  onClick={() => setOpenSheetDocId(doc.id)}
+                >
                   <TableCell>
                     <FileIcon size={24} className="text-green-600" />
                   </TableCell>
@@ -198,9 +203,19 @@ export default function DocumentsTable({
                       {doc.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell
+                    className="text-right"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div className="flex justify-end gap-2">
-                      <DocumentSheet doc={doc} pathname={pathname} />
+                      <DocumentSheet
+                        doc={doc}
+                        pathname={pathname}
+                        open={openSheetDocId === doc.id}
+                        onOpenChange={(open) =>
+                          setOpenSheetDocId(open ? doc.id : null)
+                        }
+                      />
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="sm" className="px-2">
@@ -352,9 +367,13 @@ function DocumentsActions({
 function DocumentSheet({
   doc,
   pathname,
+  open,
+  onOpenChange,
 }: {
   doc: DocumentType;
   pathname: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [files, setFiles] = useState<FileWithMetadata[]>();
   const [progress, setProgress] = useState(0);
@@ -668,7 +687,7 @@ function DocumentSheet({
   }
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
         <Button
           size="sm"
