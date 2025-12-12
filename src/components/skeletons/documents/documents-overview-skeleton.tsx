@@ -4,13 +4,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function DocumentsOverviewSkeleton() {
   return (
     <div className="space-y-6 p-6">
-      {/* Gradient Header */}
-      <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-900 dark:to-purple-900 rounded-xl p-8 flex flex-col justify-end">
+      <div className="h-48  rounded-xl p-8 flex flex-col justify-end">
         <Skeleton className="h-10 w-64 mb-2 bg-white/20" />
         <Skeleton className="h-5 w-96 bg-white/20" />
       </div>
 
-      {/* Controls Row */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
           <Skeleton className="h-9 w-24" />

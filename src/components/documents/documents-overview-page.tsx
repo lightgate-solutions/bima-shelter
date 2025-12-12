@@ -5,9 +5,6 @@ import CreateFolderButton from "./folders/create-folder-button";
 import FoldersViewWrapper from "./folders/folders-view-wrapper";
 import UploadDocumentButton from "./upload-document-button";
 import { ViewToggle } from "./view-toggle/view-toggle";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "../ui/button";
 
 export function DocumentsOverview({
   usersFolders,
@@ -20,12 +17,6 @@ export function DocumentsOverview({
     <div className="flex w-full flex-col gap-6">
       <div className="w-full flex justify-between pt-2">
         <div className="flex items-start gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="size-4" />
-              Back to Dashboard
-            </Button>
-          </Link>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">
               All Documents

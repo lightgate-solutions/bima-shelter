@@ -2,9 +2,6 @@ import { getUser } from "@/actions/auth/dal";
 import { getAllAccessibleDocuments } from "@/actions/documents/documents";
 import DocumentsViewWrapper from "@/components/documents/documents-view-wrapper";
 import { ViewToggle } from "@/components/documents/view-toggle/view-toggle";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export default async function Page({
   searchParams,
@@ -29,12 +26,6 @@ export default async function Page({
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="size-4" />
-              Back to Dashboard
-            </Button>
-          </Link>
           <div>
             <h1 className="text-xl font-semibold">All Documents</h1>
             <p className="text-sm text-muted-foreground">
