@@ -4,7 +4,7 @@
 
 "use client";
 import { Dropzone, type FileWithMetadata } from "@/components/ui/dropzone";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
@@ -58,14 +58,21 @@ const statuses = [
 ] as const;
 
 const uploadSchema = z.object({
-  title: z
-    .string()
-    .min(5, "Document title must be at least 5 characters.")
-    .max(32, "Document title must be at most 32 characters."),
-  description: z
-    .string()
-    .max(100, "Description must be at most 100 characters.")
-    .optional(),
+  fileMetadata: z
+    .array(
+      z.object({
+        title: z
+          .string()
+          .min(5, "Document title must be at least 5 characters.")
+          .max(64, "Document title must be at most 64 characters."),
+        description: z
+          .string()
+          .max(500, "Description must be at most 500 characters.")
+          .optional(),
+      }),
+    )
+    .min(1, "At least one file is required.")
+    .max(10, "You can upload up to 10 files."),
   folder: z.string().min(1, "Please select documents folder."),
   public: z.boolean(),
   departmental: z.boolean(),
@@ -76,7 +83,7 @@ const uploadSchema = z.object({
           .string()
           .trim()
           .min(2, "Tag must have at least 2 characters.")
-          .max(20, "Tag must not exceed 20 characters."),
+          .max(32, "Tag must not exceed 20 characters."),
       }),
     )
     .min(1, "Add at least one tag.")
@@ -118,8 +125,7 @@ export default function UploadDocumentButton({
   const form = useForm<z.infer<typeof uploadSchema>>({
     resolver: zodResolver(uploadSchema),
     defaultValues: {
-      title: "",
-      description: "",
+      fileMetadata: [],
       folder: "personal",
       public: false,
       departmental: false,
@@ -128,6 +134,11 @@ export default function UploadDocumentButton({
       permissions: [{ manage: false, edit: false, view: false }],
       shares: [],
     },
+  });
+
+  const { replace: fileMetadataReplace } = useFieldArray({
+    control: form.control,
+    name: "fileMetadata",
   });
 
   const {
@@ -154,6 +165,31 @@ export default function UploadDocumentButton({
     control: form.control,
     name: "shares",
   });
+
+  // Sync fileMetadata array with uploaded files
+  useEffect(() => {
+    if (!files || files.length === 0) {
+      fileMetadataReplace([]);
+      return;
+    }
+
+    const currentMetadata = form.getValues("fileMetadata");
+    const newMetadata = files.map((file, index) => {
+      // Preserve existing metadata if available
+      if (currentMetadata[index]?.title) {
+        return currentMetadata[index];
+      }
+      // Generate default title from filename
+      const defaultTitle = file.file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+      return {
+        title: defaultTitle.substring(0, 64),
+        description: "",
+      };
+    });
+
+    // Update form with new metadata array
+    fileMetadataReplace(newMetadata);
+  }, [files, fileMetadataReplace, form]);
 
   function handleAddTag() {
     const trimmed = newTag.trim();
@@ -284,45 +320,62 @@ export default function UploadDocumentButton({
         return;
       }
 
-      setProgress(10);
-      const uploadedUrls: {
-        originalFileName: string;
-        filePath: string;
-        fileSize: string;
-        mimeType: string;
-      }[] = [];
-
-      setProgress(20);
-      for (const f of files) {
-        const url = await uploadFile(f.file);
-        const fileSizeMB = (f.file.size / (1024 * 1024)).toFixed(2);
-        if (url)
-          uploadedUrls.push({
-            originalFileName: f.file.name,
-            filePath: url,
-            fileSize: fileSizeMB,
-            mimeType: f.file.type,
-          });
+      if (!data.fileMetadata || data.fileMetadata.length !== files.length) {
+        toast.error("File metadata is missing or incomplete");
+        return;
       }
 
-      const payload: any = {
-        title: data.title,
-        folder: data.folder,
-        permissions: data.permissions,
-        tags: data.tags,
-        status: data.status,
-        public: data.public,
-        departmental: data.departmental,
-        description: data.description,
-        Files: uploadedUrls,
-        shares:
-          (data as any).shares?.filter(
-            (s: any) => s?.email && s?.accessLevel,
-          ) ?? [],
-      };
-      const res = await uploadDocumentsAction(payload);
+      setProgress(10);
+
+      // Upload each file with its individual metadata
+      const uploadPromises = files.map(async (f, index) => {
+        const url = await uploadFile(f.file);
+        if (!url) return null;
+
+        const fileSizeMB = (f.file.size / (1024 * 1024)).toFixed(2);
+        const metadata = data.fileMetadata[index];
+
+        const payload: any = {
+          title: metadata.title,
+          description: metadata.description || "",
+          folder: data.folder,
+          permissions: data.permissions,
+          tags: data.tags,
+          status: data.status,
+          public: data.public,
+          departmental: data.departmental,
+          Files: [
+            {
+              originalFileName: f.file.name,
+              filePath: url,
+              fileSize: fileSizeMB,
+              mimeType: f.file.type,
+            },
+          ],
+          shares:
+            data.shares?.filter((s: any) => s?.email && s?.accessLevel) ?? [],
+        };
+
+        return uploadDocumentsAction(payload);
+      });
+
+      setProgress(20);
+      const results = await Promise.all(uploadPromises);
+      setProgress(100);
+
+      const successCount = results.filter((r) => r?.success).length;
+      const failCount = results.length - successCount;
+
+      const res =
+        successCount > 0 ? { success: true } : { success: false, error: {} };
       if (res.success) {
-        toast.success("Files uploaded succesfully");
+        if (failCount > 0) {
+          toast.success(
+            `${successCount} file(s) uploaded successfully. ${failCount} file(s) failed.`,
+          );
+        } else {
+          toast.success(`${successCount} file(s) uploaded successfully!`);
+        }
         // Close dialog
         setDialogOpen(false);
         // Refresh the page to show new documents
@@ -352,7 +405,7 @@ export default function UploadDocumentButton({
           console.log("[Upload Button] Dispatched document upload events");
         }
       } else {
-        toast.error(res.error?.reason);
+        toast.error("All files failed to upload. Please try again.");
       }
     } catch (_error) {
       toast.error("Upload failed. Try again!");
@@ -383,31 +436,6 @@ export default function UploadDocumentButton({
         <form id="form-upload-document" onSubmit={form.handleSubmit(onSubmit)}>
           <FieldGroup>
             <div className="grid gap-4 grid-cols-2 py-4">
-              <Controller
-                name="title"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldContent>
-                      <FieldLabel htmlFor="title">Document Title *</FieldLabel>
-                      <Input
-                        {...field}
-                        name="title"
-                        aria-invalid={fieldState.invalid}
-                        placeholder="2025 regional report"
-                        autoComplete="off"
-                      />
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                      <FieldDescription>
-                        Multiple docs will be prefixed with $name-number
-                      </FieldDescription>
-                    </FieldContent>
-                  </Field>
-                )}
-              />
-
               <Controller
                 name="folder"
                 control={form.control}
@@ -813,39 +841,92 @@ export default function UploadDocumentButton({
                 </div>
               </div>
 
-              <div className="col-span-2">
-                <Controller
-                  name="description"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="description">Description</FieldLabel>
-                      <InputGroup>
-                        <InputGroupTextarea
-                          {...field}
-                          name="description"
-                          placeholder="All documents in relation to the northen states"
-                          rows={6}
-                          className="min-h-24 resize-none"
-                          aria-invalid={fieldState.invalid}
-                        />
-                        <InputGroupAddon align="block-end">
-                          <InputGroupText className="tabular-nums">
-                            {field.value?.length}/100 characters
-                          </InputGroupText>
-                        </InputGroupAddon>
-                      </InputGroup>
-                      <FieldDescription>
-                        Include steps to reproduce, expected behavior, and what
-                        actually happened.
-                      </FieldDescription>
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
-              </div>
+              {/* Per-file metadata section */}
+              {files && files.length > 0 && (
+                <div className="col-span-2 space-y-4">
+                  <FieldLabel>Document Details</FieldLabel>
+                  <FieldDescription>
+                    Provide title and description for each uploaded file
+                  </FieldDescription>
+                  {files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="border rounded-md p-2 space-y-2 bg-muted/50"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">
+                            {file.file.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            ({(file.file.size / (1024 * 1024)).toFixed(2)} MB)
+                          </span>
+                        </div>
+                      </div>
+
+                      <Controller
+                        name={`fileMetadata.${index}.title`}
+                        control={form.control}
+                        defaultValue=""
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldContent>
+                              <FieldLabel htmlFor={`file-title-${index}`}>
+                                Title *
+                              </FieldLabel>
+                              <Input
+                                {...field}
+                                value={field.value || ""}
+                                id={`file-title-${index}`}
+                                aria-invalid={fieldState.invalid}
+                                placeholder="Document title"
+                                autoComplete="off"
+                              />
+                              {fieldState.invalid && (
+                                <FieldError errors={[fieldState.error]} />
+                              )}
+                            </FieldContent>
+                          </Field>
+                        )}
+                      />
+
+                      <Controller
+                        name={`fileMetadata.${index}.description`}
+                        control={form.control}
+                        defaultValue=""
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldContent>
+                              <FieldLabel htmlFor={`file-description-${index}`}>
+                                Description
+                              </FieldLabel>
+                              <InputGroup>
+                                <InputGroupTextarea
+                                  {...field}
+                                  value={field.value || ""}
+                                  id={`file-description-${index}`}
+                                  placeholder="Optional description for this document"
+                                  rows={3}
+                                  className="min-h-20 resize-none"
+                                  aria-invalid={fieldState.invalid}
+                                />
+                                <InputGroupAddon align="block-end">
+                                  <InputGroupText className="tabular-nums">
+                                    {(field.value || "").length}/500 characters
+                                  </InputGroupText>
+                                </InputGroupAddon>
+                              </InputGroup>
+                              {fieldState.invalid && (
+                                <FieldError errors={[fieldState.error]} />
+                              )}
+                            </FieldContent>
+                          </Field>
+                        )}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </FieldGroup>
 
@@ -856,7 +937,7 @@ export default function UploadDocumentButton({
             maxSize={1024 * 1024 * 50} // 50MB
             onFilesChange={(files) => setFiles(files)}
           />
-          <div>
+          <div className="pt-2">
             <Field orientation="horizontal">
               <Button
                 type="button"

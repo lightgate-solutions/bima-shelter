@@ -26,9 +26,7 @@ export function DocumentsOverview({
       <div className="w-full flex justify-between pt-2">
         <div className="flex items-start gap-4">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">
-              All Documents
-            </h1>
+            <h1 className="text-xl font-semibold tracking-tight">Documents</h1>
             <p className="text-muted-foreground">
               Review and manage all folders across the organization
             </p>
